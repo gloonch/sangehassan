@@ -1,0 +1,39 @@
+CREATE TABLE IF NOT EXISTS categories (
+  id SERIAL PRIMARY KEY,
+  title_en VARCHAR(255) NOT NULL,
+  title_fa VARCHAR(255) NOT NULL,
+  title_ar VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id SERIAL PRIMARY KEY,
+  title_en VARCHAR(255) NOT NULL,
+  title_fa VARCHAR(255) NOT NULL,
+  title_ar VARCHAR(255) NOT NULL,
+  description TEXT,
+  price NUMERIC(12, 2),
+  image_url TEXT,
+  category_id INT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS blogs (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  cover_image_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

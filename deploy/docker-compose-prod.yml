@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: sangehassan-db
+    env_file: .prod.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - pg_data_prod:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ../back
+      target: prod
+    container_name: sangehassan-backend
+    env_file: .prod.env
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+
+  website:
+    build:
+      context: ../front/website
+      target: prod
+    container_name: sangehassan-website
+    env_file: .prod.env
+    ports:
+      - "3000:80"
+
+  panel:
+    build:
+      context: ../front/panel
+      target: prod
+    container_name: sangehassan-panel
+    env_file: .prod.env
+    ports:
+      - "3001:80"
+
+  nginx:
+    image: nginx:alpine
+    container_name: sangehassan-nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../back/storage/images:/var/www/images:ro
+
+volumes:
+  pg_data_prod:
