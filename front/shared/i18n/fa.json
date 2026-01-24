@@ -1,0 +1,150 @@
+{
+  "brand": "سنگ حسن",
+  "language": {
+    "en": "انگلیسی",
+    "fa": "فارسی",
+    "ar": "عربی"
+  },
+  "nav": {
+    "home": "خانه",
+    "products": "محصولات",
+    "blogs": "مقالات",
+    "stoneFinishes": "انواع پرداخت سنگ",
+    "gallery": "گالری",
+    "about": "درباره ما",
+    "contact": "تماس با ما",
+    "profile": "پروفایل",
+    "dashboard": "داشبورد"
+  },
+  "hero": {
+    "kicker": "آتلیه سنگ طبیعی",
+    "title": "سطوح مینیمال، سنگ ماندگار",
+    "subtitle": "متریال‌های برگزیده برای معماران، سازندگان و خانه‌های مدرن.",
+    "ctaPrimary": "مشاهده محصولات",
+    "ctaSecondary": "تماس با ما",
+    "scrollHint": "برای کشف بیشتر اسکرول کنید"
+  },
+  "home": {
+    "popularTitle": "محصولات محبوب",
+    "popularSubtitle": "گلچینی روان از سنگ‌های پرطرفدار ما.",
+    "popularItems": [
+      "تراورتن عباس آباد",
+      "گرانیت مشکی نطنز",
+      "مرمر سفید",
+      "کوارتزیت قرمز",
+      "اونیکس سبز",
+      "سنگ آنتیک"
+    ],
+    "viewAll": "مشاهده همه محصولات",
+    "sectionTitle": "برای فضاهای ماندگار ساخته شده",
+    "sectionSubtitle": "برش دقیق و تامین مطمئن برای هر پروژه."
+  },
+  "products": {
+    "title": "همه محصولات",
+    "subtitle": "کاتالوگ کامل را ببینید و بر اساس دسته‌بندی فیلتر کنید.",
+    "filterAll": "همه محصولات",
+    "categoryLabel": "دسته‌بندی",
+    "priceLabel": "قیمت",
+    "empty": "فعلا محصولی موجود نیست."
+  },
+  "blogs": {
+    "title": "داستان سنگ",
+    "subtitle": "بینش‌ها، پرداخت‌ها و تحقیق‌ها از کارگاه.",
+    "readMore": "ادامه مطلب",
+    "empty": "فعلا مقاله‌ای موجود نیست."
+  },
+  "auth": {
+    "loginTitle": "خوش آمدید",
+    "loginSubtitle": "برای ادامه وارد حساب خود شوید.",
+    "signupTitle": "ساخت حساب جدید",
+    "signupSubtitle": "برای دنبال کردن علاقه‌مندی‌ها ثبت‌نام کنید.",
+    "username": "نام کاربری",
+    "password": "رمز عبور",
+    "email": "ایمیل",
+    "fullName": "نام کامل",
+    "loginButton": "ورود",
+    "signupButton": "ثبت‌نام"
+  },
+  "profile": {
+    "title": "پروفایل شما",
+    "subtitle": "ترجیحات و سنگ‌های ذخیره‌شده را مدیریت کنید."
+  },
+  "footer": {
+    "title": "با سنگ بسازیم",
+    "subtitle": "برای تامین، پرداخت و پروژه‌های سفارشی با ما در تماس باشید.",
+    "addressLabel": "دفتر",
+    "addressValue": "تهران، میدان ونک",
+    "phoneLabel": "تلفن",
+    "phoneValue": "+۹۸ ۲۱ ۰۰۰۰ ۰۰۰۰",
+    "whatsappLabel": "واتساپ",
+    "whatsappValue": "+۹۸ ۹۱۲ ۰۰۰ ۰۰۰۰",
+    "linkedinLabel": "لینکدین",
+    "linkedinValue": "linkedin.com/company/sangehasan",
+    "emailLabel": "ایمیل",
+    "emailValue": "hello@sangehasan.com",
+    "aboutTitle": "درباره سنگ حسن",
+    "aboutText": "سنگ‌های طبیعی ممتاز با تامین شفاف و اجرای دقیق."
+  },
+  "admin": {
+    "title": "پنل مدیریت",
+    "subtitle": "محصولات، دسته‌بندی‌ها و مقالات را مدیریت کنید."
+  },
+  "adminLogin": {
+    "title": "ورود مدیر",
+    "subtitle": "برای مدیریت کاتالوگ وارد شوید.",
+    "username": "نام کاربری",
+    "password": "رمز عبور",
+    "button": "ورود"
+  },
+  "dashboard": {
+    "overviewTitle": "داشبورد",
+    "overviewSubtitle": "نگاهی سریع به کاتالوگ."
+  },
+  "categories": {
+    "title": "دسته‌بندی‌ها",
+    "empty": "فعلا دسته‌بندی‌ای موجود نیست."
+  },
+  "panelProducts": {
+    "title": "محصولات",
+    "empty": "فعلا محصولی موجود نیست."
+  },
+  "panelBlogs": {
+    "title": "مقالات",
+    "empty": "فعلا مقاله‌ای موجود نیست."
+  },
+  "form": {
+    "title": "عنوان",
+    "titleEn": "عنوان (انگلیسی)",
+    "titleFa": "عنوان (فارسی)",
+    "titleAr": "عنوان (عربی)",
+    "slug": "اسلاگ (انگلیسی)",
+    "description": "توضیحات",
+    "price": "قیمت",
+    "imageUrl": "آدرس تصویر",
+    "category": "دسته‌بندی",
+    "excerpt": "خلاصه",
+    "content": "متن",
+    "coverImageUrl": "آدرس تصویر شاخص"
+  },
+  "actions": {
+    "create": "ایجاد",
+    "update": "ویرایش",
+    "delete": "حذف",
+    "save": "ذخیره",
+    "cancel": "انصراف",
+    "addNew": "افزودن جدید",
+    "edit": "ویرایش",
+    "logout": "خروج",
+    "login": "ورود",
+    "signup": "ثبت‌نام",
+    "menu": "منو"
+  },
+  "messages": {
+    "loading": "در حال بارگذاری...",
+    "error": "مشکلی پیش آمد.",
+    "empty": "چیزی برای نمایش نیست."
+  },
+  "sections": {
+    "comingSoon": "به‌زودی"
+  }
+}

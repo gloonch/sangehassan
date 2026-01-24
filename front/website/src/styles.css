@@ -1,0 +1,40 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #083a4f;
+  --color-accent: #a58d66;
+  --color-base: #e5e1dd;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-primary);
+  min-height: 100vh;
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
+  }
+
+  .section-shell {
+    @apply mx-auto w-full max-w-6xl px-6;
+  }
+}
+
+@layer utilities {
+  .bg-quiet-grid {
+    background-image: linear-gradient(rgba(8, 58, 79, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(8, 58, 79, 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .mask-fade {
+    mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  }
+}

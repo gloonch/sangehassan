@@ -1,0 +1,150 @@
+{
+  "brand": "سنگ حسن",
+  "language": {
+    "en": "الإنجليزية",
+    "fa": "الفارسية",
+    "ar": "العربية"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "products": "المنتجات",
+    "blogs": "المقالات",
+    "stoneFinishes": "تشطيبات الحجر",
+    "gallery": "المعرض",
+    "about": "من نحن",
+    "contact": "تواصل معنا",
+    "profile": "الملف الشخصي",
+    "dashboard": "لوحة التحكم"
+  },
+  "hero": {
+    "kicker": "مشغل الحجر الطبيعي",
+    "title": "أسطح بسيطة، حجر خالد",
+    "subtitle": "مواد مختارة بعناية للمعماريين والبنائين والمنازل الحديثة.",
+    "ctaPrimary": "استكشف المنتجات",
+    "ctaSecondary": "تواصل معنا",
+    "scrollHint": "مرر لاكتشاف المزيد"
+  },
+  "home": {
+    "popularTitle": "منتجات شائعة",
+    "popularSubtitle": "اختيار متدفق من أكثر أحجارنا طلباً.",
+    "popularItems": [
+      "ترافرتين عباس آباد",
+      "جرانيت نطنز الأسود",
+      "رخام أبيض",
+      "كوارتزيت أحمر",
+      "أونيكس أخضر",
+      "حجر عتيق"
+    ],
+    "viewAll": "عرض جميع المنتجات",
+    "sectionTitle": "مصنوع لمساحات تدوم",
+    "sectionSubtitle": "قطع دقيق وتوريد موثوق لكل مشروع."
+  },
+  "products": {
+    "title": "جميع المنتجات",
+    "subtitle": "تصفح الكتالوج الكامل وفلتر حسب الفئة.",
+    "filterAll": "كل المنتجات",
+    "categoryLabel": "الفئة",
+    "priceLabel": "السعر",
+    "empty": "لا توجد منتجات حالياً."
+  },
+  "blogs": {
+    "title": "حكايات الحجر",
+    "subtitle": "رؤى وتشطيبات وأبحاث من الورشة.",
+    "readMore": "اقرأ المزيد",
+    "empty": "لا توجد مقالات حالياً."
+  },
+  "auth": {
+    "loginTitle": "مرحباً بعودتك",
+    "loginSubtitle": "سجل الدخول للمتابعة.",
+    "signupTitle": "أنشئ حساباً",
+    "signupSubtitle": "انضم لتتبع المفضلات والطلبات.",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "email": "البريد الإلكتروني",
+    "fullName": "الاسم الكامل",
+    "loginButton": "تسجيل الدخول",
+    "signupButton": "إنشاء حساب"
+  },
+  "profile": {
+    "title": "ملفك الشخصي",
+    "subtitle": "أدر التفضيلات والأحجار المحفوظة."
+  },
+  "footer": {
+    "title": "لنَبْنِ بالحجر",
+    "subtitle": "تواصل معنا للتوريد والتشطيبات والمشاريع المخصصة.",
+    "addressLabel": "المكتب",
+    "addressValue": "طهران، ساحة فاناك",
+    "phoneLabel": "الهاتف",
+    "phoneValue": "+98 21 0000 0000",
+    "whatsappLabel": "واتساب",
+    "whatsappValue": "+98 912 000 0000",
+    "linkedinLabel": "لينكدإن",
+    "linkedinValue": "linkedin.com/company/sangehasan",
+    "emailLabel": "البريد",
+    "emailValue": "hello@sangehasan.com",
+    "aboutTitle": "عن سنگ حسن",
+    "aboutText": "أحجار طبيعية فاخرة مع توريد شفاف وحرفية دقيقة."
+  },
+  "admin": {
+    "title": "لوحة الإدارة",
+    "subtitle": "إدارة المنتجات والفئات والمقالات."
+  },
+  "adminLogin": {
+    "title": "دخول المدير",
+    "subtitle": "سجل الدخول لإدارة الكتالوج.",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "button": "تسجيل الدخول"
+  },
+  "dashboard": {
+    "overviewTitle": "لوحة التحكم",
+    "overviewSubtitle": "نظرة سريعة على الكتالوج."
+  },
+  "categories": {
+    "title": "الفئات",
+    "empty": "لا توجد فئات حالياً."
+  },
+  "panelProducts": {
+    "title": "المنتجات",
+    "empty": "لا توجد منتجات حالياً."
+  },
+  "panelBlogs": {
+    "title": "المقالات",
+    "empty": "لا توجد مقالات حالياً."
+  },
+  "form": {
+    "title": "العنوان",
+    "titleEn": "العنوان (إنجليزي)",
+    "titleFa": "العنوان (فارسي)",
+    "titleAr": "العنوان (عربي)",
+    "slug": "المعرف (إنجليزي)",
+    "description": "الوصف",
+    "price": "السعر",
+    "imageUrl": "رابط الصورة",
+    "category": "الفئة",
+    "excerpt": "ملخص",
+    "content": "المحتوى",
+    "coverImageUrl": "رابط صورة الغلاف"
+  },
+  "actions": {
+    "create": "إضافة",
+    "update": "تحديث",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "addNew": "إضافة جديد",
+    "edit": "تعديل",
+    "logout": "تسجيل خروج",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "menu": "القائمة"
+  },
+  "messages": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ ما.",
+    "empty": "لا يوجد شيء هنا بعد."
+  },
+  "sections": {
+    "comingSoon": "قريباً"
+  }
+}

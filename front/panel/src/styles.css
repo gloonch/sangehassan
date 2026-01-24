@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #083a4f;
+  --color-accent: #a58d66;
+  --color-base: #e5e1dd;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-primary);
+  min-height: 100vh;
+}
+
+@layer components {
+  .panel-shell {
+    @apply mx-auto w-full max-w-6xl px-6;
+  }
+
+  .panel-card {
+    @apply rounded-2xl border border-primary/10 bg-white/80 p-6 shadow-lg;
+  }
+}

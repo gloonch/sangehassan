@@ -1,0 +1,150 @@
+{
+  "brand": "Sange Hasan",
+  "language": {
+    "en": "English",
+    "fa": "Persian",
+    "ar": "Arabic"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "blogs": "Blogs",
+    "stoneFinishes": "Stone Finishes",
+    "gallery": "Gallery",
+    "about": "About Us",
+    "contact": "Contact Us",
+    "profile": "Profile",
+    "dashboard": "Dashboard"
+  },
+  "hero": {
+    "kicker": "Natural stone atelier",
+    "title": "Minimal surfaces. Timeless stone.",
+    "subtitle": "Premium materials curated for architects, builders, and modern homes.",
+    "ctaPrimary": "Explore products",
+    "ctaSecondary": "Contact us",
+    "scrollHint": "Scroll to discover"
+  },
+  "home": {
+    "popularTitle": "Popular products",
+    "popularSubtitle": "A flowing selection of our most requested stones.",
+    "popularItems": [
+      "Abbas Abad Travertine",
+      "Natanzi Black Granite",
+      "White Marble",
+      "Red Quartzite",
+      "Green Onyx",
+      "Antique Limestone"
+    ],
+    "viewAll": "View all products",
+    "sectionTitle": "Crafted for enduring spaces",
+    "sectionSubtitle": "We pair precise cutting with attentive sourcing for every project."
+  },
+  "products": {
+    "title": "All products",
+    "subtitle": "Browse the full catalog and filter by category.",
+    "filterAll": "All products",
+    "categoryLabel": "Category",
+    "priceLabel": "Price",
+    "empty": "No products available yet."
+  },
+  "blogs": {
+    "title": "Stone stories",
+    "subtitle": "Insights, finishes, and research from the workshop.",
+    "readMore": "Read more",
+    "empty": "No blogs available yet."
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to continue to your account.",
+    "signupTitle": "Create your account",
+    "signupSubtitle": "Join us to track favorites and requests.",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "fullName": "Full name",
+    "loginButton": "Sign in",
+    "signupButton": "Create account"
+  },
+  "profile": {
+    "title": "Your profile",
+    "subtitle": "Manage preferences and saved stones."
+  },
+  "footer": {
+    "title": "Let's build in stone",
+    "subtitle": "Reach us for sourcing, finishes, and custom projects.",
+    "addressLabel": "Office",
+    "addressValue": "Tehran, Vanak Square",
+    "phoneLabel": "Phone",
+    "phoneValue": "+98 21 0000 0000",
+    "whatsappLabel": "WhatsApp",
+    "whatsappValue": "+98 912 000 0000",
+    "linkedinLabel": "LinkedIn",
+    "linkedinValue": "linkedin.com/company/sangehasan",
+    "emailLabel": "Email",
+    "emailValue": "hello@sangehasan.com",
+    "aboutTitle": "About Sange Hasan",
+    "aboutText": "Premium natural stones with honest sourcing and craftsmanship."
+  },
+  "admin": {
+    "title": "Admin panel",
+    "subtitle": "Manage products, categories, and blogs."
+  },
+  "adminLogin": {
+    "title": "Admin access",
+    "subtitle": "Sign in to manage the catalog.",
+    "username": "Username",
+    "password": "Password",
+    "button": "Sign in"
+  },
+  "dashboard": {
+    "overviewTitle": "Dashboard",
+    "overviewSubtitle": "Quick look at your catalog."
+  },
+  "categories": {
+    "title": "Categories",
+    "empty": "No categories available yet."
+  },
+  "panelProducts": {
+    "title": "Products",
+    "empty": "No products available yet."
+  },
+  "panelBlogs": {
+    "title": "Blogs",
+    "empty": "No blogs available yet."
+  },
+  "form": {
+    "title": "Title",
+    "titleEn": "Title (English)",
+    "titleFa": "Title (Persian)",
+    "titleAr": "Title (Arabic)",
+    "slug": "Slug (English)",
+    "description": "Description",
+    "price": "Price",
+    "imageUrl": "Image URL",
+    "category": "Category",
+    "excerpt": "Excerpt",
+    "content": "Content",
+    "coverImageUrl": "Cover image URL"
+  },
+  "actions": {
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "addNew": "Add new",
+    "edit": "Edit",
+    "logout": "Log out",
+    "login": "Log in",
+    "signup": "Sign up",
+    "menu": "Menu"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "empty": "Nothing here yet."
+  },
+  "sections": {
+    "comingSoon": "Coming soon"
+  }
+}
