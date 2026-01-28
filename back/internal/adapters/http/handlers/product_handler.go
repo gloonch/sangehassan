@@ -26,10 +26,20 @@ type productPayload struct {
 	Price       float64 `json:"price"`
 	ImageURL    string  `json:"image_url"`
 	CategoryID  int64   `json:"category_id"`
+	IsPopular   bool    `json:"is_popular"`
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
-	products, err := h.service.List(c.Request.Context())
+	popularOnly := c.Query("popular") == "true"
+	var (
+		products []domain.Product
+		err      error
+	)
+	if popularOnly {
+		products, err = h.service.ListPopular(c.Request.Context())
+	} else {
+		products, err = h.service.List(c.Request.Context())
+	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to load products")
 		return
@@ -52,6 +62,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		Price:       payload.Price,
 		ImageURL:    payload.ImageURL,
 		CategoryID:  payload.CategoryID,
+		IsPopular:   payload.IsPopular,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create product")
@@ -83,6 +94,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		Price:       payload.Price,
 		ImageURL:    payload.ImageURL,
 		CategoryID:  payload.CategoryID,
+		IsPopular:   payload.IsPopular,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update product")

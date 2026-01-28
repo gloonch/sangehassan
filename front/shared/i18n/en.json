@@ -104,6 +104,10 @@
     "title": "Categories",
     "empty": "No categories available yet."
   },
+  "templates": {
+    "title": "Templates",
+    "empty": "No templates available yet."
+  },
   "panelProducts": {
     "title": "Products",
     "empty": "No products available yet."
@@ -118,6 +122,11 @@
     "titleFa": "Title (Persian)",
     "titleAr": "Title (Arabic)",
     "slug": "Slug (English)",
+    "templateName": "Template name",
+    "templateImageUrl": "Template image URL",
+    "active": "Active",
+    "inactive": "Inactive",
+    "popular": "Popular",
     "description": "Description",
     "price": "Price",
     "imageUrl": "Image URL",
@@ -146,5 +155,13 @@
   },
   "sections": {
     "comingSoon": "Coming soon"
+  },
+  "preview": {
+    "title": "Material preview",
+    "subtitle": "Switch templates and stones",
+    "nextTemplate": "Next template",
+    "prevTemplate": "Previous template",
+    "nextStone": "Next stone",
+    "prevStone": "Previous stone"
   }
 }

@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
-import ProductMarquee from "../components/ProductMarquee";
+import MaterialPreviewStudio from "../components/MaterialPreviewStudio";
 
 export default function Home() {
   const { t } = useTranslation();
-  const popularItems = t("home.popularItems");
 
   return (
     <div className="bg-quiet-grid">
@@ -52,7 +51,7 @@ export default function Home() {
             {t("home.viewAll")}
           </Link>
         </div>
-        <ProductMarquee items={Array.isArray(popularItems) ? popularItems : []} />
+        <MaterialPreviewStudio />
       </section>
     </div>
   );

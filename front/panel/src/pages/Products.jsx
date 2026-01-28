@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../lib/i18n";
-import { fetchJSON } from "../lib/api";
+import { API_BASE, fetchJSON } from "../lib/api";
+import { resolveImageUrl } from "../lib/assets";
 
 const emptyForm = {
   title_en: "",
@@ -9,7 +10,8 @@ const emptyForm = {
   description: "",
   price: "",
   image_url: "",
-  category_id: ""
+  category_id: "",
+  is_popular: false
 };
 
 export default function Products() {
@@ -49,7 +51,8 @@ export default function Products() {
     const payload = {
       ...form,
       price: form.price ? Number(form.price) : 0,
-      category_id: Number(form.category_id)
+      category_id: Number(form.category_id),
+      is_popular: Boolean(form.is_popular)
     };
 
     try {
@@ -81,7 +84,8 @@ export default function Products() {
       description: product.description || "",
       price: product.price || "",
       image_url: product.image_url || "",
-      category_id: product.category_id ? String(product.category_id) : ""
+      category_id: product.category_id ? String(product.category_id) : "",
+      is_popular: Boolean(product.is_popular)
     });
   };
 
@@ -149,12 +153,41 @@ export default function Products() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
           {t("form.imageUrl")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.image_url}
-            onChange={(event) => setForm({ ...form, image_url: event.target.value })}
-          />
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append("file", file);
+
+                try {
+                  setLoading(true);
+                  const res = await fetch(`${API_BASE}/api/admin/upload/product`, {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                  });
+                  if (!res.ok) throw new Error("Upload failed");
+                  const data = await res.json();
+                  setForm({ ...form, image_url: data?.data?.image_url || "" });
+                } catch (err) {
+                  setError(t("messages.error"));
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            />
+            {form.image_url && (
+              <div className="h-10 w-10 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
+                <img src={resolveImageUrl(form.image_url)} alt="Preview" className="h-full w-full object-cover" />
+              </div>
+            )}
+          </div>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
           {t("form.category")}
@@ -171,6 +204,15 @@ export default function Products() {
               </option>
             ))}
           </select>
+        </label>
+        <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
+          <input
+            type="checkbox"
+            checked={form.is_popular}
+            onChange={(event) => setForm({ ...form, is_popular: event.target.checked })}
+            className="h-4 w-4 rounded border-primary/20"
+          />
+          {t("form.popular")}
         </label>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -218,6 +260,11 @@ export default function Products() {
                   <p className="text-xs text-primary/60">{product.title_fa} • {product.title_ar}</p>
                   <p className="text-xs text-primary/40">{product.category?.title_en}</p>
                 </div>
+                {product.is_popular && (
+                  <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-accent">
+                    {t("form.popular")}
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

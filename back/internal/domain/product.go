@@ -11,6 +11,7 @@ type Product struct {
 	Price       float64   `json:"price"`
 	ImageURL    string    `json:"image_url"`
 	CategoryID  int64     `json:"category_id"`
+	IsPopular   bool      `json:"is_popular"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at,omitempty"`
 	Category    *Category `json:"category,omitempty"`

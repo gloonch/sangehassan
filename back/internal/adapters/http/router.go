@@ -12,7 +12,7 @@ import (
 	"sangehassan/back/internal/usecase"
 )
 
-func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, productService *usecase.ProductService, blogService *usecase.BlogService, authService *usecase.AuthService) *gin.Engine {
+func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, productService *usecase.ProductService, blogService *usecase.BlogService, templateService *usecase.TemplateService, authService *usecase.AuthService, uploadHandler *handlers.UploadHandler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
@@ -28,6 +28,8 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 	}
 	router.Use(cors.New(corsConfig))
 
+	router.Static("/images", "./storage/images")
+
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -35,6 +37,7 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	productHandler := handlers.NewProductHandler(productService)
 	blogHandler := handlers.NewBlogHandler(blogService)
+	templateHandler := handlers.NewTemplateHandler(templateService)
 	authHandler := handlers.NewAuthHandler(authService, cfg.CookieSecure, cfg.JWTTTLHours)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
@@ -43,9 +46,13 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 		api.GET("/categories", categoryHandler.List)
 		api.GET("/products", productHandler.List)
 		api.GET("/blogs", blogHandler.List)
+		api.GET("/templates", templateHandler.List)
 
 		api.POST("/admin/login", authHandler.Login)
 		api.POST("/admin/logout", authHandler.Logout)
+
+		api.POST("/admin/upload/template", uploadHandler.UploadTemplate)
+		api.POST("/admin/upload/product", uploadHandler.UploadProduct)
 
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)
@@ -66,6 +73,11 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 			admin.POST("/blogs", blogHandler.Create)
 			admin.PUT("/blogs/:id", blogHandler.Update)
 			admin.DELETE("/blogs/:id", blogHandler.Delete)
+
+			admin.GET("/templates", templateHandler.List)
+			admin.POST("/templates", templateHandler.Create)
+			admin.PUT("/templates/:id", templateHandler.Update)
+			admin.DELETE("/templates/:id", templateHandler.Delete)
 		}
 	}
 

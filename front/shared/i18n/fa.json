@@ -104,6 +104,10 @@
     "title": "دسته‌بندی‌ها",
     "empty": "فعلا دسته‌بندی‌ای موجود نیست."
   },
+  "templates": {
+    "title": "قالب‌ها",
+    "empty": "فعلا قالبی موجود نیست."
+  },
   "panelProducts": {
     "title": "محصولات",
     "empty": "فعلا محصولی موجود نیست."
@@ -118,6 +122,11 @@
     "titleFa": "عنوان (فارسی)",
     "titleAr": "عنوان (عربی)",
     "slug": "اسلاگ (انگلیسی)",
+    "templateName": "نام قالب",
+    "templateImageUrl": "آدرس تصویر قالب",
+    "active": "فعال",
+    "inactive": "غیرفعال",
+    "popular": "محبوب",
     "description": "توضیحات",
     "price": "قیمت",
     "imageUrl": "آدرس تصویر",
@@ -146,5 +155,13 @@
   },
   "sections": {
     "comingSoon": "به‌زودی"
+  },
+  "preview": {
+    "title": "نمایش متریال",
+    "subtitle": "قالب‌ها و سنگ‌ها را جابه‌جا کنید",
+    "nextTemplate": "قالب بعدی",
+    "prevTemplate": "قالب قبلی",
+    "nextStone": "سنگ بعدی",
+    "prevStone": "سنگ قبلی"
   }
 }

@@ -104,6 +104,10 @@
     "title": "الفئات",
     "empty": "لا توجد فئات حالياً."
   },
+  "templates": {
+    "title": "القوالب",
+    "empty": "لا توجد قوالب حالياً."
+  },
   "panelProducts": {
     "title": "المنتجات",
     "empty": "لا توجد منتجات حالياً."
@@ -118,6 +122,11 @@
     "titleFa": "العنوان (فارسي)",
     "titleAr": "العنوان (عربي)",
     "slug": "المعرف (إنجليزي)",
+    "templateName": "اسم القالب",
+    "templateImageUrl": "رابط صورة القالب",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "popular": "شائع",
     "description": "الوصف",
     "price": "السعر",
     "imageUrl": "رابط الصورة",
@@ -146,5 +155,13 @@
   },
   "sections": {
     "comingSoon": "قريباً"
+  },
+  "preview": {
+    "title": "معاينة المواد",
+    "subtitle": "بدّل القوالب والأحجار",
+    "nextTemplate": "القالب التالي",
+    "prevTemplate": "القالب السابق",
+    "nextStone": "الحجر التالي",
+    "prevStone": "الحجر السابق"
   }
 }

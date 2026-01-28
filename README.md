@@ -39,3 +39,6 @@ Services:
 Update secrets in:
 - `deploy/.dev.env`
 - `deploy/.prod.env`
+
+Image hosting base URL:
+- `VITE_IMAGE_BASE_URL` (defaults to `http://localhost:8081` if unset)

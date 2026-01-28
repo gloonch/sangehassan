@@ -19,6 +19,10 @@ func (s *ProductService) List(ctx context.Context) ([]domain.Product, error) {
 	return s.repo.List(ctx)
 }
 
+func (s *ProductService) ListPopular(ctx context.Context) ([]domain.Product, error) {
+	return s.repo.ListPopular(ctx)
+}
+
 func (s *ProductService) GetByID(ctx context.Context, id int64) (domain.Product, error) {
 	return s.repo.GetByID(ctx, id)
 }

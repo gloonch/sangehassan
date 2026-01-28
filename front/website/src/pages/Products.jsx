@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
+import { resolveImageUrl } from "../lib/assets";
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -91,7 +92,11 @@ export default function Products() {
             <div key={product.id} className="glass-panel flex h-full flex-col rounded-2xl p-5">
               <div
                 className="mb-4 h-40 rounded-xl bg-primary/10 bg-cover bg-center"
-                style={product.image_url ? { backgroundImage: `url(${product.image_url})` } : undefined}
+                style={
+                  product.image_url
+                    ? { backgroundImage: `url(${resolveImageUrl(product.image_url)})` }
+                    : undefined
+                }
               />
               <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
                 {product.category ? getLocalized(product.category, lang) : t("products.categoryLabel")}

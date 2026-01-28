@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Blogs from "./pages/Blogs";
+import Templates from "./pages/Templates";
 import PanelLayout from "./components/PanelLayout";
 import { useTranslation } from "./lib/i18n";
 
@@ -41,6 +42,7 @@ export default function AppRoutes() {
         <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
         <Route path="blogs" element={<Blogs />} />
+        <Route path="templates" element={<Templates />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

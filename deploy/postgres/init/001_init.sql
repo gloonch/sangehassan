@@ -17,6 +17,16 @@ CREATE TABLE IF NOT EXISTS products (
   price NUMERIC(12, 2),
   image_url TEXT,
   category_id INT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+  is_popular BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS templates (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  image_url TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ
 );

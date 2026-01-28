@@ -20,6 +20,7 @@ type Config struct {
 	JWTTTLHours    int
 	CookieSecure   bool
 	AllowedOrigins []string
+	UploadDir      string
 }
 
 func Load() (Config, error) {
@@ -33,6 +34,7 @@ func Load() (Config, error) {
 		DBName:    getEnv("DB_NAME", "sangehassan"),
 		DBSSLMode: getEnv("DB_SSLMODE", "disable"),
 		JWTSecret: getEnv("JWT_SECRET", ""),
+		UploadDir: getEnv("UPLOAD_DIR", "./storage/images"),
 	}
 
 	if cfg.JWTSecret == "" {

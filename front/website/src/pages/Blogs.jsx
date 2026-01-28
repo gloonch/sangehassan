@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
+import { resolveImageUrl } from "../lib/assets";
 
 export default function Blogs() {
   const { t } = useTranslation();
@@ -44,7 +45,11 @@ export default function Blogs() {
             <article key={blog.id} className="glass-panel flex h-full flex-col rounded-2xl p-6">
               <div
                 className="mb-4 h-40 rounded-xl bg-primary/10 bg-cover bg-center"
-                style={blog.cover_image_url ? { backgroundImage: `url(${blog.cover_image_url})` } : undefined}
+                style={
+                  blog.cover_image_url
+                    ? { backgroundImage: `url(${resolveImageUrl(blog.cover_image_url)})` }
+                    : undefined
+                }
               />
               <h2 className="font-display text-2xl">{blog.title}</h2>
               <p className="mt-3 text-sm text-primary/70">{blog.excerpt}</p>
