@@ -8,9 +8,9 @@ const navItems = [
   { key: "products", path: "/products" },
   { key: "blogs", path: "/blogs" },
   { key: "stoneFinishes", path: "/stone-finishes" },
-  { key: "gallery", path: "/gallery" },
+  // { key: "gallery", path: "/gallery" },
   { key: "about", path: "/about" },
-  { key: "contact", path: "/contact" }
+  // { key: "contact", path: "/contact" }
 ];
 
 export default function Navbar() {
