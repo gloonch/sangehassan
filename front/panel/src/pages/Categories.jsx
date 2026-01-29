@@ -22,6 +22,7 @@ export default function Categories() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(true);
 
   const slugPreview = useMemo(() => slugify(form.title_en), [form.title_en]);
 
@@ -84,75 +85,90 @@ export default function Categories() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-      <form className="panel-card space-y-4" onSubmit={handleSubmit}>
-        <h2 className="font-display text-xl">{t("categories.title")}</h2>
-
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.titleEn")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.title_en}
-            onChange={(event) => setForm({ ...form, title_en: event.target.value })}
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.titleFa")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.title_fa}
-            onChange={(event) => setForm({ ...form, title_fa: event.target.value })}
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.titleAr")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.title_ar}
-            onChange={(event) => setForm({ ...form, title_ar: event.target.value })}
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.slug")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm"
-            value={slugPreview}
-            readOnly
-          />
-        </label>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      <section className="panel-card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl">{t("categories.title")}</h2>
           <button
-            type="submit"
-            className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+            type="button"
+            onClick={() => setFormOpen((prev) => !prev)}
+            className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
           >
-            {editingId ? t("actions.update") : t("actions.create")}
+            {formOpen ? t("actions.hideForm") : t("actions.showForm")}
           </button>
-          {editingId && (
-            <button
-              type="button"
-              className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyForm);
-              }}
-            >
-              {t("actions.cancel")}
-            </button>
-          )}
         </div>
-      </form>
 
-      <div className="panel-card">
+        {formOpen && (
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.titleEn")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.title_en}
+                  onChange={(event) => setForm({ ...form, title_en: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.titleFa")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.title_fa}
+                  onChange={(event) => setForm({ ...form, title_fa: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.titleAr")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.title_ar}
+                  onChange={(event) => setForm({ ...form, title_ar: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.slug")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm"
+                  value={slugPreview}
+                  readOnly
+                />
+              </label>
+            </div>
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+              >
+                {editingId ? t("actions.update") : t("actions.create")}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm(emptyForm);
+                  }}
+                >
+                  {t("actions.cancel")}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+      </section>
+
+      <section className="panel-card">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">{t("categories.title")}</h3>
         </div>
@@ -162,7 +178,7 @@ export default function Categories() {
         ) : categories.length === 0 ? (
           <p className="text-sm text-primary/70">{t("categories.empty")}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[720px] space-y-3 overflow-y-auto pr-2">
             {categories.map((category) => (
               <div
                 key={category.id}
@@ -193,7 +209,7 @@ export default function Categories() {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -47,6 +47,18 @@
     "priceLabel": "قیمت",
     "empty": "فعلا محصولی موجود نیست."
   },
+  "productDetail": {
+    "backToProducts": "بازگشت به محصولات",
+    "notFound": "محصول یافت نشد.",
+    "openGallery": "نمایش گالری",
+    "noImages": "تصویری موجود نیست",
+    "category": "دسته‌بندی",
+    "price": "قیمت",
+    "description": "توضیحات",
+    "attributes": "مشخصات",
+    "prev": "قبلی",
+    "next": "بعدی"
+  },
   "blogs": {
     "title": "داستان سنگ",
     "subtitle": "بینش‌ها، پرداخت‌ها و تحقیق‌ها از کارگاه.",
@@ -98,7 +110,13 @@
   },
   "dashboard": {
     "overviewTitle": "داشبورد",
-    "overviewSubtitle": "نگاهی سریع به کاتالوگ."
+    "overviewSubtitle": "نگاهی سریع به کاتالوگ.",
+    "productsCount": "تعداد محصولات",
+    "categoriesCount": "دسته‌بندی‌ها",
+    "templatesCount": "قالب‌ها",
+    "blogsCount": "مقالات",
+    "categoryUsageTitle": "پوشش دسته‌بندی‌ها",
+    "templatesTitle": "نمای کلی قالب‌ها"
   },
   "categories": {
     "title": "دسته‌بندی‌ها",
@@ -110,7 +128,11 @@
   },
   "panelProducts": {
     "title": "محصولات",
-    "empty": "فعلا محصولی موجود نیست."
+    "empty": "فعلا محصولی موجود نیست.",
+    "filterLabel": "فیلتر بر اساس دسته‌بندی",
+    "allCategories": "همه دسته‌بندی‌ها",
+    "imagesLabel": "تصاویر",
+    "imageCount": "تصویر"
   },
   "panelBlogs": {
     "title": "مقالات",
@@ -130,6 +152,7 @@
     "description": "توضیحات",
     "price": "قیمت",
     "imageUrl": "آدرس تصویر",
+    "images": "تصاویر",
     "category": "دسته‌بندی",
     "excerpt": "خلاصه",
     "content": "متن",
@@ -141,6 +164,9 @@
     "delete": "حذف",
     "save": "ذخیره",
     "cancel": "انصراف",
+    "close": "بستن",
+    "showForm": "نمایش فرم",
+    "hideForm": "بستن فرم",
     "addNew": "افزودن جدید",
     "edit": "ویرایش",
     "logout": "خروج",

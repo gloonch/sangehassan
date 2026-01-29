@@ -16,6 +16,7 @@ export default function Templates() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(true);
 
   const loadTemplates = async () => {
     try {
@@ -76,93 +77,108 @@ export default function Templates() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-      <form className="panel-card space-y-4" onSubmit={handleSubmit}>
-        <h2 className="font-display text-xl">{t("templates.title")}</h2>
-
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.templateName")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.name}
-            onChange={(event) => setForm({ ...form, name: event.target.value })}
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.templateImageUrl")}
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append("file", file);
-
-                try {
-                  setLoading(true);
-                  const res = await fetch(`${API_BASE}/api/admin/upload/template`, {
-                    method: "POST",
-                    body: formData,
-                    credentials: "include",
-                  });
-                  if (!res.ok) throw new Error("Upload failed");
-                  const data = await res.json();
-                  setForm({ ...form, image_url: data?.data?.image_url || "" });
-                } catch (err) {
-                  setError(t("messages.error"));
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            />
-            {form.image_url && (
-              <div className="h-10 w-10 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
-                <img src={resolveImageUrl(form.image_url)} alt="Preview" className="h-full w-full object-cover" />
-              </div>
-            )}
-          </div>
-        </label>
-        <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
-          <input
-            type="checkbox"
-            checked={form.is_active}
-            onChange={(event) => setForm({ ...form, is_active: event.target.checked })}
-            className="h-4 w-4 rounded border-primary/20"
-          />
-          {t("form.active")}
-        </label>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      <section className="panel-card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl">{t("templates.title")}</h2>
           <button
-            type="submit"
-            className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+            type="button"
+            onClick={() => setFormOpen((prev) => !prev)}
+            className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
           >
-            {editingId ? t("actions.update") : t("actions.create")}
+            {formOpen ? t("actions.hideForm") : t("actions.showForm")}
           </button>
-          {editingId && (
-            <button
-              type="button"
-              className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyForm);
-              }}
-            >
-              {t("actions.cancel")}
-            </button>
-          )}
         </div>
-      </form>
 
-      <div className="panel-card">
+        {formOpen && (
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.templateName")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.templateImageUrl")}
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const formData = new FormData();
+                      formData.append("file", file);
+
+                      try {
+                        setLoading(true);
+                        const res = await fetch(`${API_BASE}/api/admin/upload/template`, {
+                          method: "POST",
+                          body: formData,
+                          credentials: "include",
+                        });
+                        if (!res.ok) throw new Error("Upload failed");
+                        const data = await res.json();
+                        setForm({ ...form, image_url: data?.data?.image_url || "" });
+                      } catch (err) {
+                        setError(t("messages.error"));
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  />
+                  {form.image_url && (
+                    <div className="h-16 w-16 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
+                      <img src={resolveImageUrl(form.image_url)} alt="Preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </label>
+              <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
+                <input
+                  type="checkbox"
+                  checked={form.is_active}
+                  onChange={(event) => setForm({ ...form, is_active: event.target.checked })}
+                  className="h-4 w-4 rounded border-primary/20"
+                />
+                {t("form.active")}
+              </label>
+            </div>
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+              >
+                {editingId ? t("actions.update") : t("actions.create")}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm(emptyForm);
+                  }}
+                >
+                  {t("actions.cancel")}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+      </section>
+
+      <section className="panel-card">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">{t("templates.title")}</h3>
         </div>
@@ -172,7 +188,7 @@ export default function Templates() {
         ) : templates.length === 0 ? (
           <p className="text-sm text-primary/70">{t("templates.empty")}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[720px] space-y-3 overflow-y-auto pr-2">
             {templates.map((template) => (
               <div
                 key={template.id}
@@ -222,7 +238,7 @@ export default function Templates() {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

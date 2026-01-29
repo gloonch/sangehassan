@@ -22,6 +22,8 @@ type categoryPayload struct {
 	TitleEN string `json:"title_en"`
 	TitleFA string `json:"title_fa"`
 	TitleAR string `json:"title_ar"`
+	Slug    string `json:"slug"`
+	Parent  *int64 `json:"parent_id"`
 }
 
 func (h *CategoryHandler) List(c *gin.Context) {
@@ -44,6 +46,8 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 		TitleEN: payload.TitleEN,
 		TitleFA: payload.TitleFA,
 		TitleAR: payload.TitleAR,
+		Slug:    payload.Slug,
+		ParentID: payload.Parent,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create category")
@@ -71,6 +75,8 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 		TitleEN: payload.TitleEN,
 		TitleFA: payload.TitleFA,
 		TitleAR: payload.TitleAR,
+		Slug:    payload.Slug,
+		ParentID: payload.Parent,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update category")

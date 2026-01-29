@@ -16,6 +16,7 @@ export default function Blogs() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(true);
 
   const loadBlogs = async () => {
     try {
@@ -77,73 +78,88 @@ export default function Blogs() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-      <form className="panel-card space-y-4" onSubmit={handleSubmit}>
-        <h2 className="font-display text-xl">{t("panelBlogs.title")}</h2>
-
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.title")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.title}
-            onChange={(event) => setForm({ ...form, title: event.target.value })}
-            required
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.excerpt")}
-          <textarea
-            rows="3"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.excerpt}
-            onChange={(event) => setForm({ ...form, excerpt: event.target.value })}
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.content")}
-          <textarea
-            rows="5"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.content}
-            onChange={(event) => setForm({ ...form, content: event.target.value })}
-          />
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-          {t("form.coverImageUrl")}
-          <input
-            type="text"
-            className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-            value={form.cover_image_url}
-            onChange={(event) => setForm({ ...form, cover_image_url: event.target.value })}
-          />
-        </label>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      <section className="panel-card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl">{t("panelBlogs.title")}</h2>
           <button
-            type="submit"
-            className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+            type="button"
+            onClick={() => setFormOpen((prev) => !prev)}
+            className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
           >
-            {editingId ? t("actions.update") : t("actions.create")}
+            {formOpen ? t("actions.hideForm") : t("actions.showForm")}
           </button>
-          {editingId && (
-            <button
-              type="button"
-              className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyForm);
-              }}
-            >
-              {t("actions.cancel")}
-            </button>
-          )}
         </div>
-      </form>
 
-      <div className="panel-card">
+        {formOpen && (
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                {t("form.title")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.title}
+                  onChange={(event) => setForm({ ...form, title: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                {t("form.excerpt")}
+                <textarea
+                  rows="3"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.excerpt}
+                  onChange={(event) => setForm({ ...form, excerpt: event.target.value })}
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                {t("form.content")}
+                <textarea
+                  rows="5"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.content}
+                  onChange={(event) => setForm({ ...form, content: event.target.value })}
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.coverImageUrl")}
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value={form.cover_image_url}
+                  onChange={(event) => setForm({ ...form, cover_image_url: event.target.value })}
+                />
+              </label>
+            </div>
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand"
+              >
+                {editingId ? t("actions.update") : t("actions.create")}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="rounded-full border border-primary/20 px-5 py-2 text-xs font-semibold text-primary/70"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm(emptyForm);
+                  }}
+                >
+                  {t("actions.cancel")}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+      </section>
+
+      <section className="panel-card">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-xl">{t("panelBlogs.title")}</h3>
         </div>
@@ -153,7 +169,7 @@ export default function Blogs() {
         ) : blogs.length === 0 ? (
           <p className="text-sm text-primary/70">{t("panelBlogs.empty")}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[720px] space-y-3 overflow-y-auto pr-2">
             {blogs.map((blog) => (
               <div
                 key={blog.id}
@@ -183,7 +199,7 @@ export default function Blogs() {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

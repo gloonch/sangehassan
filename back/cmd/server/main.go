@@ -27,15 +27,17 @@ func main() {
 	blogRepo := postgres.NewBlogRepository(db)
 	templateRepo := postgres.NewTemplateRepository(db)
 	adminRepo := postgres.NewAdminRepository(db)
+	dashboardRepo := postgres.NewDashboardRepository(db)
 
 	categoryService := usecase.NewCategoryService(categoryRepo)
 	productService := usecase.NewProductService(productRepo)
 	blogService := usecase.NewBlogService(blogRepo)
 	templateService := usecase.NewTemplateService(templateRepo)
 	authService := usecase.NewAuthService(adminRepo, cfg.JWTSecret, cfg.JWTTTLHours)
+	dashboardService := usecase.NewDashboardService(dashboardRepo)
 
 	uploadHandler := handlers.NewUploadHandler("./storage/images")
-	router := httpapi.NewRouter(cfg, categoryService, productService, blogService, templateService, authService, uploadHandler)
+	router := httpapi.NewRouter(cfg, categoryService, productService, blogService, templateService, authService, dashboardService, uploadHandler)
 
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

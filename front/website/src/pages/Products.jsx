@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
@@ -89,7 +90,11 @@ export default function Products() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product) => (
-            <div key={product.id} className="glass-panel flex h-full flex-col rounded-2xl p-5">
+            <Link
+              key={product.id}
+              to={`/products/${product.slug}`}
+              className="glass-panel flex h-full flex-col rounded-2xl p-5 transition hover:-translate-y-1 hover:shadow-2xl"
+            >
               <div
                 className="mb-4 h-40 rounded-xl bg-primary/10 bg-cover bg-center"
                 style={
@@ -108,7 +113,7 @@ export default function Products() {
               <div className="mt-auto pt-4 text-sm font-semibold text-accent">
                 {t("products.priceLabel")}: {product.price ? product.price : t("messages.empty")}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

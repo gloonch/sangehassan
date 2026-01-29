@@ -8,6 +8,7 @@ type Category struct {
 	TitleFA   string    `json:"title_fa"`
 	TitleAR   string    `json:"title_ar"`
 	Slug      string    `json:"slug"`
+	ParentID  *int64    `json:"parent_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }

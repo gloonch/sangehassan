@@ -11,6 +11,8 @@ pnpm-debug.log*
 
 # Go
 back/server
+back/storage/images/
+back/storage/images/**
 **/*.exe
 **/*.exe~
 **/*.dll
@@ -36,4 +38,3 @@ deploy/.prod.env
 # Docker
 **/*.pid
 **/*.pid.lock
-

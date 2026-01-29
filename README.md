@@ -42,3 +42,23 @@ Update secrets in:
 
 Image hosting base URL:
 - `VITE_IMAGE_BASE_URL` (defaults to `http://localhost:8081` if unset)
+
+## Data import (SangeHassan export)
+The extracted JSON lives in `data/` and images in `data/images/products`. We added a Go importer and expanded the DB schema (attributes + product-category relations).
+
+Run after the database is up:
+```sh
+# reset DB if this is an existing volume (init SQL runs only once)
+cd deploy
+docker compose -f docker-compose-dev.yml down -v
+docker compose -f docker-compose-dev.yml up -d db
+
+# import from host (override DB_HOST to localhost)
+cd ../back
+DB_HOST=localhost DB_PORT=5432 DB_USER=sangehassan DB_PASSWORD=sangehassan_dev DB_NAME=sangehassan DB_SSLMODE=disable \\
+  go run ./cmd/importdata -data ../data
+```
+
+Notes:
+- The importer copies product images into `back/storage/images/products` and writes `/images/products/...` URLs.
+- `permalink` from the export is ignored as requested.

@@ -19,14 +19,18 @@ func NewProductHandler(service *usecase.ProductService) *ProductHandler {
 }
 
 type productPayload struct {
-	TitleEN     string  `json:"title_en"`
-	TitleFA     string  `json:"title_fa"`
-	TitleAR     string  `json:"title_ar"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	ImageURL    string  `json:"image_url"`
-	CategoryID  int64   `json:"category_id"`
-	IsPopular   bool    `json:"is_popular"`
+	TitleEN          string   `json:"title_en"`
+	TitleFA          string   `json:"title_fa"`
+	TitleAR          string   `json:"title_ar"`
+	Slug             string   `json:"slug"`
+	Description      string   `json:"description"`
+	ShortDescription string   `json:"short_description_html"`
+	Price            float64  `json:"price"`
+	PriceHTML        string   `json:"price_html"`
+	ImageURL         string   `json:"image_url"`
+	ImageURLs        []string `json:"image_urls"`
+	CategoryID       int64    `json:"category_id"`
+	IsPopular        bool     `json:"is_popular"`
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
@@ -47,6 +51,36 @@ func (h *ProductHandler) List(c *gin.Context) {
 	respondOK(c, products)
 }
 
+func (h *ProductHandler) GetByID(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid product id")
+		return
+	}
+
+	product, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, http.StatusNotFound, "product not found")
+		return
+	}
+	respondOK(c, product)
+}
+
+func (h *ProductHandler) GetBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		respondError(c, http.StatusBadRequest, "invalid slug")
+		return
+	}
+
+	product, err := h.service.GetBySlug(c.Request.Context(), slug)
+	if err != nil {
+		respondError(c, http.StatusNotFound, "product not found")
+		return
+	}
+	respondOK(c, product)
+}
+
 func (h *ProductHandler) Create(c *gin.Context) {
 	var payload productPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -54,15 +88,21 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
+	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Create(c.Request.Context(), domain.Product{
-		TitleEN:     payload.TitleEN,
-		TitleFA:     payload.TitleFA,
-		TitleAR:     payload.TitleAR,
-		Description: payload.Description,
-		Price:       payload.Price,
-		ImageURL:    payload.ImageURL,
-		CategoryID:  payload.CategoryID,
-		IsPopular:   payload.IsPopular,
+		TitleEN:              payload.TitleEN,
+		TitleFA:              payload.TitleFA,
+		TitleAR:              payload.TitleAR,
+		Slug:                 payload.Slug,
+		Description:          payload.Description,
+		DescriptionHTML:      payload.Description,
+		ShortDescriptionHTML: payload.ShortDescription,
+		Price:                payload.Price,
+		PriceHTML:            payload.PriceHTML,
+		ImageURL:             payload.ImageURL,
+		Images:               payload.ImageURLs,
+		MainCategoryID:       mainCategoryID,
+		IsPopular:            payload.IsPopular,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create product")
@@ -85,16 +125,22 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
+	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Update(c.Request.Context(), domain.Product{
-		ID:          id,
-		TitleEN:     payload.TitleEN,
-		TitleFA:     payload.TitleFA,
-		TitleAR:     payload.TitleAR,
-		Description: payload.Description,
-		Price:       payload.Price,
-		ImageURL:    payload.ImageURL,
-		CategoryID:  payload.CategoryID,
-		IsPopular:   payload.IsPopular,
+		ID:                   id,
+		TitleEN:              payload.TitleEN,
+		TitleFA:              payload.TitleFA,
+		TitleAR:              payload.TitleAR,
+		Slug:                 payload.Slug,
+		Description:          payload.Description,
+		DescriptionHTML:      payload.Description,
+		ShortDescriptionHTML: payload.ShortDescription,
+		Price:                payload.Price,
+		PriceHTML:            payload.PriceHTML,
+		ImageURL:             payload.ImageURL,
+		Images:               payload.ImageURLs,
+		MainCategoryID:       mainCategoryID,
+		IsPopular:            payload.IsPopular,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update product")
@@ -117,4 +163,11 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func buildCategoryID(value int64) *int64 {
+	if value == 0 {
+		return nil
+	}
+	return &value
 }

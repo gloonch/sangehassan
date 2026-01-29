@@ -12,7 +12,7 @@ import (
 	"sangehassan/back/internal/usecase"
 )
 
-func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, productService *usecase.ProductService, blogService *usecase.BlogService, templateService *usecase.TemplateService, authService *usecase.AuthService, uploadHandler *handlers.UploadHandler) *gin.Engine {
+func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, productService *usecase.ProductService, blogService *usecase.BlogService, templateService *usecase.TemplateService, authService *usecase.AuthService, dashboardService *usecase.DashboardService, uploadHandler *handlers.UploadHandler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
@@ -39,12 +39,14 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 	blogHandler := handlers.NewBlogHandler(blogService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	authHandler := handlers.NewAuthHandler(authService, cfg.CookieSecure, cfg.JWTTTLHours)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	api := router.Group("/api")
 	{
 		api.GET("/categories", categoryHandler.List)
 		api.GET("/products", productHandler.List)
+		api.GET("/products/:slug", productHandler.GetBySlug)
 		api.GET("/blogs", blogHandler.List)
 		api.GET("/templates", templateHandler.List)
 
@@ -58,6 +60,7 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 		admin.Use(authMiddleware.RequireAdmin)
 		{
 			admin.GET("/session", authHandler.Session)
+			admin.GET("/dashboard", dashboardHandler.Stats)
 
 			admin.GET("/categories", categoryHandler.List)
 			admin.POST("/categories", categoryHandler.Create)
@@ -65,6 +68,7 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 			admin.DELETE("/categories/:id", categoryHandler.Delete)
 
 			admin.GET("/products", productHandler.List)
+			admin.GET("/products/:id", productHandler.GetByID)
 			admin.POST("/products", productHandler.Create)
 			admin.PUT("/products/:id", productHandler.Update)
 			admin.DELETE("/products/:id", productHandler.Delete)

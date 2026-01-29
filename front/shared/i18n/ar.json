@@ -47,6 +47,18 @@
     "priceLabel": "السعر",
     "empty": "لا توجد منتجات حالياً."
   },
+  "productDetail": {
+    "backToProducts": "العودة إلى المنتجات",
+    "notFound": "المنتج غير موجود.",
+    "openGallery": "فتح المعرض",
+    "noImages": "لا توجد صور",
+    "category": "الفئة",
+    "price": "السعر",
+    "description": "الوصف",
+    "attributes": "المواصفات",
+    "prev": "السابق",
+    "next": "التالي"
+  },
   "blogs": {
     "title": "حكايات الحجر",
     "subtitle": "رؤى وتشطيبات وأبحاث من الورشة.",
@@ -98,7 +110,13 @@
   },
   "dashboard": {
     "overviewTitle": "لوحة التحكم",
-    "overviewSubtitle": "نظرة سريعة على الكتالوج."
+    "overviewSubtitle": "نظرة سريعة على الكتالوج.",
+    "productsCount": "إجمالي المنتجات",
+    "categoriesCount": "الفئات",
+    "templatesCount": "القوالب",
+    "blogsCount": "المقالات",
+    "categoryUsageTitle": "تغطية الفئات",
+    "templatesTitle": "نظرة على القوالب"
   },
   "categories": {
     "title": "الفئات",
@@ -110,7 +128,11 @@
   },
   "panelProducts": {
     "title": "المنتجات",
-    "empty": "لا توجد منتجات حالياً."
+    "empty": "لا توجد منتجات حالياً.",
+    "filterLabel": "تصفية حسب الفئة",
+    "allCategories": "كل الفئات",
+    "imagesLabel": "الصور",
+    "imageCount": "صور"
   },
   "panelBlogs": {
     "title": "المقالات",
@@ -130,6 +152,7 @@
     "description": "الوصف",
     "price": "السعر",
     "imageUrl": "رابط الصورة",
+    "images": "الصور",
     "category": "الفئة",
     "excerpt": "ملخص",
     "content": "المحتوى",
@@ -141,6 +164,9 @@
     "delete": "حذف",
     "save": "حفظ",
     "cancel": "إلغاء",
+    "close": "إغلاق",
+    "showForm": "إظهار النموذج",
+    "hideForm": "إخفاء النموذج",
     "addNew": "إضافة جديد",
     "edit": "تعديل",
     "logout": "تسجيل خروج",

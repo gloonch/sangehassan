@@ -47,6 +47,18 @@
     "priceLabel": "Price",
     "empty": "No products available yet."
   },
+  "productDetail": {
+    "backToProducts": "Back to products",
+    "notFound": "Product not found.",
+    "openGallery": "Open gallery",
+    "noImages": "No images available",
+    "category": "Category",
+    "price": "Price",
+    "description": "Description",
+    "attributes": "Specifications",
+    "prev": "Previous",
+    "next": "Next"
+  },
   "blogs": {
     "title": "Stone stories",
     "subtitle": "Insights, finishes, and research from the workshop.",
@@ -98,7 +110,13 @@
   },
   "dashboard": {
     "overviewTitle": "Dashboard",
-    "overviewSubtitle": "Quick look at your catalog."
+    "overviewSubtitle": "Quick look at your catalog.",
+    "productsCount": "Total products",
+    "categoriesCount": "Categories",
+    "templatesCount": "Templates",
+    "blogsCount": "Blogs",
+    "categoryUsageTitle": "Category coverage",
+    "templatesTitle": "Templates overview"
   },
   "categories": {
     "title": "Categories",
@@ -110,7 +128,11 @@
   },
   "panelProducts": {
     "title": "Products",
-    "empty": "No products available yet."
+    "empty": "No products available yet.",
+    "filterLabel": "Filter by category",
+    "allCategories": "All categories",
+    "imagesLabel": "Images",
+    "imageCount": "images"
   },
   "panelBlogs": {
     "title": "Blogs",
@@ -130,6 +152,7 @@
     "description": "Description",
     "price": "Price",
     "imageUrl": "Image URL",
+    "images": "Images",
     "category": "Category",
     "excerpt": "Excerpt",
     "content": "Content",
@@ -141,6 +164,9 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
+    "showForm": "Show form",
+    "hideForm": "Hide form",
     "addNew": "Add new",
     "edit": "Edit",
     "logout": "Log out",

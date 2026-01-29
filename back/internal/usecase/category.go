@@ -24,12 +24,16 @@ func (s *CategoryService) GetByID(ctx context.Context, id int64) (domain.Categor
 }
 
 func (s *CategoryService) Create(ctx context.Context, category domain.Category) (domain.Category, error) {
-	category.Slug = slugify(category.TitleEN)
+	if category.Slug == "" {
+		category.Slug = slugify(category.TitleEN)
+	}
 	return s.repo.Create(ctx, category)
 }
 
 func (s *CategoryService) Update(ctx context.Context, category domain.Category) (domain.Category, error) {
-	category.Slug = slugify(category.TitleEN)
+	if category.Slug == "" {
+		category.Slug = slugify(category.TitleEN)
+	}
 	return s.repo.Update(ctx, category)
 }
 
