@@ -12,7 +12,18 @@ import (
 	"sangehassan/back/internal/usecase"
 )
 
-func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, productService *usecase.ProductService, blogService *usecase.BlogService, templateService *usecase.TemplateService, authService *usecase.AuthService, dashboardService *usecase.DashboardService, uploadHandler *handlers.UploadHandler) *gin.Engine {
+func NewRouter(
+	cfg config.Config,
+	categoryService *usecase.CategoryService,
+	productService *usecase.ProductService,
+	blogService *usecase.BlogService,
+	templateService *usecase.TemplateService,
+	blockService *usecase.BlockService,
+	contentSectionService *usecase.ContentSectionService,
+	authService *usecase.AuthService,
+	dashboardService *usecase.DashboardService,
+	uploadHandler *handlers.UploadHandler,
+) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
@@ -38,6 +49,8 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 	productHandler := handlers.NewProductHandler(productService)
 	blogHandler := handlers.NewBlogHandler(blogService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
+	blockHandler := handlers.NewBlockHandler(blockService)
+	contentSectionHandler := handlers.NewContentSectionHandler(contentSectionService)
 	authHandler := handlers.NewAuthHandler(authService, cfg.CookieSecure, cfg.JWTTTLHours)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
@@ -49,12 +62,17 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 		api.GET("/products/:slug", productHandler.GetBySlug)
 		api.GET("/blogs", blogHandler.List)
 		api.GET("/templates", templateHandler.List)
+		api.GET("/blocks", blockHandler.List)
+		api.GET("/blocks/:slug", blockHandler.GetBySlug)
+		api.GET("/content-sections", contentSectionHandler.ListPublic)
 
 		api.POST("/admin/login", authHandler.Login)
 		api.POST("/admin/logout", authHandler.Logout)
 
 		api.POST("/admin/upload/template", uploadHandler.UploadTemplate)
 		api.POST("/admin/upload/product", uploadHandler.UploadProduct)
+		api.POST("/admin/upload/block", uploadHandler.UploadBlock)
+		api.POST("/admin/upload/content", uploadHandler.UploadContent)
 
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)
@@ -73,6 +91,12 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 			admin.PUT("/products/:id", productHandler.Update)
 			admin.DELETE("/products/:id", productHandler.Delete)
 
+			admin.GET("/blocks", blockHandler.List)
+			admin.GET("/blocks/:id", blockHandler.GetByID)
+			admin.POST("/blocks", blockHandler.Create)
+			admin.PUT("/blocks/:id", blockHandler.Update)
+			admin.DELETE("/blocks/:id", blockHandler.Delete)
+
 			admin.GET("/blogs", blogHandler.List)
 			admin.POST("/blogs", blogHandler.Create)
 			admin.PUT("/blogs/:id", blogHandler.Update)
@@ -82,6 +106,12 @@ func NewRouter(cfg config.Config, categoryService *usecase.CategoryService, prod
 			admin.POST("/templates", templateHandler.Create)
 			admin.PUT("/templates/:id", templateHandler.Update)
 			admin.DELETE("/templates/:id", templateHandler.Delete)
+
+			admin.GET("/content-sections", contentSectionHandler.List)
+			admin.GET("/content-sections/:id", contentSectionHandler.GetByID)
+			admin.POST("/content-sections", contentSectionHandler.Create)
+			admin.PUT("/content-sections/:id", contentSectionHandler.Update)
+			admin.DELETE("/content-sections/:id", contentSectionHandler.Delete)
 		}
 	}
 

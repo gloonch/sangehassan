@@ -8,6 +8,7 @@
   "nav": {
     "home": "Home",
     "products": "Products",
+    "blocks": "Blocks",
     "blogs": "Blogs",
     "stoneFinishes": "Stone Finishes",
     "gallery": "Gallery",
@@ -23,6 +24,10 @@
     "ctaPrimary": "Explore products",
     "ctaSecondary": "Contact us",
     "scrollHint": "Scroll to discover"
+  },
+  "landing": {
+    "title": "Choose your stone journey",
+    "subtitle": "Select the route that matches your project scale and finish."
   },
   "home": {
     "popularTitle": "Popular products",
@@ -46,6 +51,26 @@
     "categoryLabel": "Category",
     "priceLabel": "Price",
     "empty": "No products available yet."
+  },
+  "blocks": {
+    "title": "Stone blocks",
+    "subtitle": "Raw quarry blocks prepared for custom cutting and bulk orders.",
+    "cta": "Browse blocks",
+    "catalogTitle": "Block catalog",
+    "catalogSubtitle": "Filter by stone type, status, and specifications.",
+    "filterAll": "All blocks",
+    "filterType": "Stone type",
+    "filterStatus": "Status",
+    "statusAvailable": "Available",
+    "statusReserved": "Reserved",
+    "statusSold": "Sold",
+    "weightTon": "Weight (ton)",
+    "dimensions": "Dimensions",
+    "quarry": "Quarry",
+    "stoneType": "Stone type",
+    "requestQuote": "Request quote",
+    "viewDetails": "View details",
+    "empty": "No blocks available yet."
   },
   "productDetail": {
     "backToProducts": "Back to products",
@@ -154,9 +179,19 @@
     "imagesLabel": "Images",
     "imageCount": "images"
   },
+  "panelBlocks": {
+    "title": "Blocks",
+    "empty": "No blocks available yet.",
+    "imagesLabel": "Images",
+    "imageCount": "images"
+  },
   "panelBlogs": {
     "title": "Blogs",
     "empty": "No blogs available yet."
+  },
+  "panelContent": {
+    "title": "Landing content",
+    "empty": "No sections available yet."
   },
   "form": {
     "title": "Title",
@@ -169,14 +204,27 @@
     "active": "Active",
     "inactive": "Inactive",
     "popular": "Popular",
+    "featured": "Featured",
     "description": "Description",
+    "subtitle": "Subtitle",
     "price": "Price",
     "imageUrl": "Image URL",
     "images": "Images",
     "category": "Category",
     "excerpt": "Excerpt",
     "content": "Content",
-    "coverImageUrl": "Cover image URL"
+    "coverImageUrl": "Cover image URL",
+    "stoneType": "Stone type",
+    "quarry": "Quarry",
+    "dimensions": "Dimensions",
+    "weightTon": "Weight (ton)",
+    "status": "Status",
+    "page": "Page",
+    "sectionKey": "Section key",
+    "ctaLabel": "CTA label",
+    "ctaHref": "CTA link",
+    "orderIndex": "Order",
+    "isActive": "Active"
   },
   "actions": {
     "create": "Create",

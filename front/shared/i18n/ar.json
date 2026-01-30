@@ -8,6 +8,7 @@
   "nav": {
     "home": "الرئيسية",
     "products": "المنتجات",
+    "blocks": "كتل الحجر",
     "blogs": "المقالات",
     "stoneFinishes": "تشطيبات الحجر",
     "gallery": "المعرض",
@@ -23,6 +24,10 @@
     "ctaPrimary": "استكشف المنتجات",
     "ctaSecondary": "تواصل معنا",
     "scrollHint": "مرر لاكتشاف المزيد"
+  },
+  "landing": {
+    "title": "اختر مسارك الحجري",
+    "subtitle": "مدخلان بحسب حجم المشروع والتشطيب المطلوب."
   },
   "home": {
     "popularTitle": "منتجات شائعة",
@@ -46,6 +51,26 @@
     "categoryLabel": "الفئة",
     "priceLabel": "السعر",
     "empty": "لا توجد منتجات حالياً."
+  },
+  "blocks": {
+    "title": "كتل الحجر",
+    "subtitle": "كتل حجر خام للطلبات الكبيرة والقص المخصص.",
+    "cta": "استعرض الكتل",
+    "catalogTitle": "كتالوج الكتل",
+    "catalogSubtitle": "فلترة حسب النوع والحالة والمواصفات.",
+    "filterAll": "كل الكتل",
+    "filterType": "نوع الحجر",
+    "filterStatus": "الحالة",
+    "statusAvailable": "متاح",
+    "statusReserved": "محجوز",
+    "statusSold": "تم البيع",
+    "weightTon": "الوزن (طن)",
+    "dimensions": "الأبعاد",
+    "quarry": "المحجر",
+    "stoneType": "نوع الحجر",
+    "requestQuote": "طلب سعر",
+    "viewDetails": "عرض التفاصيل",
+    "empty": "لا توجد كتل حالياً."
   },
   "productDetail": {
     "backToProducts": "العودة إلى المنتجات",
@@ -154,9 +179,19 @@
     "imagesLabel": "الصور",
     "imageCount": "صور"
   },
+  "panelBlocks": {
+    "title": "الكتل",
+    "empty": "لا توجد كتل حالياً.",
+    "imagesLabel": "الصور",
+    "imageCount": "صور"
+  },
   "panelBlogs": {
     "title": "المقالات",
     "empty": "لا توجد مقالات حالياً."
+  },
+  "panelContent": {
+    "title": "محتوى الهبوط",
+    "empty": "لا توجد أقسام حالياً."
   },
   "form": {
     "title": "العنوان",
@@ -169,14 +204,27 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "popular": "شائع",
+    "featured": "مميز",
     "description": "الوصف",
+    "subtitle": "العنوان الفرعي",
     "price": "السعر",
     "imageUrl": "رابط الصورة",
     "images": "الصور",
     "category": "الفئة",
     "excerpt": "ملخص",
     "content": "المحتوى",
-    "coverImageUrl": "رابط صورة الغلاف"
+    "coverImageUrl": "رابط صورة الغلاف",
+    "stoneType": "نوع الحجر",
+    "quarry": "المحجر",
+    "dimensions": "الأبعاد",
+    "weightTon": "الوزن (طن)",
+    "status": "الحالة",
+    "page": "الصفحة",
+    "sectionKey": "مفتاح القسم",
+    "ctaLabel": "نص الدعوة",
+    "ctaHref": "رابط الدعوة",
+    "orderIndex": "الترتيب",
+    "isActive": "نشط"
   },
   "actions": {
     "create": "إضافة",

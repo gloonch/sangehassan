@@ -89,6 +89,66 @@ CREATE TABLE IF NOT EXISTS blogs (
   updated_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS content_sections (
+  id SERIAL PRIMARY KEY,
+  page VARCHAR(50) NOT NULL,
+  section_key VARCHAR(50) NOT NULL,
+  title_en VARCHAR(255) NOT NULL,
+  title_fa VARCHAR(255) NOT NULL,
+  title_ar VARCHAR(255) NOT NULL,
+  subtitle_en TEXT,
+  subtitle_fa TEXT,
+  subtitle_ar TEXT,
+  description_en TEXT,
+  description_fa TEXT,
+  description_ar TEXT,
+  cta_label_en VARCHAR(255),
+  cta_label_fa VARCHAR(255),
+  cta_label_ar VARCHAR(255),
+  cta_href TEXT,
+  order_index INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  UNIQUE(page, section_key)
+);
+
+CREATE TABLE IF NOT EXISTS content_section_images (
+  id SERIAL PRIMARY KEY,
+  section_id INT NOT NULL REFERENCES content_sections(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  position INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(section_id, image_url)
+);
+
+CREATE TABLE IF NOT EXISTS blocks (
+  id SERIAL PRIMARY KEY,
+  title_en VARCHAR(255) NOT NULL,
+  title_fa VARCHAR(255) NOT NULL,
+  title_ar VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  stone_type VARCHAR(255),
+  quarry VARCHAR(255),
+  dimensions VARCHAR(255),
+  weight_ton NUMERIC(10, 2),
+  status VARCHAR(50) NOT NULL DEFAULT 'available',
+  description TEXT,
+  image_url TEXT,
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS block_images (
+  id SERIAL PRIMARY KEY,
+  block_id INT NOT NULL REFERENCES blocks(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  position INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(block_id, image_url)
+);
+
 CREATE TABLE IF NOT EXISTS admin_users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(100) UNIQUE NOT NULL,
@@ -106,4 +166,87 @@ VALUES
   ('Triangle', '/images/templates/triangle.png', TRUE),
   ('Rectangle', '/images/templates/rectangle.png', TRUE),
   ('Circle', '/images/templates/circle.png', TRUE)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_sections (
+  page, section_key,
+  title_en, title_fa, title_ar,
+  subtitle_en, subtitle_fa, subtitle_ar,
+  description_en, description_fa, description_ar,
+  cta_label_en, cta_label_fa, cta_label_ar,
+  cta_href, order_index, is_active
+)
+VALUES
+  (
+    'home', 'blocks',
+    'Stone Blocks (Quarry Blocks)', 'کوپ سنگ (Stone Block)', 'كتل الحجر (Stone Block)',
+    'Raw stone extracted from the quarry for large-scale orders', 'سنگ خام معدن برای سفارش‌های حجیم و برش سفارشی', 'حجر خام من المحجر للطلبات الكبيرة والقصّ المخصص',
+    E'Focus on stone type, dimensions, and tonnage.\nIdeal for large projects, export, and custom fabrication.\nReserve blocks and request tailored cutting.',
+    E'تمرکز روی جنس سنگ، ابعاد و وزن بلوک است.\nمناسب برای پروژه‌های بزرگ، سفارش عمده و صادرات.\nرزرو کوپ و ثبت درخواست برش اختصاصی.',
+    E'الاختيار يعتمد على نوع الحجر والأبعاد والوزن.\nمناسب للمشاريع الكبيرة والتصدير والتصنيع المخصص.\nاحجز الكتل واطلب قصاً خاصاً.',
+    'Enter blocks', 'ورود به بخش کوپ', 'الدخول إلى الكتل',
+    '/blocks', 1, TRUE
+  ),
+  (
+    'home', 'finished',
+    'Finished Stone', 'سنگ‌های فرآوری‌شده', 'الحجر المُعالج',
+    'Slabs and ready products with multiple finishes', 'اسلب و محصولات آماده با فینیش‌های متنوع', 'ألواح ومنتجات جاهزة بتشطيبات متنوعة',
+    E'Choose by stone type and surface finish.\nPerfect for facades, floors, walls, and counters.\nExplore the full catalog and technical details.',
+    E'انتخاب براساس نوع سنگ و فینیش سطح.\nمناسب برای نما، کف، دیوار و کانتر.\nدسترسی به کاتالوگ و جزئیات فنی.',
+    E'اختر حسب نوع الحجر وتشطيب السطح.\nمثالي للواجهات والأرضيات والجدران والكونتر.\nاستعرض الكتالوج والتفاصيل الفنية.',
+    'Enter finished products', 'ورود به محصولات فرآوری‌شده', 'الدخول إلى المنتجات',
+    '/products/overview', 2, TRUE
+  ),
+  (
+    'blocks', 'hero',
+    'Quarry Blocks', 'کوپ سنگ', 'كتل المحاجر',
+    'Natural stone blocks prepared for custom cutting', 'بلوک‌های استخراج‌شده از معدن، آماده برش سفارشی', 'كتل حجر طبيعي جاهزة للقص المخصص',
+    E'Block selection is driven by stone type, dimensions, and weight.\nBest fit for large projects and export orders.\nSend requirements to get availability and pricing.',
+    E'انتخاب کوپ بر اساس نوع سنگ، ابعاد و وزن انجام می‌شود.\nبهترین گزینه برای پروژه‌های حجیم و سفارش‌های صادراتی.\nجزئیات خود را ارسال کنید تا موجودی و قیمت اعلام شود.',
+    E'يعتمد الاختيار على نوع الحجر والأبعاد والوزن.\nأفضل للمشاريع الكبيرة وطلبات التصدير.\nأرسل متطلباتك للحصول على التوفر والسعر.',
+    'Browse blocks', 'مشاهده کوپ‌ها', 'استعرض الكتل',
+    '/blocks/catalog', 1, TRUE
+  )
+ON CONFLICT (page, section_key) DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/1664011/pexels-photo-1664011.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 0
+FROM content_sections
+WHERE page = 'home' AND section_key = 'blocks'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/13552642/pexels-photo-13552642.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 1
+FROM content_sections
+WHERE page = 'home' AND section_key = 'blocks'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/9041501/pexels-photo-9041501.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 0
+FROM content_sections
+WHERE page = 'home' AND section_key = 'finished'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/842562/pexels-photo-842562.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 1
+FROM content_sections
+WHERE page = 'home' AND section_key = 'finished'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/7195950/pexels-photo-7195950.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 2
+FROM content_sections
+WHERE page = 'home' AND section_key = 'finished'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/1664011/pexels-photo-1664011.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 0
+FROM content_sections
+WHERE page = 'blocks' AND section_key = 'hero'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO content_section_images (section_id, image_url, position)
+SELECT id, 'https://images.pexels.com/photos/13552642/pexels-photo-13552642.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200', 1
+FROM content_sections
+WHERE page = 'blocks' AND section_key = 'hero'
 ON CONFLICT DO NOTHING;

@@ -6,6 +6,7 @@ import { useTranslation } from "../lib/i18n";
 const navItems = [
   { key: "home", path: "/", end: true },
   { key: "products", path: "/products" },
+  { key: "blocks", path: "/blocks" },
   { key: "blogs", path: "/blogs" },
   { key: "stoneFinishes", path: "/stone-finishes" },
   // { key: "gallery", path: "/gallery" },

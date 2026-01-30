@@ -6,9 +6,11 @@ import LanguageSwitch from "./LanguageSwitch";
 const navItems = [
   { key: "dashboard", path: "/dashboard", label: "nav.dashboard", end: true },
   { key: "products", path: "/dashboard/products", label: "panelProducts.title" },
+  { key: "blocks", path: "/dashboard/blocks", label: "panelBlocks.title" },
   { key: "categories", path: "/dashboard/categories", label: "categories.title" },
   { key: "blogs", path: "/dashboard/blogs", label: "panelBlogs.title" },
-  { key: "templates", path: "/dashboard/templates", label: "templates.title" }
+  { key: "templates", path: "/dashboard/templates", label: "templates.title" },
+  { key: "content", path: "/dashboard/content", label: "panelContent.title" }
 ];
 
 export default function PanelLayout() {

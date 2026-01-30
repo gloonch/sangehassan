@@ -8,6 +8,7 @@
   "nav": {
     "home": "خانه",
     "products": "محصولات",
+    "blocks": "کوپ سنگ",
     "blogs": "مقالات",
     "stoneFinishes": "انواع پرداخت سنگ",
     "gallery": "گالری",
@@ -23,6 +24,10 @@
     "ctaPrimary": "مشاهده محصولات",
     "ctaSecondary": "تماس با ما",
     "scrollHint": "برای کشف بیشتر اسکرول کنید"
+  },
+  "landing": {
+    "title": "مسیر مناسب پروژه‌ات را انتخاب کن",
+    "subtitle": "دو نقطه ورود برای پروژه‌های حجیم یا محصولات فرآوری‌شده."
   },
   "home": {
     "popularTitle": "محصولات محبوب",
@@ -46,6 +51,26 @@
     "categoryLabel": "دسته‌بندی",
     "priceLabel": "قیمت",
     "empty": "فعلا محصولی موجود نیست."
+  },
+  "blocks": {
+    "title": "کوپ سنگ",
+    "subtitle": "بلوک‌های سنگی خام برای سفارش‌های سفارشی و عمده.",
+    "cta": "مشاهده کوپ‌ها",
+    "catalogTitle": "کاتالوگ کوپ‌ها",
+    "catalogSubtitle": "فیلتر بر اساس نوع سنگ، وضعیت و مشخصات.",
+    "filterAll": "همه کوپ‌ها",
+    "filterType": "نوع سنگ",
+    "filterStatus": "وضعیت",
+    "statusAvailable": "موجود",
+    "statusReserved": "رزرو",
+    "statusSold": "فروخته شده",
+    "weightTon": "وزن (تن)",
+    "dimensions": "ابعاد",
+    "quarry": "معدن",
+    "stoneType": "نوع سنگ",
+    "requestQuote": "درخواست استعلام",
+    "viewDetails": "مشاهده جزئیات",
+    "empty": "فعلا کوپی موجود نیست."
   },
   "productDetail": {
     "backToProducts": "بازگشت به محصولات",
@@ -154,9 +179,19 @@
     "imagesLabel": "تصاویر",
     "imageCount": "تصویر"
   },
+  "panelBlocks": {
+    "title": "کوپ‌ها",
+    "empty": "فعلا کوپی موجود نیست.",
+    "imagesLabel": "تصاویر",
+    "imageCount": "تصویر"
+  },
   "panelBlogs": {
     "title": "مقالات",
     "empty": "فعلا مقاله‌ای موجود نیست."
+  },
+  "panelContent": {
+    "title": "محتوای لندینگ",
+    "empty": "بخشی ثبت نشده است."
   },
   "form": {
     "title": "عنوان",
@@ -169,14 +204,27 @@
     "active": "فعال",
     "inactive": "غیرفعال",
     "popular": "محبوب",
+    "featured": "ویژه",
     "description": "توضیحات",
+    "subtitle": "زیرعنوان",
     "price": "قیمت",
     "imageUrl": "آدرس تصویر",
     "images": "تصاویر",
     "category": "دسته‌بندی",
     "excerpt": "خلاصه",
     "content": "متن",
-    "coverImageUrl": "آدرس تصویر شاخص"
+    "coverImageUrl": "آدرس تصویر شاخص",
+    "stoneType": "نوع سنگ",
+    "quarry": "معدن",
+    "dimensions": "ابعاد",
+    "weightTon": "وزن (تن)",
+    "status": "وضعیت",
+    "page": "صفحه",
+    "sectionKey": "کلید بخش",
+    "ctaLabel": "متن CTA",
+    "ctaHref": "لینک CTA",
+    "orderIndex": "ترتیب",
+    "isActive": "فعال"
   },
   "actions": {
     "create": "ایجاد",
