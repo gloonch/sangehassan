@@ -11,11 +11,83 @@ const getLocalized = (item, lang) => {
   return item.title_en;
 };
 
+const WIDTH_TAB_KEY = "width-40";
+
+const stoneTypeTargets = [
+  {
+    key: "travertine",
+    slugs: ["travertine"],
+    fa: ["تراورتن"],
+    en: ["travertine"],
+    ar: ["ترافرتين"]
+  },
+  {
+    key: "marble-stone",
+    slugs: ["marble-stone", "marble"],
+    fa: ["مرمریت"],
+    en: ["marble"],
+    ar: ["رخام"]
+  },
+  {
+    key: "onyx",
+    slugs: ["onyx"],
+    fa: ["مرمر"],
+    en: ["onyx"],
+    ar: ["أونيكس", "اونكس"]
+  },
+  {
+    key: "granite",
+    slugs: ["granite"],
+    fa: ["گرانیت"],
+    en: ["granite"],
+    ar: ["جرانيت"]
+  },
+  {
+    key: "crystal",
+    slugs: ["crystal"],
+    fa: ["چینی", "کریستال"],
+    en: ["crystal"],
+    ar: ["كريستال", "كريستال"]
+  }
+];
+
+const matchesTitle = (text, terms) => {
+  if (!text) return false;
+  return terms.some((term) => text.includes(term));
+};
+
+const findCategoryByTarget = (categories, target) => {
+  return categories.find((category) => {
+    const slug = category.slug?.toLowerCase() || "";
+    if (target.slugs.some((value) => slug.includes(value))) return true;
+    return (
+      matchesTitle(category.title_fa, target.fa) ||
+      matchesTitle(category.title_en?.toLowerCase(), target.en) ||
+      matchesTitle(category.title_ar, target.ar)
+    );
+  });
+};
+
+const findWidthCategory = (categories) => {
+  return categories.find((category) => {
+    const slug = category.slug?.toLowerCase() || "";
+    const faTitle = category.title_fa || "";
+    return (
+      slug.includes("40") ||
+      faTitle.includes("عرض 40") ||
+      faTitle.includes("عرض ۴۰") ||
+      faTitle.includes("۴۰") ||
+      faTitle.includes("40")
+    );
+  });
+};
+
 export default function Products() {
   const { t, lang } = useTranslation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [activeSubCategory, setActiveSubCategory] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,8 +117,48 @@ export default function Products() {
 
   const filtered = useMemo(() => {
     if (activeCategory === "all") return products;
+    if (activeCategory === WIDTH_TAB_KEY && activeSubCategory) {
+      return products.filter((product) => product.category?.slug === activeSubCategory);
+    }
     return products.filter((product) => product.category?.slug === activeCategory);
-  }, [activeCategory, products]);
+  }, [activeCategory, activeSubCategory, products]);
+
+  const widthCategory = useMemo(() => findWidthCategory(categories), [categories]);
+  const stoneTypeCategories = useMemo(
+    () => stoneTypeTargets.map((target) => findCategoryByTarget(categories, target)).filter(Boolean),
+    [categories]
+  );
+
+  const widthSubTabs = useMemo(() => {
+    if (widthCategory) {
+      const children = categories.filter((category) => category.parent_id === widthCategory.id);
+      if (children.length) return children;
+    }
+    return stoneTypeCategories;
+  }, [categories, stoneTypeCategories, widthCategory]);
+
+  const defaultSubTab = useMemo(() => {
+    const travertineTarget = stoneTypeTargets[0];
+    return (
+      findCategoryByTarget(widthSubTabs, travertineTarget)?.slug ||
+      widthSubTabs[0]?.slug ||
+      ""
+    );
+  }, [widthSubTabs]);
+
+  useEffect(() => {
+    if (activeCategory === WIDTH_TAB_KEY) {
+      setActiveSubCategory(defaultSubTab);
+    }
+  }, [activeCategory, defaultSubTab]);
+
+  const mainCategories = useMemo(() => {
+    const excluded = new Set(
+      stoneTypeCategories.map((category) => category.id).filter(Boolean)
+    );
+    if (widthCategory?.id) excluded.add(widthCategory.id);
+    return categories.filter((category) => !excluded.has(category.id));
+  }, [categories, stoneTypeCategories, widthCategory]);
 
   return (
     <section className="section-shell py-16">
@@ -67,7 +179,20 @@ export default function Products() {
         >
           {t("products.filterAll")}
         </button>
-        {categories.map((category) => (
+        {(widthCategory || widthSubTabs.length > 0) && (
+          <button
+            type="button"
+            onClick={() => setActiveCategory(WIDTH_TAB_KEY)}
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+              activeCategory === WIDTH_TAB_KEY
+                ? "border-primary bg-primary text-sand"
+                : "border-primary/20 text-primary/70 hover:border-primary/50"
+            }`}
+          >
+            {t("products.width40")}
+          </button>
+        )}
+        {mainCategories.map((category) => (
           <button
             key={category.id}
             type="button"
@@ -82,6 +207,25 @@ export default function Products() {
           </button>
         ))}
       </div>
+
+      {activeCategory === WIDTH_TAB_KEY && widthSubTabs.length > 0 && (
+        <div className="mb-10 flex flex-wrap items-center gap-3 border-t border-primary/10 pt-4">
+          {widthSubTabs.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => setActiveSubCategory(category.slug)}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                activeSubCategory === category.slug
+                  ? "border-accent bg-accent/10 text-primary"
+                  : "border-primary/20 text-primary/70 hover:border-primary/50"
+              }`}
+            >
+              {getLocalized(category, lang)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-primary/70">{t("messages.loading")}</p>

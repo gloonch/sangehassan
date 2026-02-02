@@ -48,6 +48,7 @@
     "title": "All products",
     "subtitle": "Browse the full catalog and filter by category.",
     "filterAll": "All products",
+    "width40": "40cm width stones",
     "categoryLabel": "Category",
     "priceLabel": "Price",
     "empty": "No products available yet."
