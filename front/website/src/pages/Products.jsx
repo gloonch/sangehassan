@@ -56,16 +56,22 @@ const matchesTitle = (text, terms) => {
   return terms.some((term) => text.includes(term));
 };
 
+const categoryMatchesTarget = (category, target) => {
+  const slug = category.slug?.toLowerCase() || "";
+  if (target.slugs.some((value) => slug.includes(value))) return true;
+  return (
+    matchesTitle(category.title_fa, target.fa) ||
+    matchesTitle(category.title_en?.toLowerCase(), target.en) ||
+    matchesTitle(category.title_ar, target.ar)
+  );
+};
+
 const findCategoryByTarget = (categories, target) => {
-  return categories.find((category) => {
-    const slug = category.slug?.toLowerCase() || "";
-    if (target.slugs.some((value) => slug.includes(value))) return true;
-    return (
-      matchesTitle(category.title_fa, target.fa) ||
-      matchesTitle(category.title_en?.toLowerCase(), target.en) ||
-      matchesTitle(category.title_ar, target.ar)
-    );
-  });
+  return categories.find((category) => categoryMatchesTarget(category, target));
+};
+
+const isStoneTypeCategory = (category) => {
+  return stoneTypeTargets.some((target) => categoryMatchesTarget(category, target));
 };
 
 const findWidthCategory = (categories) => {
@@ -153,12 +159,12 @@ export default function Products() {
   }, [activeCategory, defaultSubTab]);
 
   const mainCategories = useMemo(() => {
-    const excluded = new Set(
-      stoneTypeCategories.map((category) => category.id).filter(Boolean)
-    );
-    if (widthCategory?.id) excluded.add(widthCategory.id);
-    return categories.filter((category) => !excluded.has(category.id));
-  }, [categories, stoneTypeCategories, widthCategory]);
+    return categories.filter((category) => {
+      if (widthCategory?.id && category.id === widthCategory.id) return false;
+      if (isStoneTypeCategory(category)) return false;
+      return true;
+    });
+  }, [categories, widthCategory]);
 
   return (
     <section className="section-shell py-16">
