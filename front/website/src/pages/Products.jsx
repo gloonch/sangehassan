@@ -259,7 +259,16 @@ export default function Products() {
               <h3 className="mt-2 font-display text-xl">
                 {getLocalized(product, lang) || product.title_en}
               </h3>
-              <p className="mt-2 text-sm text-primary/70">{product.description}</p>
+              {product.description_html || product.description ? (
+                <div
+                  className="mt-2 max-h-24 overflow-hidden text-sm text-primary/70 space-y-2"
+                  dangerouslySetInnerHTML={{
+                    __html: product.description_html || product.description
+                  }}
+                />
+              ) : (
+                <p className="mt-2 text-sm text-primary/50">{t("messages.empty")}</p>
+              )}
               <div className="mt-auto pt-4 text-sm font-semibold text-accent">
                 {t("products.priceLabel")}: {product.price ? product.price : t("messages.empty")}
               </div>
