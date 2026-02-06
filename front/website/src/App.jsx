@@ -5,7 +5,7 @@ import AppRoutes from "./router";
 
 export default function App() {
   const location = useLocation();
-  const hideFooter = location.pathname === "/";
+  const hideFooter = ["/", "/profile"].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-sand text-primary">

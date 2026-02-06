@@ -10,14 +10,20 @@ export async function fetchJSON(path, options = {}) {
     credentials: "include"
   });
 
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
   if (!response.ok) {
-    throw new Error("Request failed");
+    const message = data?.error || data?.message || response.statusText || "Request failed";
+    const err = new Error(message);
+    err.status = response.status;
+    err.body = data;
+    throw err;
   }
 
   if (response.status === 204) {
     return {};
   }
 
-  const text = await response.text();
-  return text ? JSON.parse(text) : {};
+  return data;
 }

@@ -20,7 +20,8 @@ func NewRouter(
 	templateService *usecase.TemplateService,
 	blockService *usecase.BlockService,
 	contentSectionService *usecase.ContentSectionService,
-	authService *usecase.AuthService,
+	adminAuthService *usecase.AuthService,
+	userAuthService *usecase.UserAuthService,
 	dashboardService *usecase.DashboardService,
 	uploadHandler *handlers.UploadHandler,
 ) *gin.Engine {
@@ -51,9 +52,11 @@ func NewRouter(
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	blockHandler := handlers.NewBlockHandler(blockService)
 	contentSectionHandler := handlers.NewContentSectionHandler(contentSectionService)
-	authHandler := handlers.NewAuthHandler(authService, cfg.CookieSecure, cfg.JWTTTLHours)
+	adminAuthHandler := handlers.NewAuthHandler(adminAuthService, cfg.CookieSecure, cfg.JWTTTLHours)
+	userAuthHandler := handlers.NewUserAuthHandler(userAuthService, cfg.CookieSecure)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
-	authMiddleware := middleware.NewAuthMiddleware(authService)
+	authMiddleware := middleware.NewAuthMiddleware(adminAuthService)
+	userMiddleware := middleware.NewUserAuthMiddleware(userAuthService)
 
 	api := router.Group("/api")
 	{
@@ -66,8 +69,20 @@ func NewRouter(
 		api.GET("/blocks/:slug", blockHandler.GetBySlug)
 		api.GET("/content-sections", contentSectionHandler.ListPublic)
 
-		api.POST("/admin/login", authHandler.Login)
-		api.POST("/admin/logout", authHandler.Logout)
+		api.POST("/admin/login", adminAuthHandler.Login)
+		api.POST("/admin/logout", adminAuthHandler.Logout)
+
+		v1 := api.Group("/v1")
+		{
+			v1.POST("/auth/signup", userAuthHandler.Signup)
+			v1.POST("/auth/login", userAuthHandler.Login)
+			v1.POST("/auth/logout", userMiddleware.RequireUser, userAuthHandler.Logout)
+			v1.POST("/auth/refresh", userAuthHandler.Refresh)
+
+			v1.GET("/me", userMiddleware.RequireUser, userAuthHandler.Me)
+			v1.PUT("/me", userMiddleware.RequireUser, userAuthHandler.UpdateMe)
+			v1.GET("/me/requests", userMiddleware.RequireUser, userAuthHandler.Requests)
+		}
 
 		api.POST("/admin/upload/template", uploadHandler.UploadTemplate)
 		api.POST("/admin/upload/product", uploadHandler.UploadProduct)
@@ -77,7 +92,7 @@ func NewRouter(
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)
 		{
-			admin.GET("/session", authHandler.Session)
+			admin.GET("/session", adminAuthHandler.Session)
 			admin.GET("/dashboard", dashboardHandler.Stats)
 
 			admin.GET("/categories", categoryHandler.List)

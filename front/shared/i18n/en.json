@@ -102,12 +102,19 @@
     "password": "Password",
     "email": "Email",
     "fullName": "Full name",
+    "phone": "Phone",
     "loginButton": "Sign in",
-    "signupButton": "Create account"
+    "signupButton": "Create account",
+    "logout": "Log out"
   },
   "profile": {
     "title": "Your profile",
-    "subtitle": "Manage preferences and saved stones."
+    "subtitle": "Manage preferences and saved stones.",
+    "basicInfo": "Basic info",
+    "requestsTitle": "Requests",
+    "requestsEmpty": "No requests yet.",
+    "tabInfo": "Profile",
+    "tabRequests": "Requests"
   },
   "footer": {
     "title": "Let's build in stone",
@@ -257,6 +264,7 @@
   },
   "messages": {
     "loading": "Loading...",
+    "saved": "Saved",
     "error": "Something went wrong.",
     "empty": "Nothing here yet."
   },

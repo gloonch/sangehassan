@@ -8,33 +8,37 @@ import (
 )
 
 type Config struct {
-	AppEnv         string
-	Port           string
-	DBHost         string
-	DBPort         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
-	DBSSLMode      string
-	JWTSecret      string
-	JWTTTLHours    int
-	CookieSecure   bool
-	AllowedOrigins []string
-	UploadDir      string
+	AppEnv             string
+	Port               string
+	DBHost             string
+	DBPort             string
+	DBUser             string
+	DBPassword         string
+	DBName             string
+	DBSSLMode          string
+	JWTSecret          string
+	JWTTTLHours        int
+	AccessTokenMinutes int
+	RefreshTokenDays   int
+	CookieSecure       bool
+	AllowedOrigins     []string
+	UploadDir          string
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		AppEnv:    getEnv("APP_ENV", "development"),
-		Port:      getEnv("PORT", "8080"),
-		DBHost:    getEnv("DB_HOST", "localhost"),
-		DBPort:    getEnv("DB_PORT", "5432"),
-		DBUser:    getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:    getEnv("DB_NAME", "sangehassan"),
-		DBSSLMode: getEnv("DB_SSLMODE", "disable"),
-		JWTSecret: getEnv("JWT_SECRET", ""),
-		UploadDir: getEnv("UPLOAD_DIR", "./storage/images"),
+		AppEnv:             getEnv("APP_ENV", "development"),
+		Port:               getEnv("PORT", "8080"),
+		DBHost:             getEnv("DB_HOST", "localhost"),
+		DBPort:             getEnv("DB_PORT", "5432"),
+		DBUser:             getEnv("DB_USER", "postgres"),
+		DBPassword:         getEnv("DB_PASSWORD", ""),
+		DBName:             getEnv("DB_NAME", "sangehassan"),
+		DBSSLMode:          getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:          getEnv("JWT_SECRET", ""),
+		AccessTokenMinutes: atoiDefault(getEnv("ACCESS_TOKEN_MINUTES", "15"), 15),
+		RefreshTokenDays:   atoiDefault(getEnv("REFRESH_TOKEN_DAYS", "30"), 30),
+		UploadDir:          getEnv("UPLOAD_DIR", "./storage/images"),
 	}
 
 	if cfg.JWTSecret == "" {
@@ -71,4 +75,12 @@ func getEnv(key, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func atoiDefault(value string, fallback int) int {
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
 }

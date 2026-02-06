@@ -29,6 +29,8 @@ func main() {
 	blockRepo := postgres.NewBlockRepository(db)
 	contentSectionRepo := postgres.NewContentSectionRepository(db)
 	adminRepo := postgres.NewAdminRepository(db)
+	userRepo := postgres.NewUserRepository(db)
+	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
 	dashboardRepo := postgres.NewDashboardRepository(db)
 
 	categoryService := usecase.NewCategoryService(categoryRepo)
@@ -38,6 +40,7 @@ func main() {
 	blockService := usecase.NewBlockService(blockRepo)
 	contentSectionService := usecase.NewContentSectionService(contentSectionRepo)
 	authService := usecase.NewAuthService(adminRepo, cfg.JWTSecret, cfg.JWTTTLHours)
+	userAuthService := usecase.NewUserAuthService(userRepo, refreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenMinutes, cfg.RefreshTokenDays)
 	dashboardService := usecase.NewDashboardService(dashboardRepo)
 
 	uploadHandler := handlers.NewUploadHandler("./storage/images")
@@ -50,6 +53,7 @@ func main() {
 		blockService,
 		contentSectionService,
 		authService,
+		userAuthService,
 		dashboardService,
 		uploadHandler,
 	)
