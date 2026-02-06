@@ -32,7 +32,9 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ email, password })
       });
-      navigate("/profile", { replace: true });
+      const redirectTo = sessionStorage.getItem("sh_after_login") || "/profile";
+      sessionStorage.removeItem("sh_after_login");
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err?.message || t("messages.error"));
     } finally {

@@ -8,6 +8,7 @@ const navItems = [
   { key: "home", path: "/", end: true },
   { key: "products", path: "/products" },
   { key: "blocks", path: "/blocks" },
+  { key: "ads", path: "/ads" },
   { key: "blogs", path: "/blogs" },
   // { key: "stoneFinishes", path: "/stone-finishes" },
   // { key: "gallery", path: "/gallery" },

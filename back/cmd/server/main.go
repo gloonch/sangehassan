@@ -33,6 +33,8 @@ func main() {
 	userRepo := postgres.NewUserRepository(db)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
 	dashboardRepo := postgres.NewDashboardRepository(db)
+	listingRepo := postgres.NewListingRepository(db)
+	dealRequestRepo := postgres.NewDealRequestRepository(db)
 
 	categoryService := usecase.NewCategoryService(categoryRepo)
 	productService := usecase.NewProductService(productRepo)
@@ -42,8 +44,10 @@ func main() {
 	blockService := usecase.NewBlockService(blockRepo)
 	contentSectionService := usecase.NewContentSectionService(contentSectionRepo)
 	authService := usecase.NewAuthService(adminRepo, cfg.JWTSecret, cfg.JWTTTLHours)
-	userAuthService := usecase.NewUserAuthService(userRepo, refreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenMinutes, cfg.RefreshTokenDays)
+	userAuthService := usecase.NewUserAuthService(userRepo, refreshTokenRepo, dealRequestRepo, cfg.JWTSecret, cfg.AccessTokenMinutes, cfg.RefreshTokenDays)
 	dashboardService := usecase.NewDashboardService(dashboardRepo)
+	listingService := usecase.NewListingService(listingRepo)
+	dealRequestService := usecase.NewDealRequestService(dealRequestRepo, listingRepo)
 
 	uploadHandler := handlers.NewUploadHandler("./storage/images")
 	router := httpapi.NewRouter(
@@ -59,6 +63,8 @@ func main() {
 		userAuthService,
 		dashboardService,
 		uploadHandler,
+		listingService,
+		dealRequestService,
 	)
 
 	if err := router.Run(":" + cfg.Port); err != nil {

@@ -37,15 +37,17 @@ type TokenPair struct {
 type UserAuthService struct {
 	users      ports.UserRepository
 	refresh    ports.RefreshTokenRepository
+	deals      ports.DealRequestRepository
 	jwtSecret  []byte
 	accessTTL  time.Duration
 	refreshTTL time.Duration
 }
 
-func NewUserAuthService(users ports.UserRepository, refresh ports.RefreshTokenRepository, secret string, accessMinutes, refreshDays int) *UserAuthService {
+func NewUserAuthService(users ports.UserRepository, refresh ports.RefreshTokenRepository, deals ports.DealRequestRepository, secret string, accessMinutes, refreshDays int) *UserAuthService {
 	return &UserAuthService{
 		users:      users,
 		refresh:    refresh,
+		deals:      deals,
 		jwtSecret:  []byte(secret),
 		accessTTL:  time.Duration(accessMinutes) * time.Minute,
 		refreshTTL: time.Duration(refreshDays) * 24 * time.Hour,
@@ -178,9 +180,11 @@ func (s *UserAuthService) UpdateMe(ctx context.Context, userID string, fullName,
 	return updated.SafeInfo(), nil
 }
 
-func (s *UserAuthService) ListRequests(ctx context.Context, userID string) ([]interface{}, error) {
-	_ = userID
-	return []interface{}{}, nil
+func (s *UserAuthService) ListRequests(ctx context.Context, userID string) ([]domain.DealRequest, error) {
+	if s.deals == nil {
+		return nil, nil
+	}
+	return s.deals.ListByBuyer(ctx, userID, 100, 0)
 }
 
 func (s *UserAuthService) issueTokenPair(ctx context.Context, userID, role string) (TokenPair, error) {

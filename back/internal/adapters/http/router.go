@@ -25,6 +25,8 @@ func NewRouter(
 	userAuthService *usecase.UserAuthService,
 	dashboardService *usecase.DashboardService,
 	uploadHandler *handlers.UploadHandler,
+	listingService *usecase.ListingService,
+	dealRequestService *usecase.DealRequestService,
 ) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
@@ -59,12 +61,24 @@ func NewRouter(
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 	authMiddleware := middleware.NewAuthMiddleware(adminAuthService)
 	userMiddleware := middleware.NewUserAuthMiddleware(userAuthService)
+	listingHandler := handlers.NewListingHandler(listingService, dealRequestService)
 
 	api := router.Group("/api")
 	{
 		api.GET("/categories", categoryHandler.List)
 		api.GET("/products", productHandler.List)
 		api.GET("/products/:slug", productHandler.GetBySlug)
+		api.GET("/ads", listingHandler.List)
+		api.GET("/ads/:id", listingHandler.Get)
+
+		adsAuth := api.Group("/ads")
+		adsAuth.Use(userMiddleware.RequireUser)
+		{
+			adsAuth.POST("", listingHandler.Create)
+			adsAuth.PUT("/:id", listingHandler.Update)
+			adsAuth.POST("/:id/requests", listingHandler.CreateDealRequest)
+			adsAuth.DELETE("/:id", listingHandler.Delete)
+		}
 		api.GET("/blogs", blogHandler.List)
 		api.GET("/templates", templateHandler.List)
 		api.GET("/blocks", blockHandler.List)
@@ -134,6 +148,10 @@ func NewRouter(
 			admin.POST("/content-sections", contentSectionHandler.Create)
 			admin.PUT("/content-sections/:id", contentSectionHandler.Update)
 			admin.DELETE("/content-sections/:id", contentSectionHandler.Delete)
+
+			admin.GET("/requests", listingHandler.AdminListRequests)
+			admin.GET("/requests/:id", listingHandler.AdminGetRequest)
+			admin.PUT("/requests/:id/status", listingHandler.AdminUpdateRequestStatus)
 		}
 	}
 

@@ -14,6 +14,9 @@ import Contact from "./pages/Contact";
 import BlocksLanding from "./pages/BlocksLanding";
 import BlocksCatalog from "./pages/BlocksCatalog";
 import BlockDetail from "./pages/BlockDetail";
+import Ads from "./pages/Ads";
+import AdDetail from "./pages/AdDetail";
+import NewAd from "./pages/NewAd";
 
 export default function AppRoutes() {
   return (
@@ -25,6 +28,9 @@ export default function AppRoutes() {
       <Route path="/blocks" element={<BlocksLanding />} />
       <Route path="/blocks/catalog" element={<BlocksCatalog />} />
       <Route path="/blocks/:slug" element={<BlockDetail />} />
+      <Route path="/ads" element={<Ads />} />
+      <Route path="/ads/new" element={<NewAd />} />
+      <Route path="/ads/:id" element={<AdDetail />} />
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
