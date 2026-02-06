@@ -98,6 +98,7 @@ func NewRouter(
 			v1.GET("/me", userMiddleware.RequireUser, userAuthHandler.Me)
 			v1.PUT("/me", userMiddleware.RequireUser, userAuthHandler.UpdateMe)
 			v1.GET("/me/requests", userMiddleware.RequireUser, userAuthHandler.Requests)
+			v1.GET("/me/listings", userMiddleware.RequireUser, listingHandler.MyListings)
 		}
 
 		api.POST("/admin/upload/template", uploadHandler.UploadTemplate)

@@ -54,6 +54,24 @@ func (h *ListingHandler) List(c *gin.Context) {
 	respondOK(c, items)
 }
 
+// MyListings returns listings created by the authenticated user.
+func (h *ListingHandler) MyListings(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	idStr, _ := userID.(string)
+	if idStr == "" {
+		respondError(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	filter := buildListingFilter(c)
+	filter.OwnerID = &idStr
+	items, err := h.listings.List(c.Request.Context(), filter)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load listings")
+		return
+	}
+	respondOK(c, items)
+}
+
 func (h *ListingHandler) Get(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

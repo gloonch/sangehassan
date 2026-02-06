@@ -48,6 +48,11 @@ func (r *ListingRepository) List(ctx context.Context, filter ports.ListingFilter
 		args = append(args, filter.StoneType)
 		argPos++
 	}
+	if filter.OwnerID != nil {
+		conditions = append(conditions, fmt.Sprintf("created_by = $%d", argPos))
+		args = append(args, *filter.OwnerID)
+		argPos++
+	}
 	if filter.Form != "" {
 		conditions = append(conditions, fmt.Sprintf("form = $%d", argPos))
 		args = append(args, filter.Form)

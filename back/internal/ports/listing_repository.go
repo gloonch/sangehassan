@@ -11,6 +11,7 @@ type ListingFilter struct {
 	Form       string
 	Province   string
 	City       string
+	OwnerID    *string
 	MinTonnage *float64
 	MaxTonnage *float64
 	MinPrice   *float64
