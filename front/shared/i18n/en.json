@@ -51,6 +51,8 @@
     "width40": "40cm width stones",
     "categoryLabel": "Category",
     "priceLabel": "Price",
+    "searchLabel": "Search products",
+    "searchPlaceholder": "Type a product name or code",
     "empty": "No products available yet."
   },
   "blocks": {

@@ -51,6 +51,8 @@
     "width40": "أحجار بعرض 40 سم",
     "categoryLabel": "الفئة",
     "priceLabel": "السعر",
+    "searchLabel": "بحث عن منتج",
+    "searchPlaceholder": "اكتب اسم المنتج أو الكود",
     "empty": "لا توجد منتجات حالياً."
   },
   "blocks": {

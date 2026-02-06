@@ -51,6 +51,8 @@
     "width40": "سنگ‌های عرض ۴۰ سانتی‌متر",
     "categoryLabel": "دسته‌بندی",
     "priceLabel": "قیمت",
+    "searchLabel": "جستجوی محصول",
+    "searchPlaceholder": "نام یا کد محصول را وارد کنید",
     "empty": "فعلا محصولی موجود نیست."
   },
   "blocks": {

@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+
+const PRODUCTS_STATE_KEY = "products-page-state";
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -94,10 +96,35 @@ export default function Products() {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeSubCategory, setActiveSubCategory] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchPending, setSearchPending] = useState(false);
+  const savedStateRef = useRef(null);
+  const [restoredScroll, setRestoredScroll] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+
+    try {
+      const stored = sessionStorage.getItem(PRODUCTS_STATE_KEY);
+      if (stored) {
+        savedStateRef.current = JSON.parse(stored);
+        if (savedStateRef.current.activeCategory) {
+          setActiveCategory(savedStateRef.current.activeCategory);
+        }
+        if (savedStateRef.current.activeSubCategory) {
+          setActiveSubCategory(savedStateRef.current.activeSubCategory);
+        }
+        if (savedStateRef.current.searchInput) {
+          setSearchInput(savedStateRef.current.searchInput);
+          setDebouncedSearch(savedStateRef.current.searchInput.trim().toLowerCase());
+        }
+      }
+    } catch (_) {
+      savedStateRef.current = null;
+    }
+
     const load = async () => {
       try {
         const [productRes, categoryRes] = await Promise.all([
@@ -121,13 +148,44 @@ export default function Products() {
     };
   }, []);
 
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim().toLowerCase());
+      setSearchPending(false);
+    }, 2000);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
   const filtered = useMemo(() => {
-    if (activeCategory === "all") return products;
-    if (activeCategory === WIDTH_TAB_KEY && activeSubCategory) {
-      return products.filter((product) => product.category?.slug === activeSubCategory);
+    let base = products;
+
+    if (activeCategory !== "all") {
+      if (activeCategory === WIDTH_TAB_KEY && activeSubCategory) {
+        base = base.filter((product) => product.category?.slug === activeSubCategory);
+      } else {
+        base = base.filter((product) => product.category?.slug === activeCategory);
+      }
     }
-    return products.filter((product) => product.category?.slug === activeCategory);
-  }, [activeCategory, activeSubCategory, products]);
+
+    if (!debouncedSearch) return base;
+
+    const matchesSearch = (product) => {
+      const title = (getLocalized(product, lang) || product.title_en || "").toLowerCase();
+      const slug = product.slug?.toLowerCase() || "";
+      const description = (product.description || "").toLowerCase();
+      const descriptionHtml = product.description_html
+        ? product.description_html.replace(/<[^>]+>/g, " ").toLowerCase()
+        : "";
+      return (
+        title.includes(debouncedSearch) ||
+        slug.includes(debouncedSearch) ||
+        description.includes(debouncedSearch) ||
+        descriptionHtml.includes(debouncedSearch)
+      );
+    };
+
+    return base.filter(matchesSearch);
+  }, [activeCategory, activeSubCategory, products, debouncedSearch, lang]);
 
   const widthCategory = useMemo(() => findWidthCategory(categories), [categories]);
   const stoneTypeCategories = useMemo(
@@ -153,10 +211,16 @@ export default function Products() {
   }, [widthSubTabs]);
 
   useEffect(() => {
-    if (activeCategory === WIDTH_TAB_KEY) {
+    if (activeCategory !== WIDTH_TAB_KEY) return;
+    if (!activeSubCategory) {
+      setActiveSubCategory(defaultSubTab);
+      return;
+    }
+    const exists = widthSubTabs.some((category) => category.slug === activeSubCategory);
+    if (!exists) {
       setActiveSubCategory(defaultSubTab);
     }
-  }, [activeCategory, defaultSubTab]);
+  }, [activeCategory, activeSubCategory, defaultSubTab, widthSubTabs]);
 
   const mainCategories = useMemo(() => {
     return categories.filter((category) => {
@@ -166,6 +230,45 @@ export default function Products() {
     });
   }, [categories, widthCategory]);
 
+  useEffect(() => {
+    if (!loading && !restoredScroll && savedStateRef.current?.scrollY >= 0) {
+      window.scrollTo({ top: savedStateRef.current.scrollY, behavior: "auto" });
+      setRestoredScroll(true);
+    }
+  }, [loading, restoredScroll]);
+
+  useEffect(() => {
+    const saveState = () => {
+      sessionStorage.setItem(
+        PRODUCTS_STATE_KEY,
+        JSON.stringify({
+          activeCategory,
+          activeSubCategory,
+          searchInput,
+          scrollY: window.scrollY
+        })
+      );
+    };
+
+    const handleScroll = () => {
+      window.requestAnimationFrame(saveState);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      saveState();
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [activeCategory, activeSubCategory, searchInput]);
+
+  const handleSearchChange = (event) => {
+    const value = event.target.value;
+    setSearchInput(value);
+    setSearchPending(true);
+    setActiveCategory("all");
+    setActiveSubCategory("");
+  };
+
   return (
     <section className="section-shell py-16">
       <div className="mb-8 flex flex-col gap-4">
@@ -173,45 +276,68 @@ export default function Products() {
         <h1 className="font-display text-3xl md:text-4xl">{t("products.subtitle")}</h1>
       </div>
 
-      <div className="mb-8 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setActiveCategory("all")}
-          className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-            activeCategory === "all"
-              ? "border-primary bg-primary text-sand"
-              : "border-primary/20 text-primary/70 hover:border-primary/50"
-          }`}
-        >
-          {t("products.filterAll")}
-        </button>
-        {(widthCategory || widthSubTabs.length > 0) && (
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => setActiveCategory(WIDTH_TAB_KEY)}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-              activeCategory === WIDTH_TAB_KEY
+            onClick={() => setActiveCategory("all")}
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === "all"
                 ? "border-primary bg-primary text-sand"
                 : "border-primary/20 text-primary/70 hover:border-primary/50"
-            }`}
+              }`}
           >
-            {t("products.width40")}
+            {t("products.filterAll")}
           </button>
-        )}
-        {mainCategories.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            onClick={() => setActiveCategory(category.slug)}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-              activeCategory === category.slug
-                ? "border-primary bg-primary text-sand"
-                : "border-primary/20 text-primary/70 hover:border-primary/50"
-            }`}
-          >
-            {getLocalized(category, lang)}
-          </button>
-        ))}
+          {(widthCategory || widthSubTabs.length > 0) && (
+            <button
+              type="button"
+              onClick={() => setActiveCategory(WIDTH_TAB_KEY)}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === WIDTH_TAB_KEY
+                  ? "border-primary bg-primary text-sand"
+                  : "border-primary/20 text-primary/70 hover:border-primary/50"
+                }`}
+            >
+              {t("products.width40")}
+            </button>
+          )}
+          {mainCategories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => setActiveCategory(category.slug)}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === category.slug
+                  ? "border-primary bg-primary text-sand"
+                  : "border-primary/20 text-primary/70 hover:border-primary/50"
+                }`}
+            >
+              {getLocalized(category, lang)}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full md:w-64">
+          <label className="sr-only" htmlFor="product-search">
+            {t("products.searchLabel")}
+          </label>
+          <div className="flex items-center gap-2">
+            {searchPending && (
+              <span
+                aria-label={t("messages.loading")}
+                className="h-3 w-3 animate-spin rounded-full border border-primary/40 border-t-transparent"
+              />
+            )}
+
+            <input
+              id="product-search"
+              type="search"
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder={t("products.searchPlaceholder")}
+              className="w-full rounded-full border border-primary/20 bg-white/60 px-4 py-2 text-sm text-primary shadow-sm outline-none transition focus:border-primary/60 focus:shadow focus:shadow-primary/10"
+            />
+
+          </div>
+        </div>
       </div>
 
       {activeCategory === WIDTH_TAB_KEY && widthSubTabs.length > 0 && (
@@ -221,11 +347,10 @@ export default function Products() {
               key={category.id}
               type="button"
               onClick={() => setActiveSubCategory(category.slug)}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                activeSubCategory === category.slug
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeSubCategory === category.slug
                   ? "border-accent bg-accent/10 text-primary"
                   : "border-primary/20 text-primary/70 hover:border-primary/50"
-              }`}
+                }`}
             >
               {getLocalized(category, lang)}
             </button>
