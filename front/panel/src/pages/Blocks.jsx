@@ -14,7 +14,6 @@ const emptyForm = {
   weight_ton: "",
   status: "available",
   description: "",
-  image_url: "",
   image_urls: [],
   is_featured: false
 };
@@ -76,8 +75,7 @@ export default function Blocks() {
         const nextImages = [...(prev.image_urls || []), ...uploads].filter(Boolean);
         return {
           ...prev,
-          image_urls: nextImages,
-          image_url: nextImages[0] || prev.image_url
+          image_urls: nextImages
         };
       });
     } catch (err) {
@@ -92,8 +90,7 @@ export default function Blocks() {
       const nextImages = (prev.image_urls || []).filter((_, idx) => idx !== index);
       return {
         ...prev,
-        image_urls: nextImages,
-        image_url: nextImages[0] || ""
+        image_urls: nextImages
       };
     });
     if (selectedImageIndex === index) {
@@ -104,11 +101,11 @@ export default function Blocks() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
-    const images = form.image_urls?.length ? form.image_urls : form.image_url ? [form.image_url] : [];
+    const images = form.image_urls?.length ? form.image_urls : [];
     const payload = {
       ...form,
       weight_ton: form.weight_ton ? Number(form.weight_ton) : 0,
-      image_url: images[0] || form.image_url || "",
+      image_url: images[0] || "",
       image_urls: images,
       is_featured: Boolean(form.is_featured)
     };
@@ -152,7 +149,6 @@ export default function Blocks() {
         weight_ton: item.weight_ton || "",
         status: item.status || "available",
         description: item.description || "",
-        image_url: item.image_url || "",
         image_urls: images,
         is_featured: Boolean(item.is_featured)
       });
@@ -307,27 +303,16 @@ export default function Blocks() {
               />
             </label>
 
-            <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-                {t("form.imageUrl")}
-                <input
-                  type="text"
-                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-                  value={form.image_url}
-                  onChange={(event) => setForm({ ...form, image_url: event.target.value })}
-                />
-              </label>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-                {t("form.images")}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-                  onChange={(event) => handleImageUpload(event.target.files)}
-                />
-              </label>
-            </div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+              {t("form.images")}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                onChange={(event) => handleImageUpload(event.target.files)}
+              />
+            </label>
 
             <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
               <div className="rounded-2xl border border-primary/10 bg-sand/60 p-4">

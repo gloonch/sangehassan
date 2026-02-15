@@ -40,12 +40,16 @@ func (h *BlogHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.CoverImageURL) {
+		respondError(c, http.StatusBadRequest, "cover image must be uploaded")
+		return
+	}
 
 	blog, err := h.service.Create(c.Request.Context(), domain.Blog{
 		Title:         payload.Title,
 		Excerpt:       payload.Excerpt,
 		Content:       payload.Content,
-		CoverImageURL: payload.CoverImageURL,
+		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create blog")
@@ -67,13 +71,17 @@ func (h *BlogHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.CoverImageURL) {
+		respondError(c, http.StatusBadRequest, "cover image must be uploaded")
+		return
+	}
 
 	blog, err := h.service.Update(c.Request.Context(), domain.Blog{
 		ID:            id,
 		Title:         payload.Title,
 		Excerpt:       payload.Excerpt,
 		Content:       payload.Content,
-		CoverImageURL: payload.CoverImageURL,
+		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update blog")

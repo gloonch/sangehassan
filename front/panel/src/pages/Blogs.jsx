@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../lib/i18n";
-import { fetchJSON } from "../lib/api";
+import { API_BASE, fetchJSON } from "../lib/api";
+import { resolveImageUrl } from "../lib/assets";
 
 const emptyForm = {
   title: "",
@@ -17,6 +18,7 @@ export default function Blogs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formOpen, setFormOpen] = useState(true);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const loadBlogs = async () => {
     try {
@@ -55,6 +57,28 @@ export default function Blogs() {
       loadBlogs();
     } catch (err) {
       setError(t("messages.error"));
+    }
+  };
+
+  const handleCoverUpload = async (file) => {
+    if (!file) return;
+    setError("");
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/api/admin/upload/blog`, {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setForm((prev) => ({ ...prev, cover_image_url: data?.data?.image_url || "" }));
+    } catch (err) {
+      setError(t("messages.error"));
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -124,12 +148,24 @@ export default function Blogs() {
               </label>
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
                 {t("form.coverImageUrl")}
-                <input
-                  type="text"
-                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-                  value={form.cover_image_url}
-                  onChange={(event) => setForm({ ...form, cover_image_url: event.target.value })}
-                />
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+                    disabled={uploadingCover}
+                    onChange={(event) => handleCoverUpload(event.target.files?.[0])}
+                  />
+                  {form.cover_image_url ? (
+                    <div className="h-16 w-16 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
+                      <img
+                        src={resolveImageUrl(form.cover_image_url)}
+                        alt="Cover"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </label>
             </div>
 

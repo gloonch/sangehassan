@@ -9,7 +9,7 @@ const navItems = [
   { key: "products", path: "/products" },
   { key: "blocks", path: "/blocks" },
   { key: "blogs", path: "/blogs" },
-  { key: "stoneFinishes", path: "/stone-finishes" },
+  // { key: "stoneFinishes", path: "/stone-finishes" },
   // { key: "gallery", path: "/gallery" },
   { key: "about", path: "/about" },
   // { key: "contact", path: "/contact" }

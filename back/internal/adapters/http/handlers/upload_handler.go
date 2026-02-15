@@ -38,6 +38,10 @@ func (h *UploadHandler) UploadContent(c *gin.Context) {
 	h.uploadFile(c, "content")
 }
 
+func (h *UploadHandler) UploadBlog(c *gin.Context) {
+	h.uploadFile(c, "blogs")
+}
+
 func (h *UploadHandler) uploadFile(c *gin.Context, subdir string) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {

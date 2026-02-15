@@ -43,6 +43,15 @@ Update secrets in:
 Image hosting base URL:
 - `VITE_IMAGE_BASE_URL` (defaults to `http://localhost:8081` if unset)
 
+## DB schema updates (existing volumes)
+Postgres init SQL in `deploy/postgres/init/` only runs the first time a new volume is created. If you pull new code that adds tables (for example `content_sections` or `blocks`) and your existing DB volume was created before that, admin pages like `/dashboard/content` or `/dashboard/blocks` can fail with 500 errors.
+
+To apply the latest schema to an existing DB volume without dropping data:
+```sh
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/001_init.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/002_auth.sql
+```
+
 ## Data import (SangeHassan export)
 The extracted JSON lives in `data/` and images in `data/images/products`. We added a Go importer and expanded the DB schema (attributes + product-category relations).
 

@@ -87,6 +87,10 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) || !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Create(c.Request.Context(), domain.Product{
@@ -99,8 +103,8 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		ShortDescriptionHTML: payload.ShortDescription,
 		Price:                payload.Price,
 		PriceHTML:            payload.PriceHTML,
-		ImageURL:             payload.ImageURL,
-		Images:               payload.ImageURLs,
+		ImageURL:             normalizeImageRef(payload.ImageURL),
+		Images:               normalizeImageRefs(payload.ImageURLs),
 		MainCategoryID:       mainCategoryID,
 		IsPopular:            payload.IsPopular,
 	})
@@ -124,6 +128,10 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) || !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Update(c.Request.Context(), domain.Product{
@@ -137,8 +145,8 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		ShortDescriptionHTML: payload.ShortDescription,
 		Price:                payload.Price,
 		PriceHTML:            payload.PriceHTML,
-		ImageURL:             payload.ImageURL,
-		Images:               payload.ImageURLs,
+		ImageURL:             normalizeImageRef(payload.ImageURL),
+		Images:               normalizeImageRefs(payload.ImageURLs),
 		MainCategoryID:       mainCategoryID,
 		IsPopular:            payload.IsPopular,
 	})

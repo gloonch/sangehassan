@@ -25,6 +25,11 @@ services:
       - db
     ports:
       - "8080:8080"
+    volumes:
+      # Persist uploads and share with nginx in prod.
+      - images_data_prod:/app/storage/images
+      # Seed the volume from the repo's checked-in images on first start.
+      - ../back/storage/images:/seed/images:ro
 
   website:
     build:
@@ -59,7 +64,8 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../back/storage/images:/var/www/images:ro
+      - images_data_prod:/var/www/images:ro
 
 volumes:
   pg_data_prod:
+  images_data_prod:

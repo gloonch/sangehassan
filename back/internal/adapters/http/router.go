@@ -88,6 +88,7 @@ func NewRouter(
 		api.POST("/admin/upload/product", uploadHandler.UploadProduct)
 		api.POST("/admin/upload/block", uploadHandler.UploadBlock)
 		api.POST("/admin/upload/content", uploadHandler.UploadContent)
+		api.POST("/admin/upload/blog", uploadHandler.UploadBlog)
 
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)

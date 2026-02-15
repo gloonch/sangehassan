@@ -48,10 +48,14 @@ func (h *TemplateHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) {
+		respondError(c, http.StatusBadRequest, "image must be uploaded")
+		return
+	}
 
 	template, err := h.service.Create(c.Request.Context(), domain.Template{
 		Name:     payload.Name,
-		ImageURL: payload.ImageURL,
+		ImageURL: normalizeImageRef(payload.ImageURL),
 		IsActive: payload.IsActive,
 	})
 	if err != nil {
@@ -74,11 +78,15 @@ func (h *TemplateHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) {
+		respondError(c, http.StatusBadRequest, "image must be uploaded")
+		return
+	}
 
 	template, err := h.service.Update(c.Request.Context(), domain.Template{
 		ID:       id,
 		Name:     payload.Name,
-		ImageURL: payload.ImageURL,
+		ImageURL: normalizeImageRef(payload.ImageURL),
 		IsActive: payload.IsActive,
 	})
 	if err != nil {

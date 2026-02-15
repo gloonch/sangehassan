@@ -91,6 +91,10 @@ func (h *ContentSectionHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
 
 	section, err := h.service.Create(c.Request.Context(), domain.ContentSection{
 		Page:          payload.Page,
@@ -110,7 +114,7 @@ func (h *ContentSectionHandler) Create(c *gin.Context) {
 		CTAHref:       payload.CTAHref,
 		OrderIndex:    payload.OrderIndex,
 		IsActive:      payload.IsActive,
-		Images:        payload.ImageURLs,
+		Images:        normalizeImageRefs(payload.ImageURLs),
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create section")
@@ -129,6 +133,10 @@ func (h *ContentSectionHandler) Update(c *gin.Context) {
 	var payload contentSectionPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		respondError(c, http.StatusBadRequest, "invalid payload")
+		return
+	}
+	if !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
 		return
 	}
 
@@ -151,7 +159,7 @@ func (h *ContentSectionHandler) Update(c *gin.Context) {
 		CTAHref:       payload.CTAHref,
 		OrderIndex:    payload.OrderIndex,
 		IsActive:      payload.IsActive,
-		Images:        payload.ImageURLs,
+		Images:        normalizeImageRefs(payload.ImageURLs),
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update section")

@@ -17,5 +17,7 @@ RUN go build -o /bin/server ./cmd/server
 FROM alpine:3.19 AS prod
 WORKDIR /app
 COPY --from=build /bin/server /app/server
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080
-CMD ["/app/server"]
+CMD ["/app/entrypoint.sh"]

@@ -104,6 +104,10 @@ func (h *BlockHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) || !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
 	status := strings.TrimSpace(payload.Status)
 	if status == "" {
 		status = "available"
@@ -120,8 +124,8 @@ func (h *BlockHandler) Create(c *gin.Context) {
 		WeightTon:   payload.WeightTon,
 		Status:      status,
 		Description: payload.Description,
-		ImageURL:    payload.ImageURL,
-		Images:      payload.ImageURLs,
+		ImageURL:    normalizeImageRef(payload.ImageURL),
+		Images:      normalizeImageRefs(payload.ImageURLs),
 		IsFeatured:  payload.IsFeatured,
 	})
 	if err != nil {
@@ -143,6 +147,10 @@ func (h *BlockHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if !isAllowedImageRef(payload.ImageURL) || !allAllowedImageRefs(payload.ImageURLs) {
+		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
 	status := strings.TrimSpace(payload.Status)
 	if status == "" {
 		status = "available"
@@ -160,8 +168,8 @@ func (h *BlockHandler) Update(c *gin.Context) {
 		WeightTon:   payload.WeightTon,
 		Status:      status,
 		Description: payload.Description,
-		ImageURL:    payload.ImageURL,
-		Images:      payload.ImageURLs,
+		ImageURL:    normalizeImageRef(payload.ImageURL),
+		Images:      normalizeImageRefs(payload.ImageURLs),
 		IsFeatured:  payload.IsFeatured,
 	})
 	if err != nil {
