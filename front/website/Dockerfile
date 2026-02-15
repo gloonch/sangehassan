@@ -1,14 +1,22 @@
 FROM node:20-alpine AS base
 WORKDIR /app
-COPY package.json ./
+COPY website/package.json ./
+COPY website/package-lock.json ./
 RUN npm install
 
 FROM base AS dev
-COPY . .
+COPY website/ .
+COPY shared/ /shared/
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
 
 FROM base AS build
-COPY . .
+COPY website/ .
+COPY shared/ /shared/
+# These must be present at build time (Vite bakes them into the bundle).
+ARG VITE_API_BASE_URL
+ARG VITE_IMAGE_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_IMAGE_BASE_URL=$VITE_IMAGE_BASE_URL
 RUN npm run build
 
 FROM nginx:alpine AS prod

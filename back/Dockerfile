@@ -2,7 +2,8 @@ FROM golang:1.22-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
-RUN go mod download
+# Some networks block proxy.golang.org. Use multiple proxies as fallback.
+RUN GOPROXY='https://proxy.golang.org|https://goproxy.cn|direct' go mod download
 
 FROM base AS dev
 RUN go install github.com/cosmtrek/air@v1.50.0

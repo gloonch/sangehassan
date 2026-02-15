@@ -6,9 +6,9 @@ services:
     container_name: sangehassan-db
     env_file: .prod.env
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-sangehassan}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me}
+      POSTGRES_DB: ${DB_NAME:-sangehassan}
     ports:
       - "5432:5432"
     volumes:
@@ -28,8 +28,12 @@ services:
 
   website:
     build:
-      context: ../front/website
+      context: ../front
+      dockerfile: website/Dockerfile
       target: prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL}
     container_name: sangehassan-website
     env_file: .prod.env
     ports:
@@ -37,8 +41,12 @@ services:
 
   panel:
     build:
-      context: ../front/panel
+      context: ../front
+      dockerfile: panel/Dockerfile
       target: prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL}
     container_name: sangehassan-panel
     env_file: .prod.env
     ports:
