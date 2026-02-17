@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
+	"strings"
 
 	"sangehassan/back/internal/domain"
 )
@@ -18,11 +19,14 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 
 func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
-		       p.description_html, p.short_description_html, p.price, p.price_html,
-		       p.image_url, p.main_category_id, p.is_popular,
-		       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
-		       p.created_at, COALESCE(p.updated_at, p.created_at),
+			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.description_html, p.short_description_html,
+			       p.description_html_en, p.description_html_fa, p.description_html_ar,
+			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
+			       p.price, p.price_html,
+			       p.image_url, p.main_category_id, p.is_popular,
+			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
@@ -34,15 +38,21 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 	defer rows.Close()
 
 	var products []domain.Product
-	for rows.Next() {
-		var product domain.Product
-		var description sql.NullString
-		var shortDescription sql.NullString
-		var price sql.NullFloat64
-		var priceHTML sql.NullString
-		var imageURL sql.NullString
-		var mainCategoryID sql.NullInt64
-		var imageCount int64
+		for rows.Next() {
+			var product domain.Product
+			var description sql.NullString
+			var shortDescription sql.NullString
+			var descriptionEN sql.NullString
+			var descriptionFA sql.NullString
+			var descriptionAR sql.NullString
+			var shortDescriptionEN sql.NullString
+			var shortDescriptionFA sql.NullString
+			var shortDescriptionAR sql.NullString
+			var price sql.NullFloat64
+			var priceHTML sql.NullString
+			var imageURL sql.NullString
+			var mainCategoryID sql.NullInt64
+			var imageCount int64
 		var categoryID sql.NullInt64
 		var categoryTitleEN sql.NullString
 		var categoryTitleFA sql.NullString
@@ -54,13 +64,19 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 			&product.TitleEN,
 			&product.TitleFA,
 			&product.TitleAR,
-			&product.Slug,
-			&description,
-			&shortDescription,
-			&price,
-			&priceHTML,
-			&imageURL,
-			&mainCategoryID,
+				&product.Slug,
+				&description,
+				&shortDescription,
+				&descriptionEN,
+				&descriptionFA,
+				&descriptionAR,
+				&shortDescriptionEN,
+				&shortDescriptionFA,
+				&shortDescriptionAR,
+				&price,
+				&priceHTML,
+				&imageURL,
+				&mainCategoryID,
 			&product.IsPopular,
 			&imageCount,
 			&product.CreatedAt,
@@ -74,14 +90,21 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 		); err != nil {
 			return nil, err
 		}
-		product.DescriptionHTML = description.String
-		product.Description = product.DescriptionHTML
-		product.ShortDescriptionHTML = shortDescription.String
-		if price.Valid {
-			product.Price = price.Float64
-		}
-		product.PriceHTML = priceHTML.String
-		product.ImageURL = imageURL.String
+			product.DescriptionHTML = description.String
+			product.Description = product.DescriptionHTML
+			product.ShortDescriptionHTML = shortDescription.String
+			product.DescriptionHTMLEn = descriptionEN.String
+			product.DescriptionHTMLFa = descriptionFA.String
+			product.DescriptionHTMLAr = descriptionAR.String
+			product.ShortDescriptionHTMLEn = shortDescriptionEN.String
+			product.ShortDescriptionHTMLFa = shortDescriptionFA.String
+			product.ShortDescriptionHTMLAr = shortDescriptionAR.String
+			applyDescriptionFallbacks(&product)
+			if price.Valid {
+				product.Price = price.Float64
+			}
+			product.PriceHTML = priceHTML.String
+			product.ImageURL = imageURL.String
 		product.ImageCount = int(imageCount)
 		if product.ImageCount == 0 && product.ImageURL != "" {
 			product.ImageCount = 1
@@ -110,11 +133,14 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 
 func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
-		       p.description_html, p.short_description_html, p.price, p.price_html,
-		       p.image_url, p.main_category_id, p.is_popular,
-		       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
-		       p.created_at, COALESCE(p.updated_at, p.created_at),
+			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.description_html, p.short_description_html,
+			       p.description_html_en, p.description_html_fa, p.description_html_ar,
+			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
+			       p.price, p.price_html,
+			       p.image_url, p.main_category_id, p.is_popular,
+			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
@@ -127,15 +153,21 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 	defer rows.Close()
 
 	var products []domain.Product
-	for rows.Next() {
-		var product domain.Product
-		var description sql.NullString
-		var shortDescription sql.NullString
-		var price sql.NullFloat64
-		var priceHTML sql.NullString
-		var imageURL sql.NullString
-		var mainCategoryID sql.NullInt64
-		var imageCount int64
+		for rows.Next() {
+			var product domain.Product
+			var description sql.NullString
+			var shortDescription sql.NullString
+			var descriptionEN sql.NullString
+			var descriptionFA sql.NullString
+			var descriptionAR sql.NullString
+			var shortDescriptionEN sql.NullString
+			var shortDescriptionFA sql.NullString
+			var shortDescriptionAR sql.NullString
+			var price sql.NullFloat64
+			var priceHTML sql.NullString
+			var imageURL sql.NullString
+			var mainCategoryID sql.NullInt64
+			var imageCount int64
 		var categoryID sql.NullInt64
 		var categoryTitleEN sql.NullString
 		var categoryTitleFA sql.NullString
@@ -147,13 +179,19 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&product.TitleEN,
 			&product.TitleFA,
 			&product.TitleAR,
-			&product.Slug,
-			&description,
-			&shortDescription,
-			&price,
-			&priceHTML,
-			&imageURL,
-			&mainCategoryID,
+				&product.Slug,
+				&description,
+				&shortDescription,
+				&descriptionEN,
+				&descriptionFA,
+				&descriptionAR,
+				&shortDescriptionEN,
+				&shortDescriptionFA,
+				&shortDescriptionAR,
+				&price,
+				&priceHTML,
+				&imageURL,
+				&mainCategoryID,
 			&product.IsPopular,
 			&imageCount,
 			&product.CreatedAt,
@@ -167,14 +205,21 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 		); err != nil {
 			return nil, err
 		}
-		product.DescriptionHTML = description.String
-		product.Description = product.DescriptionHTML
-		product.ShortDescriptionHTML = shortDescription.String
-		if price.Valid {
-			product.Price = price.Float64
-		}
-		product.PriceHTML = priceHTML.String
-		product.ImageURL = imageURL.String
+			product.DescriptionHTML = description.String
+			product.Description = product.DescriptionHTML
+			product.ShortDescriptionHTML = shortDescription.String
+			product.DescriptionHTMLEn = descriptionEN.String
+			product.DescriptionHTMLFa = descriptionFA.String
+			product.DescriptionHTMLAr = descriptionAR.String
+			product.ShortDescriptionHTMLEn = shortDescriptionEN.String
+			product.ShortDescriptionHTMLFa = shortDescriptionFA.String
+			product.ShortDescriptionHTMLAr = shortDescriptionAR.String
+			applyDescriptionFallbacks(&product)
+			if price.Valid {
+				product.Price = price.Float64
+			}
+			product.PriceHTML = priceHTML.String
+			product.ImageURL = imageURL.String
 		product.ImageCount = int(imageCount)
 		if product.ImageCount == 0 && product.ImageURL != "" {
 			product.ImageCount = 1
@@ -202,26 +247,35 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 }
 
 func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Product, error) {
-	row := r.db.QueryRowContext(ctx, `
-		SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
-		       p.description_html, p.short_description_html, p.price, p.price_html,
-		       p.image_url, p.main_category_id, p.is_popular,
-		       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
-		       p.created_at, COALESCE(p.updated_at, p.created_at),
+		row := r.db.QueryRowContext(ctx, `
+			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.description_html, p.short_description_html,
+			       p.description_html_en, p.description_html_fa, p.description_html_ar,
+			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
+			       p.price, p.price_html,
+			       p.image_url, p.main_category_id, p.is_popular,
+			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
 		WHERE p.id = $1
 	`, id)
 
-	var product domain.Product
-	var description sql.NullString
-	var shortDescription sql.NullString
-	var price sql.NullFloat64
-	var priceHTML sql.NullString
-	var imageURL sql.NullString
-	var mainCategoryID sql.NullInt64
-	var imageCount int64
+		var product domain.Product
+		var description sql.NullString
+		var shortDescription sql.NullString
+		var descriptionEN sql.NullString
+		var descriptionFA sql.NullString
+		var descriptionAR sql.NullString
+		var shortDescriptionEN sql.NullString
+		var shortDescriptionFA sql.NullString
+		var shortDescriptionAR sql.NullString
+		var price sql.NullFloat64
+		var priceHTML sql.NullString
+		var imageURL sql.NullString
+		var mainCategoryID sql.NullInt64
+		var imageCount int64
 	var categoryID sql.NullInt64
 	var categoryTitleEN sql.NullString
 	var categoryTitleFA sql.NullString
@@ -234,13 +288,19 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&product.TitleEN,
 		&product.TitleFA,
 		&product.TitleAR,
-		&product.Slug,
-		&description,
-		&shortDescription,
-		&price,
-		&priceHTML,
-		&imageURL,
-		&mainCategoryID,
+			&product.Slug,
+			&description,
+			&shortDescription,
+			&descriptionEN,
+			&descriptionFA,
+			&descriptionAR,
+			&shortDescriptionEN,
+			&shortDescriptionFA,
+			&shortDescriptionAR,
+			&price,
+			&priceHTML,
+			&imageURL,
+			&mainCategoryID,
 		&product.IsPopular,
 		&imageCount,
 		&product.CreatedAt,
@@ -255,13 +315,20 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		return domain.Product{}, err
 	}
 
-	product.DescriptionHTML = description.String
-	product.Description = product.DescriptionHTML
-	product.ShortDescriptionHTML = shortDescription.String
-	if price.Valid {
-		product.Price = price.Float64
-	}
-	product.PriceHTML = priceHTML.String
+		product.DescriptionHTML = description.String
+		product.Description = product.DescriptionHTML
+		product.ShortDescriptionHTML = shortDescription.String
+		product.DescriptionHTMLEn = descriptionEN.String
+		product.DescriptionHTMLFa = descriptionFA.String
+		product.DescriptionHTMLAr = descriptionAR.String
+		product.ShortDescriptionHTMLEn = shortDescriptionEN.String
+		product.ShortDescriptionHTMLFa = shortDescriptionFA.String
+		product.ShortDescriptionHTMLAr = shortDescriptionAR.String
+		applyDescriptionFallbacks(&product)
+		if price.Valid {
+			product.Price = price.Float64
+		}
+		product.PriceHTML = priceHTML.String
 	product.ImageURL = imageURL.String
 	product.ImageCount = int(imageCount)
 	if product.ImageCount == 0 && product.ImageURL != "" {
@@ -291,26 +358,35 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 
 func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.Product, error) {
 	escapedSlug := url.PathEscape(slug)
-	row := r.db.QueryRowContext(ctx, `
-		SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
-		       p.description_html, p.short_description_html, p.price, p.price_html,
-		       p.image_url, p.main_category_id, p.is_popular,
-		       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
-		       p.created_at, COALESCE(p.updated_at, p.created_at),
+		row := r.db.QueryRowContext(ctx, `
+			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.description_html, p.short_description_html,
+			       p.description_html_en, p.description_html_fa, p.description_html_ar,
+			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
+			       p.price, p.price_html,
+			       p.image_url, p.main_category_id, p.is_popular,
+			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
 		WHERE p.slug = $1 OR p.slug = $2
 	`, slug, escapedSlug)
 
-	var product domain.Product
-	var description sql.NullString
-	var shortDescription sql.NullString
-	var price sql.NullFloat64
-	var priceHTML sql.NullString
-	var imageURL sql.NullString
-	var mainCategoryID sql.NullInt64
-	var imageCount int64
+		var product domain.Product
+		var description sql.NullString
+		var shortDescription sql.NullString
+		var descriptionEN sql.NullString
+		var descriptionFA sql.NullString
+		var descriptionAR sql.NullString
+		var shortDescriptionEN sql.NullString
+		var shortDescriptionFA sql.NullString
+		var shortDescriptionAR sql.NullString
+		var price sql.NullFloat64
+		var priceHTML sql.NullString
+		var imageURL sql.NullString
+		var mainCategoryID sql.NullInt64
+		var imageCount int64
 	var categoryID sql.NullInt64
 	var categoryTitleEN sql.NullString
 	var categoryTitleFA sql.NullString
@@ -323,13 +399,19 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&product.TitleEN,
 		&product.TitleFA,
 		&product.TitleAR,
-		&product.Slug,
-		&description,
-		&shortDescription,
-		&price,
-		&priceHTML,
-		&imageURL,
-		&mainCategoryID,
+			&product.Slug,
+			&description,
+			&shortDescription,
+			&descriptionEN,
+			&descriptionFA,
+			&descriptionAR,
+			&shortDescriptionEN,
+			&shortDescriptionFA,
+			&shortDescriptionAR,
+			&price,
+			&priceHTML,
+			&imageURL,
+			&mainCategoryID,
 		&product.IsPopular,
 		&imageCount,
 		&product.CreatedAt,
@@ -344,13 +426,20 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		return domain.Product{}, err
 	}
 
-	product.DescriptionHTML = description.String
-	product.Description = product.DescriptionHTML
-	product.ShortDescriptionHTML = shortDescription.String
-	if price.Valid {
-		product.Price = price.Float64
-	}
-	product.PriceHTML = priceHTML.String
+		product.DescriptionHTML = description.String
+		product.Description = product.DescriptionHTML
+		product.ShortDescriptionHTML = shortDescription.String
+		product.DescriptionHTMLEn = descriptionEN.String
+		product.DescriptionHTMLFa = descriptionFA.String
+		product.DescriptionHTMLAr = descriptionAR.String
+		product.ShortDescriptionHTMLEn = shortDescriptionEN.String
+		product.ShortDescriptionHTMLFa = shortDescriptionFA.String
+		product.ShortDescriptionHTMLAr = shortDescriptionAR.String
+		applyDescriptionFallbacks(&product)
+		if price.Valid {
+			product.Price = price.Float64
+		}
+		product.PriceHTML = priceHTML.String
 	product.ImageURL = imageURL.String
 	product.ImageCount = int(imageCount)
 	if product.ImageCount == 0 && product.ImageURL != "" {
@@ -380,11 +469,37 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 }
 
 func (r *ProductRepository) Create(ctx context.Context, product domain.Product) (domain.Product, error) {
+	applyDescriptionFallbacks(&product)
+
 	row := r.db.QueryRowContext(ctx, `
-		INSERT INTO products (title_en, title_fa, title_ar, slug, description_html, short_description_html, price, price_html, image_url, main_category_id, is_popular)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO products (
+		  title_en, title_fa, title_ar, slug,
+		  description_html, short_description_html,
+		  description_html_en, description_html_fa, description_html_ar,
+		  short_description_html_en, short_description_html_fa, short_description_html_ar,
+		  price, price_html, image_url, main_category_id, is_popular
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
-	`, product.TitleEN, product.TitleFA, product.TitleAR, product.Slug, nullableString(product.DescriptionHTML), nullableString(product.ShortDescriptionHTML), nullableFloat(product.Price), nullableString(product.PriceHTML), nullableString(product.ImageURL), nullableInt64(product.MainCategoryID), product.IsPopular)
+	`,
+		product.TitleEN,
+		product.TitleFA,
+		product.TitleAR,
+		product.Slug,
+		nullableString(product.DescriptionHTML),
+		nullableString(product.ShortDescriptionHTML),
+		nullableString(product.DescriptionHTMLEn),
+		nullableString(product.DescriptionHTMLFa),
+		nullableString(product.DescriptionHTMLAr),
+		nullableString(product.ShortDescriptionHTMLEn),
+		nullableString(product.ShortDescriptionHTMLFa),
+		nullableString(product.ShortDescriptionHTMLAr),
+		nullableFloat(product.Price),
+		nullableString(product.PriceHTML),
+		nullableString(product.ImageURL),
+		nullableInt64(product.MainCategoryID),
+		product.IsPopular,
+	)
 
 	if err := row.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt); err != nil {
 		return domain.Product{}, err
@@ -393,12 +508,50 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 }
 
 func (r *ProductRepository) Update(ctx context.Context, product domain.Product) (domain.Product, error) {
+	applyDescriptionFallbacks(&product)
+
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE products
-		SET title_en = $1, title_fa = $2, title_ar = $3, slug = $4, description_html = $5, short_description_html = $6, price = $7, price_html = $8, image_url = $9, main_category_id = $10, is_popular = $11, updated_at = NOW()
-		WHERE id = $12
+		SET title_en = $1,
+		    title_fa = $2,
+		    title_ar = $3,
+		    slug = $4,
+		    description_html = $5,
+		    short_description_html = $6,
+		    description_html_en = $7,
+		    description_html_fa = $8,
+		    description_html_ar = $9,
+		    short_description_html_en = $10,
+		    short_description_html_fa = $11,
+		    short_description_html_ar = $12,
+		    price = $13,
+		    price_html = $14,
+		    image_url = $15,
+		    main_category_id = $16,
+		    is_popular = $17,
+		    updated_at = NOW()
+		WHERE id = $18
 		RETURNING created_at, COALESCE(updated_at, created_at)
-	`, product.TitleEN, product.TitleFA, product.TitleAR, product.Slug, nullableString(product.DescriptionHTML), nullableString(product.ShortDescriptionHTML), nullableFloat(product.Price), nullableString(product.PriceHTML), nullableString(product.ImageURL), nullableInt64(product.MainCategoryID), product.IsPopular, product.ID)
+	`,
+		product.TitleEN,
+		product.TitleFA,
+		product.TitleAR,
+		product.Slug,
+		nullableString(product.DescriptionHTML),
+		nullableString(product.ShortDescriptionHTML),
+		nullableString(product.DescriptionHTMLEn),
+		nullableString(product.DescriptionHTMLFa),
+		nullableString(product.DescriptionHTMLAr),
+		nullableString(product.ShortDescriptionHTMLEn),
+		nullableString(product.ShortDescriptionHTMLFa),
+		nullableString(product.ShortDescriptionHTMLAr),
+		nullableFloat(product.Price),
+		nullableString(product.PriceHTML),
+		nullableString(product.ImageURL),
+		nullableInt64(product.MainCategoryID),
+		product.IsPopular,
+		product.ID,
+	)
 
 	if err := row.Scan(&product.CreatedAt, &product.UpdatedAt); err != nil {
 		return domain.Product{}, err
@@ -450,6 +603,30 @@ func (r *ProductRepository) ReplaceCategories(ctx context.Context, productID int
 	return nil
 }
 
+func (r *ProductRepository) ReplaceTerms(ctx context.Context, productID int64, termIDs []int64) error {
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM product_term_links WHERE product_id = $1`, productID); err != nil {
+		return err
+	}
+	seen := make(map[int64]struct{}, len(termIDs))
+	for _, termID := range termIDs {
+		if termID == 0 {
+			continue
+		}
+		if _, ok := seen[termID]; ok {
+			continue
+		}
+		seen[termID] = struct{}{}
+		if _, err := r.db.ExecContext(ctx, `
+			INSERT INTO product_term_links (product_id, term_id)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`, productID, termID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *ProductRepository) loadProductRelations(ctx context.Context, product *domain.Product) error {
 	images, err := r.loadImages(ctx, product.ID)
 	if err != nil {
@@ -471,6 +648,18 @@ func (r *ProductRepository) loadProductRelations(ctx context.Context, product *d
 		return err
 	}
 	product.Attributes = attributes
+
+	terms, err := r.loadTerms(ctx, product.ID)
+	if err != nil {
+		return err
+	}
+	product.Terms = terms
+	if len(terms) > 0 {
+		product.TermIDs = make([]int64, 0, len(terms))
+		for _, term := range terms {
+			product.TermIDs = append(product.TermIDs, term.ID)
+		}
+	}
 	return nil
 }
 
@@ -549,6 +738,53 @@ func (r *ProductRepository) loadAttributes(ctx context.Context, productID int64)
 		attributes[attrName] = append(attributes[attrName], termName)
 	}
 	return attributes, rows.Err()
+}
+
+func (r *ProductRepository) loadTerms(ctx context.Context, productID int64) ([]domain.ProductTerm, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar
+		FROM product_term_links ptl
+		JOIN product_terms t ON t.id = ptl.term_id
+		WHERE ptl.product_id = $1
+		ORDER BY t.taxonomy, t.id
+	`, productID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var terms []domain.ProductTerm
+	for rows.Next() {
+		var term domain.ProductTerm
+		if err := rows.Scan(&term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR); err != nil {
+			return nil, err
+		}
+		terms = append(terms, term)
+	}
+	return terms, rows.Err()
+}
+
+func applyDescriptionFallbacks(product *domain.Product) {
+	// Backward compatibility + graceful migration:
+	// - Legacy fields: description_html / short_description_html
+	// - New localized fields: *_en/fa/ar
+	//
+	// Prefer explicit *_en, otherwise fall back to legacy, and keep legacy in sync as EN.
+	if strings.TrimSpace(product.DescriptionHTMLEn) == "" {
+		product.DescriptionHTMLEn = product.DescriptionHTML
+	}
+	if strings.TrimSpace(product.ShortDescriptionHTMLEn) == "" {
+		product.ShortDescriptionHTMLEn = product.ShortDescriptionHTML
+	}
+
+	if strings.TrimSpace(product.DescriptionHTML) == "" {
+		product.DescriptionHTML = product.DescriptionHTMLEn
+	}
+	product.Description = product.DescriptionHTML
+
+	if strings.TrimSpace(product.ShortDescriptionHTML) == "" {
+		product.ShortDescriptionHTML = product.ShortDescriptionHTMLEn
+	}
 }
 
 func nullableString(value string) interface{} {

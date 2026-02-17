@@ -16,6 +16,7 @@ func NewRouter(
 	cfg config.Config,
 	categoryService *usecase.CategoryService,
 	productService *usecase.ProductService,
+	productTermService *usecase.ProductTermService,
 	blogService *usecase.BlogService,
 	templateService *usecase.TemplateService,
 	blockService *usecase.BlockService,
@@ -48,6 +49,7 @@ func NewRouter(
 
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	productHandler := handlers.NewProductHandler(productService)
+	productTermHandler := handlers.NewProductTermHandler(productTermService)
 	blogHandler := handlers.NewBlogHandler(blogService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	blockHandler := handlers.NewBlockHandler(blockService)
@@ -95,6 +97,10 @@ func NewRouter(
 		{
 			admin.GET("/session", adminAuthHandler.Session)
 			admin.GET("/dashboard", dashboardHandler.Stats)
+
+			admin.GET("/product-terms", productTermHandler.List)
+			admin.POST("/product-terms", productTermHandler.Upsert)
+			admin.DELETE("/product-terms/:id", productTermHandler.Delete)
 
 			admin.GET("/categories", categoryHandler.List)
 			admin.POST("/categories", categoryHandler.Create)

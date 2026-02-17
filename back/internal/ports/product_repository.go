@@ -16,4 +16,5 @@ type ProductRepository interface {
 	Delete(ctx context.Context, id int64) error
 	ReplaceImages(ctx context.Context, productID int64, images []string) error
 	ReplaceCategories(ctx context.Context, productID int64, categoryIDs []int64) error
+	ReplaceTerms(ctx context.Context, productID int64, termIDs []int64) error
 }

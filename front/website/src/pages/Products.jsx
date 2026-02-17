@@ -156,6 +156,20 @@ export default function Products() {
     return () => clearTimeout(id);
   }, [searchInput]);
 
+  const getLocalizedDescriptionHTML = (product) => {
+    if (!product) return "";
+    return (
+      (lang === "fa"
+        ? product.description_html_fa
+        : lang === "ar"
+          ? product.description_html_ar
+          : product.description_html_en) ||
+      product.description_html ||
+      product.description ||
+      ""
+    );
+  };
+
   const filtered = useMemo(() => {
     let base = products;
 
@@ -172,15 +186,12 @@ export default function Products() {
     const matchesSearch = (product) => {
       const title = (getLocalized(product, lang) || product.title_en || "").toLowerCase();
       const slug = product.slug?.toLowerCase() || "";
-      const description = (product.description || "").toLowerCase();
-      const descriptionHtml = product.description_html
-        ? product.description_html.replace(/<[^>]+>/g, " ").toLowerCase()
-        : "";
+      const descriptionHtmlRaw = getLocalizedDescriptionHTML(product);
+      const description = (descriptionHtmlRaw || "").replace(/<[^>]+>/g, " ").toLowerCase();
       return (
         title.includes(debouncedSearch) ||
         slug.includes(debouncedSearch) ||
-        description.includes(debouncedSearch) ||
-        descriptionHtml.includes(debouncedSearch)
+        description.includes(debouncedSearch)
       );
     };
 
@@ -381,19 +392,19 @@ export default function Products() {
               <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
                 {product.category ? getLocalized(product.category, lang) : t("products.categoryLabel")}
               </p>
-              <h3 className="mt-2 font-display text-xl">
-                {getLocalized(product, lang) || product.title_en}
-              </h3>
-              {product.description_html || product.description ? (
-                <div
-                  className="mt-2 max-h-24 overflow-hidden text-sm text-primary/70 space-y-2"
-                  dangerouslySetInnerHTML={{
-                    __html: product.description_html || product.description
-                  }}
-                />
-              ) : (
-                <p className="mt-2 text-sm text-primary/50">{t("messages.empty")}</p>
-              )}
+	              <h3 className="mt-2 font-display text-xl">
+	                {getLocalized(product, lang) || product.title_en}
+	              </h3>
+	              {getLocalizedDescriptionHTML(product) ? (
+	                <div
+	                  className="mt-2 max-h-24 overflow-hidden text-sm text-primary/70 space-y-2"
+	                  dangerouslySetInnerHTML={{
+	                    __html: getLocalizedDescriptionHTML(product)
+	                  }}
+	                />
+	              ) : (
+	                <p className="mt-2 text-sm text-primary/50">{t("messages.empty")}</p>
+	              )}
               <div className="mt-auto pt-4 text-sm font-semibold text-accent">
                 {t("products.priceLabel")}: {product.price ? product.price : t("messages.empty")}
               </div>

@@ -7,16 +7,22 @@ const emptyForm = {
   title_en: "",
   title_fa: "",
   title_ar: "",
-  description: "",
+  description_html_en: "",
+  description_html_fa: "",
+  description_html_ar: "",
+  short_description_html_en: "",
+  short_description_html_fa: "",
+  short_description_html_ar: "",
   price: "",
   image_url: "",
   image_urls: [],
   category_id: "",
-  is_popular: false
+  is_popular: false,
+  term_ids: []
 };
 
 export default function Products() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -26,6 +32,28 @@ export default function Products() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [formOpen, setFormOpen] = useState(true);
+  const [termsByTaxonomy, setTermsByTaxonomy] = useState({});
+  const [newTermLabels, setNewTermLabels] = useState({});
+  const [descriptionLang, setDescriptionLang] = useState("en");
+
+	  const termTaxonomies = useMemo(() => ([
+	    { taxonomy: "stone_type", label: t("panelProductMeta.stoneType"), multiple: false },
+	    { taxonomy: "visual_impact", label: t("panelProductMeta.visualImpact"), multiple: false },
+	    { taxonomy: "tone", label: t("panelProductMeta.tone"), multiple: true },
+	    { taxonomy: "pattern", label: t("panelProductMeta.pattern"), multiple: true },
+	    { taxonomy: "use_case_space", label: t("panelProductMeta.useCaseSpaces"), multiple: true },
+	    { taxonomy: "use_case_form", label: t("panelProductMeta.useCaseForms"), multiple: true },
+	    { taxonomy: "use_case_application", label: t("panelProductMeta.useCaseApplications"), multiple: true },
+	    { taxonomy: "use_case_project_type", label: t("panelProductMeta.useCaseProjects"), multiple: true },
+	    { taxonomy: "use_case_special", label: t("panelProductMeta.useCaseSpecial"), multiple: true },
+	  ]), [t]);
+
+  const getTermLabel = (term) => {
+    if (!term) return "";
+    if (lang === "fa") return term.label_fa || term.label_en || "";
+    if (lang === "ar") return term.label_ar || term.label_en || "";
+    return term.label_en || "";
+  };
 
   const loadData = async () => {
     try {
@@ -45,9 +73,27 @@ export default function Products() {
     }
   };
 
+  const loadTerms = async () => {
+    try {
+      const results = await Promise.all(
+        termTaxonomies.map((entry) =>
+          fetchJSON(`/api/admin/product-terms?taxonomy=${encodeURIComponent(entry.taxonomy)}`)
+        )
+      );
+      const grouped = {};
+      termTaxonomies.forEach((entry, index) => {
+        grouped[entry.taxonomy] = results[index]?.data || [];
+      });
+      setTermsByTaxonomy(grouped);
+    } catch (err) {
+      setTermsByTaxonomy({});
+    }
+  };
+
   useEffect(() => {
     loadData();
-  }, []);
+    loadTerms();
+  }, [termTaxonomies]);
 
   const filteredProducts = useMemo(() => {
     if (filterCategory === "all") return products;
@@ -107,6 +153,46 @@ export default function Products() {
     }
   };
 
+  const toggleTerm = (taxonomy, termId) => {
+    const config = termTaxonomies.find((entry) => entry.taxonomy === taxonomy);
+    const isMultiple = Boolean(config?.multiple);
+    const termIdsInTax = (termsByTaxonomy[taxonomy] || []).map((term) => term.id);
+
+    setForm((prev) => {
+      const current = new Set(prev.term_ids || []);
+      const isSelected = current.has(termId);
+
+      if (!isMultiple && !isSelected) {
+        for (const existingId of termIdsInTax) current.delete(existingId);
+      }
+
+      if (isSelected) {
+        current.delete(termId);
+      } else {
+        current.add(termId);
+      }
+
+      return { ...prev, term_ids: Array.from(current) };
+    });
+  };
+
+  const createTerm = async (taxonomy) => {
+    const label = String(newTermLabels[taxonomy] || "").trim();
+    if (!label) return;
+
+    setError("");
+    try {
+      await fetchJSON("/api/admin/product-terms", {
+        method: "POST",
+        body: JSON.stringify({ taxonomy, label_en: label })
+      });
+      setNewTermLabels((prev) => ({ ...prev, [taxonomy]: "" }));
+      loadTerms();
+    } catch (err) {
+      setError(t("messages.error"));
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -135,6 +221,7 @@ export default function Products() {
       setForm(emptyForm);
       setEditingId(null);
       setSelectedImageIndex(0);
+      setDescriptionLang("en");
       loadData();
     } catch (err) {
       setError(t("messages.error"));
@@ -148,18 +235,30 @@ export default function Products() {
       const res = await fetchJSON(`/api/admin/products/${product.id}`);
       const item = res.data || product;
       const images = item.images?.length ? item.images : item.image_url ? [item.image_url] : [];
+      const termIds = item.term_ids?.length
+        ? item.term_ids
+        : item.terms?.length
+          ? item.terms.map((term) => term.id)
+          : [];
       setForm({
         title_en: item.title_en || "",
         title_fa: item.title_fa || "",
         title_ar: item.title_ar || "",
-        description: item.description || "",
+        description_html_en: item.description_html_en || item.description_html || item.description || "",
+        description_html_fa: item.description_html_fa || "",
+        description_html_ar: item.description_html_ar || "",
+        short_description_html_en: item.short_description_html_en || item.short_description_html || "",
+        short_description_html_fa: item.short_description_html_fa || "",
+        short_description_html_ar: item.short_description_html_ar || "",
         price: item.price || "",
         image_url: item.image_url || "",
         image_urls: images,
         category_id: item.category_id ? String(item.category_id) : "",
-        is_popular: Boolean(item.is_popular)
+        is_popular: Boolean(item.is_popular),
+        term_ids: termIds
       });
       setSelectedImageIndex(0);
+      setDescriptionLang("en");
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -232,15 +331,116 @@ export default function Products() {
                   onChange={(event) => setForm({ ...form, price: event.target.value })}
                 />
               </label>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
-                {t("form.description")}
-                <textarea
-                  rows="3"
-                  className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-                  value={form.description}
-                  onChange={(event) => setForm({ ...form, description: event.target.value })}
-                />
-              </label>
+              <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 md:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    {t("form.description")}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {["en", "fa", "ar"].map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => setDescriptionLang(code)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                          descriptionLang === code
+                            ? "border-accent bg-accent text-white"
+                            : "border-primary/20 bg-white text-primary/70 hover:border-primary/40"
+                        }`}
+                      >
+                        {code.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                  {t("form.description")} (HTML)
+                  <textarea
+                    rows="4"
+                    className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                    value={form[`description_html_${descriptionLang}`] || ""}
+                    onChange={(event) =>
+                      setForm({ ...form, [`description_html_${descriptionLang}`]: event.target.value })
+                    }
+                  />
+                </label>
+
+                <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                  {t("form.shortDescription")} (HTML)
+                  <textarea
+                    rows="2"
+                    className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                    value={form[`short_description_html_${descriptionLang}`] || ""}
+                    onChange={(event) =>
+                      setForm({ ...form, [`short_description_html_${descriptionLang}`]: event.target.value })
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 md:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+                  {t("panelProductMeta.tagsTitle")}
+                </p>
+                <div className="mt-4 space-y-6">
+                  {termTaxonomies.map((entry) => (
+                    <div key={entry.taxonomy} className="space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-primary">
+                          {entry.label}
+                          {!entry.multiple && (
+                            <span className="ml-2 text-xs font-semibold text-primary/50">
+                              ({t("panelProductMeta.singleSelect")})
+                            </span>
+                          )}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="text"
+                            className="w-56 rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm"
+                            placeholder={t("panelProductMeta.newTermPlaceholder")}
+                            value={newTermLabels[entry.taxonomy] || ""}
+                            onChange={(event) =>
+                              setNewTermLabels((prev) => ({ ...prev, [entry.taxonomy]: event.target.value }))
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => createTerm(entry.taxonomy)}
+                            className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
+                          >
+                            {t("panelProductMeta.addTerm")}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {(termsByTaxonomy[entry.taxonomy] || []).map((term) => {
+                          const selected = form.term_ids?.includes(term.id);
+                          return (
+                            <button
+                              key={`${entry.taxonomy}-${term.id}`}
+                              type="button"
+                              onClick={() => toggleTerm(entry.taxonomy, term.id)}
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                selected
+                                  ? "border-accent bg-accent text-white"
+                                  : "border-primary/20 bg-white text-primary/70 hover:border-primary/40"
+                              }`}
+                            >
+                              {getTermLabel(term)}
+                            </button>
+                          );
+                        })}
+                        {(termsByTaxonomy[entry.taxonomy] || []).length === 0 && (
+                          <p className="text-xs text-primary/60">{t("panelProductMeta.noTerms")}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
                 {t("form.images")}
                 <div className="mt-2 space-y-3">
@@ -336,6 +536,7 @@ export default function Products() {
                     setEditingId(null);
                     setForm(emptyForm);
                     setSelectedImageIndex(0);
+                    setDescriptionLang("en");
                   }}
                 >
                   {t("actions.cancel")}

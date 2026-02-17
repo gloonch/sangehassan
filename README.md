@@ -71,3 +71,17 @@ DB_HOST=localhost DB_PORT=5432 DB_USER=sangehassan DB_PASSWORD=sangehassan_dev D
 Notes:
 - The importer copies product images into `back/storage/images/products` and writes `/images/products/...` URLs.
 - `permalink` from the export is ignored as requested.
+
+## Product tags import (normalized terms)
+This repo supports normalized product tags (many-to-many) via `product_terms` + `product_term_links`.
+
+After `importdata` (or anytime later), import the structured CSV exports:
+```sh
+cd back
+DB_HOST=localhost DB_PORT=5432 DB_USER=sangehassan DB_PASSWORD=sangehassan_dev DB_NAME=sangehassan DB_SSLMODE=disable \\
+  go run ./cmd/importmeta --extended ../data/products_extended.csv --descriptions ../data/products_with_descriptions.csv
+```
+
+Import behavior:
+- Default is additive/merge (does not wipe existing tags).
+- Use `--overwrite-terms` only if you intentionally want to replace existing product-term links.

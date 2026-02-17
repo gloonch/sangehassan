@@ -208,3 +208,114 @@ VALUES
     '/blocks/catalog', 1, TRUE
   )
 ON CONFLICT (page, section_key) DO NOTHING;
+
+-- Localized product descriptions (HTML). Keep legacy description_html/short_description_html as EN fallback.
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS description_html_en TEXT,
+ADD COLUMN IF NOT EXISTS description_html_fa TEXT,
+ADD COLUMN IF NOT EXISTS description_html_ar TEXT,
+ADD COLUMN IF NOT EXISTS short_description_html_en TEXT,
+ADD COLUMN IF NOT EXISTS short_description_html_fa TEXT,
+ADD COLUMN IF NOT EXISTS short_description_html_ar TEXT;
+
+-- Backfill EN columns from legacy columns (safe on existing volumes; no-op if already filled).
+UPDATE products
+SET
+  description_html_en = COALESCE(description_html_en, description_html),
+  short_description_html_en = COALESCE(short_description_html_en, short_description_html)
+WHERE
+  (description_html_en IS NULL OR short_description_html_en IS NULL)
+  AND (description_html IS NOT NULL OR short_description_html IS NOT NULL);
+
+CREATE TABLE IF NOT EXISTS product_terms (
+  id SERIAL PRIMARY KEY,
+  taxonomy VARCHAR(64) NOT NULL,
+  term_key VARCHAR(128) NOT NULL,
+  label_en VARCHAR(255) NOT NULL,
+  label_fa VARCHAR(255) NOT NULL,
+  label_ar VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  UNIQUE (taxonomy, term_key)
+);
+
+CREATE TABLE IF NOT EXISTS product_term_links (
+  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  term_id INT NOT NULL REFERENCES product_terms(id) ON DELETE CASCADE,
+  PRIMARY KEY (product_id, term_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_terms_taxonomy ON product_terms(taxonomy);
+CREATE INDEX IF NOT EXISTS idx_product_term_links_product ON product_term_links(product_id);
+
+-- Seed common taxonomies (use-case tags + stone types) so the admin panel can manage products immediately.
+INSERT INTO product_terms (taxonomy, term_key, label_en, label_fa, label_ar)
+VALUES
+  -- Stone types
+  ('stone_type', 'granite', 'Granite', 'گرانیت', 'جرانيت'),
+  ('stone_type', 'marble', 'Marble', 'مرمریت', 'رخام'),
+  ('stone_type', 'onyx', 'Onyx', 'اونیکس', 'أونيكس'),
+  ('stone_type', 'travertine', 'Travertine', 'تراورتن', 'ترافرتين'),
+  ('stone_type', 'crystal', 'Crystal', 'کریستال', 'كريستال'),
+  ('stone_type', 'quartzite', 'Quartzite', 'کوارتزیت', 'كوارتزيت'),
+  ('stone_type', 'limestone', 'Limestone', 'سنگ آهک', 'حجر جيري'),
+  ('stone_type', 'agate', 'Agate', 'عقیق', 'عقيق'),
+  ('stone_type', 'other', 'Other', 'سایر', 'أخرى'),
+
+  -- Visual impact
+  ('visual_impact', 'low', 'Low', 'کم', 'منخفض'),
+  ('visual_impact', 'medium', 'Medium', 'متوسط', 'متوسط'),
+  ('visual_impact', 'high', 'High', 'زیاد', 'مرتفع'),
+  ('visual_impact', 'dramatic', 'Dramatic', 'دراماتیک', 'دراماتيكي'),
+
+  -- Use-case: spaces
+  ('use_case_space', 'interior', 'Interior', 'فضای داخلی', 'داخلي'),
+  ('use_case_space', 'exterior', 'Exterior', 'فضای خارجی', 'خارجي'),
+  ('use_case_space', 'wet_areas', 'Wet areas', 'فضاهای مرطوب', 'مناطق رطبة'),
+
+  -- Use-case: forms
+  ('use_case_form', 'slab', 'Slab', 'اسلب', 'ألواح'),
+  ('use_case_form', 'tile', 'Tile', 'تایل', 'بلاط'),
+  ('use_case_form', 'finishing', 'Finishing', 'فینیش/پرداخت', 'تشطيبات'),
+  ('use_case_form', 'accessory', 'Accessory', 'اکسسوری', 'إكسسوارات'),
+  ('use_case_form', 'furniture', 'Furniture', 'مبلمان/آیتم دکور', 'أثاث'),
+
+  -- Use-case: applications
+  ('use_case_application', 'countertops', 'Countertops', 'کانتر/صفحه کابینت', 'أسطح/كاونتر'),
+  ('use_case_application', 'vanity', 'Vanity', 'روشویی/ونیتی', 'مغسلة/فانيتي'),
+  ('use_case_application', 'flooring', 'Flooring', 'کف', 'أرضيات'),
+  ('use_case_application', 'wall_cladding', 'Wall cladding', 'دیوارپوش', 'كسوة الجدران'),
+  ('use_case_application', 'facade', 'Facade', 'نما', 'واجهات'),
+  ('use_case_application', 'stairs', 'Stairs', 'پله', 'سلالم'),
+  ('use_case_application', 'fireplace', 'Fireplace', 'شومینه', 'مدفأة'),
+  ('use_case_application', 'feature_wall', 'Feature wall', 'دیوار شاخص', 'جدار مميز'),
+  ('use_case_application', 'backlit', 'Backlit', 'نورپردازی از پشت', 'إضاءة خلفية'),
+  ('use_case_application', 'capstone', 'Capstone/Coping', 'درپوش/سرپوش', 'تغطية/تاج'),
+  ('use_case_application', 'landscaping', 'Landscaping', 'محوطه', 'تنسيق حدائق'),
+  ('use_case_application', 'tabletop', 'Tabletop', 'روی میز', 'سطح طاولة'),
+  ('use_case_application', 'tableware', 'Tableware', 'ظروف/سرو', 'أواني تقديم'),
+  ('use_case_application', 'decor', 'Decor', 'دکور', 'ديكور'),
+  ('use_case_application', 'furniture', 'Furniture', 'مبلمان', 'أثاث'),
+  ('use_case_application', 'seating', 'Seating', 'نشیمن', 'جلوس'),
+  ('use_case_application', 'lighting', 'Lighting', 'روشنایی', 'إضاءة'),
+  ('use_case_application', 'gift', 'Gift', 'هدیه', 'هدية'),
+
+  -- Use-case: project types
+  ('use_case_project_type', 'residential', 'Residential', 'مسکونی', 'سكني'),
+  ('use_case_project_type', 'commercial', 'Commercial', 'تجاری', 'تجاري'),
+  ('use_case_project_type', 'hospitality', 'Hospitality', 'هتل/هُسپیـتالیتی', 'ضيافة'),
+  ('use_case_project_type', 'office', 'Office', 'اداری', 'مكاتب'),
+  ('use_case_project_type', 'villa', 'Villa', 'ویلا', 'فيلا'),
+  ('use_case_project_type', 'retail', 'Retail', 'فروشگاهی', 'تجزئة'),
+
+  -- Use-case: special
+  ('use_case_special', 'high_traffic', 'High traffic', 'پرتردد', 'كثيف الاستخدام'),
+  ('use_case_special', 'scratch_resistant', 'Scratch resistant', 'مقاوم به خط و خش', 'مقاوم للخدش'),
+  ('use_case_special', 'heat_resistant', 'Heat resistant', 'مقاوم به حرارت', 'مقاوم للحرارة'),
+  ('use_case_special', 'low_absorption', 'Low absorption', 'جذب آب پایین', 'امتصاص منخفض'),
+  ('use_case_special', 'sealing_recommended', 'Sealing recommended', 'نیاز به سیلر', 'يُنصح بالعزل'),
+  ('use_case_special', 'acid_sensitive', 'Acid sensitive', 'حساس به اسید', 'حساس للأحماض'),
+  ('use_case_special', 'delicate', 'Delicate', 'حساس/ظریف', 'حساس'),
+  ('use_case_special', 'translucent', 'Translucent', 'نیمه‌شفاف', 'شبه شفاف'),
+  ('use_case_special', 'handmade', 'Handmade', 'دست‌ساز', 'يدوي')
+ON CONFLICT (taxonomy, term_key) DO NOTHING;

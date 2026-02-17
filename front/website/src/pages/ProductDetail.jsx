@@ -11,6 +11,13 @@ const getLocalized = (item, lang) => {
   return item.title_en;
 };
 
+const getLocalizedTerm = (term, lang) => {
+  if (!term) return "";
+  if (lang === "fa") return term.label_fa || term.label_en || "";
+  if (lang === "ar") return term.label_ar || term.label_en || "";
+  return term.label_en || "";
+};
+
 export default function ProductDetail() {
   const { slug } = useParams();
   const { t, lang } = useTranslation();
@@ -48,8 +55,23 @@ export default function ProductDetail() {
 
   const activeImage = images[activeIndex] || images[0] || "";
   const localizedTitle = getLocalized(product, lang) || product?.title_en || "";
+  const localizedDescriptionHTML =
+    (lang === "fa" ? product?.description_html_fa : lang === "ar" ? product?.description_html_ar : product?.description_html_en) ||
+    product?.description_html ||
+    product?.description ||
+    "";
 
   const attributes = product?.attributes ? Object.entries(product.attributes) : [];
+  const terms = product?.terms || [];
+  const termsByTaxonomy = useMemo(() => {
+    const grouped = {};
+    for (const term of terms) {
+      if (!term?.taxonomy) continue;
+      grouped[term.taxonomy] = grouped[term.taxonomy] || [];
+      grouped[term.taxonomy].push(term);
+    }
+    return grouped;
+  }, [terms]);
 
   return (
     <section className="section-shell py-16">
@@ -105,9 +127,8 @@ export default function ProductDetail() {
                     key={`${img}-${index}`}
                     type="button"
                     onClick={() => setActiveIndex(index)}
-                    className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border transition ${
-                      activeIndex === index ? "border-accent" : "border-primary/10"
-                    }`}
+                    className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border transition ${activeIndex === index ? "border-accent" : "border-primary/10"
+                      }`}
                   >
                     <img
                       src={resolveImageUrl(img)}
@@ -143,36 +164,168 @@ export default function ProductDetail() {
 
             <div className="glass-panel rounded-3xl p-6">
               <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.description")}</p>
-              {product.description_html ? (
+              {localizedDescriptionHTML ? (
                 <div
                   className="mt-3 space-y-3 text-sm text-primary/70"
-                  dangerouslySetInnerHTML={{ __html: product.description_html }}
+                  dangerouslySetInnerHTML={{ __html: localizedDescriptionHTML }}
                 />
               ) : (
                 <p className="mt-3 text-sm text-primary/70">{t("messages.empty")}</p>
               )}
             </div>
 
-            {attributes.length > 0 && (
+            {terms?.length > 0 && (
               <div className="glass-panel rounded-3xl p-6">
-                <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.attributes")}</p>
-                <div className="mt-4 space-y-4">
-                  {attributes.map(([name, terms]) => (
-                    <div key={name}>
-                      <p className="text-sm font-semibold text-primary">{name}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {terms.map((term) => (
-                          <span
-                            key={`${name}-${term}`}
-                            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                          >
-                            {term}
-                          </span>
-                        ))}
+                <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.moreInfo")}</p>
+
+                {terms?.length > 0 && (
+                  <div className="mt-4 space-y-4">
+                    {termsByTaxonomy.stone_type?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.stoneType")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.stone_type.map((term) => (
+                            <span
+                              key={`stone_type-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+
+                    {termsByTaxonomy.tone?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.tone")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.tone.map((term) => (
+                            <span
+                              key={`tone-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.pattern?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.pattern")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.pattern.map((term) => (
+                            <span
+                              key={`pattern-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.visual_impact?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.visualImpact")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.visual_impact.map((term) => (
+                            <span
+                              key={`visual_impact-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.use_case_space?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseSpaces")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.use_case_space.map((term) => (
+                            <span
+                              key={`use_case_space-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.use_case_form?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseForms")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.use_case_form.map((term) => (
+                            <span
+                              key={`use_case_form-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.use_case_application?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseApplications")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.use_case_application.map((term) => (
+                            <span
+                              key={`use_case_application-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.use_case_project_type?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseProjects")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.use_case_project_type.map((term) => (
+                            <span
+                              key={`use_case_project_type-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {termsByTaxonomy.use_case_special?.length > 0 && (
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseSpecial")}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {termsByTaxonomy.use_case_special.map((term) => (
+                            <span
+                              key={`use_case_special-${term.id}`}
+                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
+                            >
+                              {getLocalizedTerm(term, lang)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
             )}
           </div>

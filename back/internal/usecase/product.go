@@ -54,6 +54,11 @@ func (s *ProductService) Create(ctx context.Context, product domain.Product) (do
 	if err := s.repo.ReplaceCategories(ctx, created.ID, categoryIDsFromProduct(product)); err != nil {
 		return domain.Product{}, err
 	}
+	if product.TermIDs != nil {
+		if err := s.repo.ReplaceTerms(ctx, created.ID, product.TermIDs); err != nil {
+			return domain.Product{}, err
+		}
+	}
 	return created, nil
 }
 
@@ -77,6 +82,11 @@ func (s *ProductService) Update(ctx context.Context, product domain.Product) (do
 	updated.ImageCount = len(images)
 	if err := s.repo.ReplaceCategories(ctx, updated.ID, categoryIDsFromProduct(product)); err != nil {
 		return domain.Product{}, err
+	}
+	if product.TermIDs != nil {
+		if err := s.repo.ReplaceTerms(ctx, updated.ID, product.TermIDs); err != nil {
+			return domain.Product{}, err
+		}
 	}
 	return updated, nil
 }
