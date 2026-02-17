@@ -258,7 +258,6 @@ VALUES
   ('stone_type', 'travertine', 'Travertine', 'تراورتن', 'ترافرتين'),
   ('stone_type', 'crystal', 'Crystal', 'کریستال', 'كريستال'),
   ('stone_type', 'quartzite', 'Quartzite', 'کوارتزیت', 'كوارتزيت'),
-  ('stone_type', 'limestone', 'Limestone', 'سنگ آهک', 'حجر جيري'),
   ('stone_type', 'agate', 'Agate', 'عقیق', 'عقيق'),
   ('stone_type', 'other', 'Other', 'سایر', 'أخرى'),
 
@@ -319,3 +318,12 @@ VALUES
   ('use_case_special', 'translucent', 'Translucent', 'نیمه‌شفاف', 'شبه شفاف'),
   ('use_case_special', 'handmade', 'Handmade', 'دست‌ساز', 'يدوي')
 ON CONFLICT (taxonomy, term_key) DO NOTHING;
+
+-- Remove limestone stone_type from existing DBs (and its product links) so it does not appear in UI filters.
+DELETE FROM product_term_links
+WHERE term_id IN (
+  SELECT id FROM product_terms WHERE taxonomy = 'stone_type' AND term_key = 'limestone'
+);
+
+DELETE FROM product_terms
+WHERE taxonomy = 'stone_type' AND term_key = 'limestone';

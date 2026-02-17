@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
@@ -25,6 +25,9 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const backRowRef = useRef(null);
+  const heroRef = useRef(null);
+  const scrollAlignedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,12 +49,55 @@ export default function ProductDetail() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    scrollAlignedRef.current = false;
+  }, [slug]);
+
   const images = useMemo(() => {
     if (!product) return [];
     if (product.images?.length) return product.images;
     if (product.image_url) return [product.image_url];
     return [];
   }, [product]);
+
+  useEffect(() => {
+    if (activeIndex >= images.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, images.length]);
+
+  useEffect(() => {
+    if (loading || !product || scrollAlignedRef.current) return;
+
+    const alignScrollToDetailStart = () => {
+      const backEl = backRowRef.current;
+      const heroEl = heroRef.current;
+      if (!backEl || !heroEl) return;
+
+      const navEl = document.querySelector("header");
+      const navHeight = navEl ? navEl.getBoundingClientRect().height : 0;
+
+      const backRect = backEl.getBoundingClientRect();
+      const heroRect = heroEl.getBoundingClientRect();
+      const gap = Math.max(0, heroRect.top - backRect.bottom);
+
+      // Place navbar bottom in the middle of the gap between back button row and hero image.
+      const desiredHeroTop = navHeight + gap / 2;
+      const delta = heroRect.top - desiredHeroTop;
+      const targetY = Math.max(0, window.scrollY + delta);
+
+      window.scrollTo({ top: targetY, behavior: "auto" });
+      scrollAlignedRef.current = true;
+    };
+
+    const raf1 = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(alignScrollToDetailStart);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+    };
+  }, [loading, product]);
 
   const activeImage = images[activeIndex] || images[0] || "";
   const localizedTitle = getLocalized(product, lang) || product?.title_en || "";
@@ -61,8 +107,10 @@ export default function ProductDetail() {
     product?.description ||
     "";
 
-  const attributes = product?.attributes ? Object.entries(product.attributes) : [];
   const terms = product?.terms || [];
+  const categories = product?.categories?.length ? product.categories : product?.category ? [product.category] : [];
+  const categoryLine = categories.map((cat) => getLocalized(cat, lang)).filter(Boolean).join(" • ");
+
   const termsByTaxonomy = useMemo(() => {
     const grouped = {};
     for (const term of terms) {
@@ -73,13 +121,33 @@ export default function ProductDetail() {
     return grouped;
   }, [terms]);
 
+  const infoSections = [
+    { key: "stone_type", label: t("productDetail.stoneType") },
+    { key: "tone", label: t("productDetail.tone") },
+    { key: "pattern", label: t("productDetail.pattern") },
+    { key: "visual_impact", label: t("productDetail.visualImpact") },
+    { key: "use_case_space", label: t("productDetail.useCaseSpaces") },
+    { key: "use_case_form", label: t("productDetail.useCaseForms") },
+    { key: "use_case_application", label: t("productDetail.useCaseApplications") },
+    { key: "use_case_project_type", label: t("productDetail.useCaseProjects") },
+    { key: "use_case_special", label: t("productDetail.useCaseSpecial") }
+  ];
+
+  const hasMoreInfo = infoSections.some((section) => (termsByTaxonomy[section.key] || []).length > 0);
+
+  const goPrev = () => {
+    if (images.length <= 1) return;
+    setActiveIndex((idx) => (idx - 1 + images.length) % images.length);
+  };
+
+  const goNext = () => {
+    if (images.length <= 1) return;
+    setActiveIndex((idx) => (idx + 1) % images.length);
+  };
+
   return (
     <section className="section-shell py-16">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("products.title")}</p>
-          <h1 className="mt-3 font-display text-3xl md:text-4xl">{localizedTitle}</h1>
-        </div>
+      <div ref={backRowRef} className="mb-6 flex items-center justify-end">
         <Link
           to="/products"
           className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50"
@@ -93,100 +161,102 @@ export default function ProductDetail() {
       ) : !product ? (
         <p className="text-sm text-primary/70">{t("productDetail.notFound")}</p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-          <div className="space-y-5">
-            <div className="glass-panel relative overflow-hidden rounded-3xl border border-white/60 bg-quiet-grid p-4">
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-primary/10">
-                {activeImage ? (
-                  <button
-                    type="button"
-                    className="group relative h-full w-full"
-                    onClick={() => setLightboxOpen(true)}
-                  >
-                    <img
-                      src={resolveImageUrl(activeImage)}
-                      alt={localizedTitle}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                    <span className="absolute bottom-4 right-4 rounded-full bg-primary/80 px-4 py-2 text-xs font-semibold text-sand shadow-lg">
-                      {t("productDetail.openGallery")}
-                    </span>
-                  </button>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-primary/60">
-                    {t("productDetail.noImages")}
-                  </div>
-                )}
+        <div className="space-y-8">
+          <div ref={heroRef} className="relative overflow-hidden rounded-3xl bg-primary/10">
+            {activeImage ? (
+              <button
+                type="button"
+                className="group relative h-[56vh] min-h-[420px] w-full md:h-[68vh]"
+                onClick={() => setLightboxOpen(true)}
+              >
+                <img
+                  src={resolveImageUrl(activeImage)}
+                  alt={localizedTitle}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              </button>
+            ) : (
+              <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
+                {t("productDetail.noImages")}
+              </div>
+            )}
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/85 via-primary/45 to-transparent p-6 md:p-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:gap-8">
+                <div className="min-w-0 flex-1" style={{ textAlign: "start" }}>
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/80">
+                    {categoryLine || t("productDetail.category")}
+                  </p>
+                  <h1 className="mt-2 font-display text-4xl leading-tight text-white md:text-6xl">{localizedTitle}</h1>
+                </div>
+
+                <div className="flex-shrink-0" style={{ textAlign: "end" }}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">{t("productDetail.price")}</p>
+                  <p className="mt-1 text-3xl font-semibold leading-none text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] md:text-5xl">
+                    {product.price ? product.price : t("messages.empty")}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {images.length > 0 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {images.map((img, index) => (
-                  <button
-                    key={`${img}-${index}`}
-                    type="button"
-                    onClick={() => setActiveIndex(index)}
-                    className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border transition ${activeIndex === index ? "border-accent" : "border-primary/10"
-                      }`}
-                  >
-                    <img
-                      src={resolveImageUrl(img)}
-                      alt={`${localizedTitle}-${index}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/30"
+                >
+                  {t("productDetail.prev")}
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/30"
+                >
+                  {t("productDetail.next")}
+                </button>
+              </>
             )}
           </div>
 
-          <div className="space-y-6">
-            <div className="glass-panel rounded-3xl p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.category")}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(product.categories?.length ? product.categories : product.category ? [product.category] : []).map((cat) => (
-                  <span
-                    key={cat.id}
-                    className="rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold text-primary/70"
-                  >
-                    {getLocalized(cat, lang)}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-6 flex items-baseline gap-3">
-                <span className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.price")}</span>
-                <span className="text-lg font-semibold text-accent">
-                  {product.price ? product.price : t("messages.empty")}
-                </span>
-              </div>
+          {images.length > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              {images.map((_, index) => (
+                <button
+                  key={`dot-${index}`}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`slide-${index + 1}`}
+                  className={`h-2.5 w-2.5 rounded-full transition ${activeIndex === index ? "bg-accent" : "bg-primary/25"}`}
+                />
+              ))}
             </div>
+          )}
 
-            <div className="glass-panel rounded-3xl p-6">
+          <div className={`grid gap-6 ${hasMoreInfo ? "lg:grid-cols-[2fr_1fr]" : ""}`}>
+            <div className="glass-panel h-fit self-start rounded-3xl p-6 md:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.description")}</p>
               {localizedDescriptionHTML ? (
-                <div
-                  className="mt-3 space-y-3 text-sm text-primary/70"
-                  dangerouslySetInnerHTML={{ __html: localizedDescriptionHTML }}
-                />
+                <div className="mt-4 space-y-3 text-sm text-primary/75" dangerouslySetInnerHTML={{ __html: localizedDescriptionHTML }} />
               ) : (
-                <p className="mt-3 text-sm text-primary/70">{t("messages.empty")}</p>
+                <p className="mt-4 text-sm text-primary/70">{t("messages.empty")}</p>
               )}
             </div>
 
-            {terms?.length > 0 && (
-              <div className="glass-panel rounded-3xl p-6">
+            {hasMoreInfo && (
+              <div className="glass-panel rounded-3xl p-6 md:p-8">
                 <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.moreInfo")}</p>
-
-                {terms?.length > 0 && (
-                  <div className="mt-4 space-y-4">
-                    {termsByTaxonomy.stone_type?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.stoneType")}</p>
+                <div className="mt-5 space-y-5">
+                  {infoSections.map((section) => {
+                    const items = termsByTaxonomy[section.key] || [];
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={section.key}>
+                        <p className="text-sm font-semibold text-primary">{section.label}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.stone_type.map((term) => (
+                          {items.map((term) => (
                             <span
-                              key={`stone_type-${term.id}`}
+                              key={`${section.key}-${term.id}`}
                               className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
                             >
                               {getLocalizedTerm(term, lang)}
@@ -194,138 +264,9 @@ export default function ProductDetail() {
                           ))}
                         </div>
                       </div>
-                    )}
-
-                    {termsByTaxonomy.tone?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.tone")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.tone.map((term) => (
-                            <span
-                              key={`tone-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.pattern?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.pattern")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.pattern.map((term) => (
-                            <span
-                              key={`pattern-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.visual_impact?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.visualImpact")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.visual_impact.map((term) => (
-                            <span
-                              key={`visual_impact-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.use_case_space?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseSpaces")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.use_case_space.map((term) => (
-                            <span
-                              key={`use_case_space-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.use_case_form?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseForms")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.use_case_form.map((term) => (
-                            <span
-                              key={`use_case_form-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.use_case_application?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseApplications")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.use_case_application.map((term) => (
-                            <span
-                              key={`use_case_application-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.use_case_project_type?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseProjects")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.use_case_project_type.map((term) => (
-                            <span
-                              key={`use_case_project_type-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {termsByTaxonomy.use_case_special?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-primary">{t("productDetail.useCaseSpecial")}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {termsByTaxonomy.use_case_special.map((term) => (
-                            <span
-                              key={`use_case_special-${term.id}`}
-                              className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary/70"
-                            >
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -334,7 +275,7 @@ export default function ProductDetail() {
 
       {lightboxOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/80 px-4 py-10">
-          <div className="relative w-full max-w-5xl">
+          <div className="relative w-full max-w-6xl">
             <button
               type="button"
               onClick={() => setLightboxOpen(false)}
@@ -346,24 +287,24 @@ export default function ProductDetail() {
               <img
                 src={resolveImageUrl(activeImage)}
                 alt={localizedTitle}
-                className="h-[70vh] w-full object-contain"
+                className="h-[78vh] w-full object-contain"
               />
             </div>
             {images.length > 1 && (
               <div className="mt-4 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => setActiveIndex((idx) => (idx - 1 + images.length) % images.length)}
+                  onClick={goPrev}
                   className="rounded-full border border-white/40 px-4 py-2 text-xs font-semibold text-white"
                 >
                   {t("productDetail.prev")}
                 </button>
-                <div className="text-xs text-white/70">
-                  {activeIndex + 1} / {images.length}
-                </div>
+                <span className="text-xs font-semibold text-white/70">
+                  {activeIndex + 1}/{images.length}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setActiveIndex((idx) => (idx + 1) % images.length)}
+                  onClick={goNext}
                   className="rounded-full border border-white/40 px-4 py-2 text-xs font-semibold text-white"
                 >
                   {t("productDetail.next")}
