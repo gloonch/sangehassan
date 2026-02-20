@@ -46,6 +46,9 @@ export default function Ads() {
           {t("ads.create")}
         </button>
       </div>
+      <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-primary/80">
+        {t("ads.privacyNote")}
+      </div>
 
       <div className="mt-8">
         {loading ? (
@@ -53,7 +56,7 @@ export default function Ads() {
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-primary/70">{t("products.empty")}</p>
+          <p className="text-sm text-primary/70">{t("ads.empty")}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((ad) => (
@@ -77,7 +80,7 @@ export default function Ads() {
                       {ad.price_amount} {ad.price_unit}
                     </span>
                   ) : (
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs">View</span>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs">{t("ads.viewDetails")}</span>
                   )}
                 </div>
               </Link>

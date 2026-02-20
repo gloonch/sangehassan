@@ -39,6 +39,14 @@ export default function Signup() {
           phone: phone || undefined
         })
       });
+      try {
+        const meRes = await fetchJSON("/api/v1/me");
+        const me = meRes?.data || meRes;
+        sessionStorage.setItem("sh_me", JSON.stringify(me));
+        window.dispatchEvent(new CustomEvent("sh:me-updated", { detail: me }));
+      } catch (_) {
+        // ignore profile refresh failure here, auth is already successful
+      }
       navigate("/profile", { replace: true });
     } catch (err) {
       setError(err?.message || t("messages.error"));

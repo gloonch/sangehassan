@@ -79,12 +79,6 @@ export default function BlocksLanding() {
               >
                 {ctaLabel}
               </Link>
-              <Link
-                to="/contact"
-                className="rounded-full border border-primary/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-primary/80"
-              >
-                {t("contact.title")}
-              </Link>
             </div>
           </div>
 

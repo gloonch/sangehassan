@@ -7,16 +7,15 @@ import Blogs from "./pages/Blogs";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
-import StoneFinishes from "./pages/StoneFinishes";
 import Gallery from "./pages/Gallery";
 import About from "./pages/About";
-import Contact from "./pages/Contact";
 import BlocksLanding from "./pages/BlocksLanding";
 import BlocksCatalog from "./pages/BlocksCatalog";
 import BlockDetail from "./pages/BlockDetail";
 import Ads from "./pages/Ads";
 import AdDetail from "./pages/AdDetail";
 import NewAd from "./pages/NewAd";
+import RequireUserAuth from "./components/RequireUserAuth";
 
 export default function AppRoutes() {
   return (
@@ -28,17 +27,17 @@ export default function AppRoutes() {
       <Route path="/blocks" element={<BlocksLanding />} />
       <Route path="/blocks/catalog" element={<BlocksCatalog />} />
       <Route path="/blocks/:slug" element={<BlockDetail />} />
-      <Route path="/ads" element={<Ads />} />
-      <Route path="/ads/new" element={<NewAd />} />
-      <Route path="/ads/:id" element={<AdDetail />} />
+      <Route element={<RequireUserAuth />}>
+        <Route path="/ads" element={<Ads />} />
+        <Route path="/ads/new" element={<NewAd />} />
+        <Route path="/ads/:id" element={<AdDetail />} />
+      </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/stone-finishes" element={<StoneFinishes />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
     </Routes>
   );
 }

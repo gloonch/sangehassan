@@ -82,6 +82,9 @@ export default function NewAd() {
       <div className="glass-panel rounded-3xl p-8">
         <h1 className="font-display text-3xl">{t("ads.create")}</h1>
         <p className="text-sm text-primary/70">{t("ads.subtitle")}</p>
+        <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-primary/80">
+          {t("ads.privacyNote")}
+        </div>
 
         <form className="mt-6 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <Field label={t("ads.form.title")}>

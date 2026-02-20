@@ -10,10 +10,7 @@ const navItems = [
   { key: "blocks", path: "/blocks" },
   { key: "ads", path: "/ads" },
   { key: "blogs", path: "/blogs" },
-  // { key: "stoneFinishes", path: "/stone-finishes" },
-  // { key: "gallery", path: "/gallery" },
   { key: "about", path: "/about" },
-  // { key: "contact", path: "/contact" }
 ];
 
 export default function Navbar() {
@@ -84,6 +81,7 @@ export default function Navbar() {
 
   const displayName = user?.full_name || user?.email;
   const avatarChar = (displayName || "U").trim().charAt(0).toUpperCase();
+  const visibleNavItems = navItems.filter((item) => item.key !== "ads" || Boolean(user));
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-primary/10 bg-sand/80 backdrop-blur-lg">
@@ -93,7 +91,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.key}
               to={item.path}
@@ -155,7 +153,7 @@ export default function Navbar() {
               <LanguageSwitch />
             </div>
             <div className="flex flex-col gap-3 text-sm font-medium">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <NavLink
                   key={item.key}
                   to={item.path}

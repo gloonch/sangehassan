@@ -44,6 +44,7 @@ services:
     volumes:
       - ../front/website:/app
       - ../front/shared:/shared
+      - website_node_modules:/app/node_modules
     command: sh -c "npm install && npm run dev"
 
   panel:
@@ -56,6 +57,7 @@ services:
     volumes:
       - ../front/panel:/app
       - ../front/shared:/shared
+      - panel_node_modules:/app/node_modules
     command: sh -c "npm install && npm run dev"
 
   nginx:
@@ -69,3 +71,5 @@ services:
 
 volumes:
   pg_data_dev:
+  website_node_modules:
+  panel_node_modules:

@@ -32,6 +32,14 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ email, password })
       });
+      try {
+        const meRes = await fetchJSON("/api/v1/me");
+        const me = meRes?.data || meRes;
+        sessionStorage.setItem("sh_me", JSON.stringify(me));
+        window.dispatchEvent(new CustomEvent("sh:me-updated", { detail: me }));
+      } catch (_) {
+        // ignore profile refresh failure here, auth is already successful
+      }
       const redirectTo = sessionStorage.getItem("sh_after_login") || "/profile";
       sessionStorage.removeItem("sh_after_login");
       navigate(redirectTo, { replace: true });

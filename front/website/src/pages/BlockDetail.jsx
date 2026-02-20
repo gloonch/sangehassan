@@ -170,12 +170,6 @@ export default function BlockDetail() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                to="/contact"
-                className="rounded-full bg-primary px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-sand"
-              >
-                {t("blocks.requestQuote")}
-              </Link>
-              <Link
                 to="/blocks/catalog"
                 className="rounded-full border border-primary/20 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary/80"
               >

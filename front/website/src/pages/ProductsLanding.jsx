@@ -23,12 +23,6 @@ export default function ProductsLanding() {
                 >
                   {t("hero.ctaPrimary")}
                 </Link>
-                <Link
-                  to="/contact"
-                  className="rounded-full border border-primary/30 px-6 py-3 text-sm font-semibold text-primary/80 transition hover:border-primary/60"
-                >
-                  {t("hero.ctaSecondary")}
-                </Link>
               </div>
               <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("hero.scrollHint")}</p>
             </div>

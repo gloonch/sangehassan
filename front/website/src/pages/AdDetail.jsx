@@ -179,9 +179,12 @@ export default function AdDetail() {
         </div>
 
         <div className="rounded-3xl border border-primary/10 bg-white/80 p-4 shadow-sm">
+          <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-primary/80">
+            {t("ads.privacyNote")}
+          </div>
           {isOwner ? (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/60">
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary/60">
                 {t("ads.owned")}
               </p>
               <div className="mt-3 space-y-3">

@@ -218,18 +218,6 @@ export default function About() {
               برای همه مشتریان؛ از پروژه‌های کوچک تا پروژه‌های بزرگ ساختمانی.
             </p>
 
-            <div className="relative mt-6 flex flex-wrap gap-3">
-              <Link
-                to="/stone-finishes"
-                className="
-                  inline-flex items-center justify-center rounded-xl px-4 py-2.5
-                  border border-[--accent]/45 bg-[--accent]/10 text-[--primary]
-                  font-semibold text-sm hover:bg-[--accent]/14 transition
-                "
-              >
-                انواع پرداخت و برش سنگ
-              </Link>
-            </div>
           </div>
         </section>
       </div>
