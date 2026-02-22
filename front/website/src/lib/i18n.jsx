@@ -1,12 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import en from "@shared/i18n/en.json";
 import fa from "@shared/i18n/fa.json";
 import ar from "@shared/i18n/ar.json";
 
 const dictionaries = { en, fa, ar };
+const supportedLangs = Object.keys(dictionaries);
 const LanguageContext = createContext({
   lang: "en",
-  setLang: () => { },
+  setLang: () => {},
   t: (key) => key
 });
 
@@ -16,9 +17,13 @@ const getValue = (obj, path) => {
 
 export const LanguageProvider = ({ children }) => {
   const [lang, setLang] = useState(() => {
+    if (typeof window === "undefined") return "en";
     const stored = window.localStorage.getItem("lang");
-    return stored || "en";
+    return supportedLangs.includes(stored) ? stored : "en";
   });
+  const setSafeLang = useCallback((nextLang) => {
+    setLang(supportedLangs.includes(nextLang) ? nextLang : "en");
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem("lang", lang);
@@ -35,10 +40,10 @@ export const LanguageProvider = ({ children }) => {
       const fallback = getValue(dictionaries.en, key);
       return fallback !== undefined ? fallback : key;
     };
-    return { lang, setLang, t };
-  }, [lang]);
+    return { lang, setLang: setSafeLang, t };
+  }, [lang, setSafeLang]);
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useTranslation = () => useContext(LanguageContext);

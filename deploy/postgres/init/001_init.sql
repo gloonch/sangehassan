@@ -206,6 +206,16 @@ VALUES
     E'يعتمد الاختيار على نوع الحجر والأبعاد والوزن.\nأفضل للمشاريع الكبيرة وطلبات التصدير.\nأرسل متطلباتك للحصول على التوفر والسعر.',
     'Browse blocks', 'مشاهده کوپ‌ها', 'استعرض الكتل',
     '/blocks/catalog', 1, TRUE
+  ),
+  (
+    'products', 'hero',
+    'Finished Stone', 'سنگ‌های فرآوری‌شده', 'الحجر المُعالج',
+    'Slabs and ready products with multiple finishes', 'اسلب و محصولات آماده با فینیش‌های متنوع', 'ألواح ومنتجات جاهزة بتشطيبات متنوعة',
+    E'Choose by stone type and surface finish.\nPerfect for facades, floors, walls, and counters.\nExplore the full catalog and technical details.',
+    E'انتخاب براساس نوع سنگ و فینیش سطح.\nمناسب برای نما، کف، دیوار و کانتر.\nدسترسی به کاتالوگ و جزئیات فنی.',
+    E'اختر حسب نوع الحجر وتشطيب السطح.\nمثالي للواجهات والأرضيات والجدران والكونتر.\nاستعرض الكتالوج والتفاصيل الفنية.',
+    'Explore products', 'مشاهده محصولات', 'استعرض المنتجات',
+    '/products', 1, TRUE
   )
 ON CONFLICT (page, section_key) DO NOTHING;
 

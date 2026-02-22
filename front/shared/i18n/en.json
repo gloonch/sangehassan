@@ -219,6 +219,61 @@
     },
     "note": "This form is for inquiry only. For orders, please use the checkout flow and WhatsApp handoff."
   },
+  "about": {
+    "hero": {
+      "title": "Our Perspective",
+      "body": "Our team focuses on supplying and professionally preparing natural stone for the construction industry. We believe choosing the right stone for each project is an important decision; that's why we work to make the path from selection to finishing and delivery clear, reliable, and simple for our customers.",
+      "ctaPrimary": "View Products",
+      "quality": "Quality isn't only \"good stone.\" Quality means the right choice, the right finish, precise delivery, and support after purchase.",
+      "bullets": [
+        "Consultation to choose the right stone for the application and space",
+        "Standard cutting and finishing for a clean, durable result",
+        "Safe delivery with professional packaging and precise scheduling"
+      ]
+    },
+    "services": {
+      "title": "Our Services",
+      "subtitle": "A few key services that make the path from selection to delivery easier for projects.",
+      "cards": [
+        {
+          "badge": "1",
+          "title": "Expert Consultation",
+          "body": "Our specialists, based on your project needs, taste, and budget, recommend the best options so the final choice is more accurate and lower-risk."
+        },
+        {
+          "badge": "2",
+          "title": "Cutting & Customization",
+          "body": "With processing equipment, we can prepare stone based on your required dimensions and design—from cutting and finishing to the details needed for architectural and interior projects."
+        },
+        {
+          "badge": "3",
+          "title": "Fast & Safe Shipping",
+          "body": "Products are shipped with professional packaging and safety standards so stones arrive intact and undamaged—domestically and, when needed, internationally."
+        },
+        {
+          "badge": "4",
+          "title": "Project Oversight & Support",
+          "body": "Our experts support you from selection to final execution, helping ensure the outcome meets expected standards."
+        },
+        {
+          "badge": "5",
+          "title": "After-Sales Support",
+          "body": "Our relationship doesn't end after delivery. If guidance or follow-up is needed, we're here to resolve questions and potential issues."
+        }
+      ]
+    },
+    "mission": {
+      "title": "Our Mission",
+      "before": "To turn the stone supply process into an",
+      "emphasis": "easy, transparent, and satisfying experience",
+      "after": "for all customers—from small projects to major construction projects.",
+      "cta": "Stone Finishes & Cutting Types"
+    },
+    "band": {
+      "productsCta": "View Products",
+      "finishesCta": "Stone Finishes & Cutting Types"
+    }
+  },
   "admin": {
     "title": "Admin panel",
     "subtitle": "Manage products, categories, and blogs."

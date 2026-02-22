@@ -7,7 +7,7 @@ import (
 )
 
 type ProductRepository interface {
-	List(ctx context.Context) ([]domain.Product, error)
+	List(ctx context.Context, limit, offset int) ([]domain.Product, error)
 	ListPopular(ctx context.Context) ([]domain.Product, error)
 	GetByID(ctx context.Context, id int64) (domain.Product, error)
 	GetBySlug(ctx context.Context, slug string) (domain.Product, error)

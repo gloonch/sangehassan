@@ -15,8 +15,8 @@ func NewProductService(repo ports.ProductRepository) *ProductService {
 	return &ProductService{repo: repo}
 }
 
-func (s *ProductService) List(ctx context.Context) ([]domain.Product, error) {
-	return s.repo.List(ctx)
+func (s *ProductService) List(ctx context.Context, limit, offset int) ([]domain.Product, error) {
+	return s.repo.List(ctx, limit, offset)
 }
 
 func (s *ProductService) ListPopular(ctx context.Context) ([]domain.Product, error) {

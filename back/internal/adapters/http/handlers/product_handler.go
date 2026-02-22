@@ -20,29 +20,47 @@ func NewProductHandler(service *usecase.ProductService) *ProductHandler {
 }
 
 type productPayload struct {
-	TitleEN          string   `json:"title_en"`
-	TitleFA          string   `json:"title_fa"`
-	TitleAR          string   `json:"title_ar"`
-	Slug             string   `json:"slug"`
-	Description      string   `json:"description"`
-	ShortDescription string   `json:"short_description_html"`
-	DescriptionHTMLEn string  `json:"description_html_en"`
-	DescriptionHTMLFa string  `json:"description_html_fa"`
-	DescriptionHTMLAr string  `json:"description_html_ar"`
-	ShortDescriptionHTMLEn string `json:"short_description_html_en"`
-	ShortDescriptionHTMLFa string `json:"short_description_html_fa"`
-	ShortDescriptionHTMLAr string `json:"short_description_html_ar"`
-	Price            float64  `json:"price"`
-	PriceHTML        string   `json:"price_html"`
-	ImageURL         string   `json:"image_url"`
-	ImageURLs        []string `json:"image_urls"`
-	CategoryID       int64    `json:"category_id"`
-	IsPopular        bool     `json:"is_popular"`
-	TermIDs          []int64        `json:"term_ids"`
+	TitleEN                string   `json:"title_en"`
+	TitleFA                string   `json:"title_fa"`
+	TitleAR                string   `json:"title_ar"`
+	Slug                   string   `json:"slug"`
+	Description            string   `json:"description"`
+	ShortDescription       string   `json:"short_description_html"`
+	DescriptionHTMLEn      string   `json:"description_html_en"`
+	DescriptionHTMLFa      string   `json:"description_html_fa"`
+	DescriptionHTMLAr      string   `json:"description_html_ar"`
+	ShortDescriptionHTMLEn string   `json:"short_description_html_en"`
+	ShortDescriptionHTMLFa string   `json:"short_description_html_fa"`
+	ShortDescriptionHTMLAr string   `json:"short_description_html_ar"`
+	Price                  float64  `json:"price"`
+	PriceHTML              string   `json:"price_html"`
+	ImageURL               string   `json:"image_url"`
+	ImageURLs              []string `json:"image_urls"`
+	CategoryID             int64    `json:"category_id"`
+	IsPopular              bool     `json:"is_popular"`
+	TermIDs                []int64  `json:"term_ids"`
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
 	popularOnly := c.Query("popular") == "true"
+	limit := 0
+	offset := 0
+	if rawLimit := c.Query("limit"); rawLimit != "" {
+		parsedLimit, err := strconv.Atoi(rawLimit)
+		if err != nil || parsedLimit <= 0 {
+			respondError(c, http.StatusBadRequest, "invalid limit")
+			return
+		}
+		limit = parsedLimit
+	}
+	if rawOffset := c.Query("offset"); rawOffset != "" {
+		parsedOffset, err := strconv.Atoi(rawOffset)
+		if err != nil || parsedOffset < 0 {
+			respondError(c, http.StatusBadRequest, "invalid offset")
+			return
+		}
+		offset = parsedOffset
+	}
 	var (
 		products []domain.Product
 		err      error
@@ -50,7 +68,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 	if popularOnly {
 		products, err = h.service.ListPopular(c.Request.Context())
 	} else {
-		products, err = h.service.List(c.Request.Context())
+		products, err = h.service.List(c.Request.Context(), limit, offset)
 	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to load products")
@@ -111,26 +129,26 @@ func (h *ProductHandler) Create(c *gin.Context) {
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Create(c.Request.Context(), domain.Product{
-		TitleEN:              payload.TitleEN,
-		TitleFA:              payload.TitleFA,
-		TitleAR:              payload.TitleAR,
-		Slug:                 payload.Slug,
-		Description:          descriptionEN,
-		DescriptionHTML:      descriptionEN,
-		DescriptionHTMLEn:    descriptionEN,
-		DescriptionHTMLFa:    payload.DescriptionHTMLFa,
-		DescriptionHTMLAr:    payload.DescriptionHTMLAr,
-		ShortDescriptionHTML: shortEN,
+		TitleEN:                payload.TitleEN,
+		TitleFA:                payload.TitleFA,
+		TitleAR:                payload.TitleAR,
+		Slug:                   payload.Slug,
+		Description:            descriptionEN,
+		DescriptionHTML:        descriptionEN,
+		DescriptionHTMLEn:      descriptionEN,
+		DescriptionHTMLFa:      payload.DescriptionHTMLFa,
+		DescriptionHTMLAr:      payload.DescriptionHTMLAr,
+		ShortDescriptionHTML:   shortEN,
 		ShortDescriptionHTMLEn: shortEN,
 		ShortDescriptionHTMLFa: payload.ShortDescriptionHTMLFa,
 		ShortDescriptionHTMLAr: payload.ShortDescriptionHTMLAr,
-		Price:                payload.Price,
-		PriceHTML:            payload.PriceHTML,
-		ImageURL:             normalizeImageRef(payload.ImageURL),
-		Images:               normalizeImageRefs(payload.ImageURLs),
-		MainCategoryID:       mainCategoryID,
-		IsPopular:            payload.IsPopular,
-		TermIDs:              payload.TermIDs,
+		Price:                  payload.Price,
+		PriceHTML:              payload.PriceHTML,
+		ImageURL:               normalizeImageRef(payload.ImageURL),
+		Images:                 normalizeImageRefs(payload.ImageURLs),
+		MainCategoryID:         mainCategoryID,
+		IsPopular:              payload.IsPopular,
+		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create product")
@@ -168,27 +186,27 @@ func (h *ProductHandler) Update(c *gin.Context) {
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
 	product, err := h.service.Update(c.Request.Context(), domain.Product{
-		ID:                   id,
-		TitleEN:              payload.TitleEN,
-		TitleFA:              payload.TitleFA,
-		TitleAR:              payload.TitleAR,
-		Slug:                 payload.Slug,
-		Description:          descriptionEN,
-		DescriptionHTML:      descriptionEN,
-		DescriptionHTMLEn:    descriptionEN,
-		DescriptionHTMLFa:    payload.DescriptionHTMLFa,
-		DescriptionHTMLAr:    payload.DescriptionHTMLAr,
-		ShortDescriptionHTML: shortEN,
+		ID:                     id,
+		TitleEN:                payload.TitleEN,
+		TitleFA:                payload.TitleFA,
+		TitleAR:                payload.TitleAR,
+		Slug:                   payload.Slug,
+		Description:            descriptionEN,
+		DescriptionHTML:        descriptionEN,
+		DescriptionHTMLEn:      descriptionEN,
+		DescriptionHTMLFa:      payload.DescriptionHTMLFa,
+		DescriptionHTMLAr:      payload.DescriptionHTMLAr,
+		ShortDescriptionHTML:   shortEN,
 		ShortDescriptionHTMLEn: shortEN,
 		ShortDescriptionHTMLFa: payload.ShortDescriptionHTMLFa,
 		ShortDescriptionHTMLAr: payload.ShortDescriptionHTMLAr,
-		Price:                payload.Price,
-		PriceHTML:            payload.PriceHTML,
-		ImageURL:             normalizeImageRef(payload.ImageURL),
-		Images:               normalizeImageRefs(payload.ImageURLs),
-		MainCategoryID:       mainCategoryID,
-		IsPopular:            payload.IsPopular,
-		TermIDs:              payload.TermIDs,
+		Price:                  payload.Price,
+		PriceHTML:              payload.PriceHTML,
+		ImageURL:               normalizeImageRef(payload.ImageURL),
+		Images:                 normalizeImageRefs(payload.ImageURLs),
+		MainCategoryID:         mainCategoryID,
+		IsPopular:              payload.IsPopular,
+		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update product")

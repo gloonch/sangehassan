@@ -18,8 +18,8 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) {
-	rows, err := r.db.QueryContext(ctx, `
+func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]domain.Product, error) {
+	query := `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
 			       p.description_html, p.short_description_html,
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
@@ -32,7 +32,21 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
 		ORDER BY p.id
-	`)
+	`
+	args := make([]any, 0, 2)
+	if limit > 0 {
+		args = append(args, limit)
+		query = fmt.Sprintf("%s LIMIT $%d", query, len(args))
+		if offset > 0 {
+			args = append(args, offset)
+			query = fmt.Sprintf("%s OFFSET $%d", query, len(args))
+		}
+	} else if offset > 0 {
+		args = append(args, offset)
+		query = fmt.Sprintf("%s OFFSET $%d", query, len(args))
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

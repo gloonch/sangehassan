@@ -1,7 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import ProductsLanding from "./pages/ProductsLanding";
-import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Blogs from "./pages/Blogs";
 import Login from "./pages/Login";
@@ -21,8 +20,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/products/overview" element={<ProductsLanding />} />
-      <Route path="/products" element={<Products />} />
+      <Route path="/products" element={<ProductsLanding />} />
+      <Route path="/products/overview" element={<Navigate to="/products" replace />} />
       <Route path="/products/:slug" element={<ProductDetail />} />
       <Route path="/blocks" element={<BlocksLanding />} />
       <Route path="/blocks/catalog" element={<BlocksCatalog />} />

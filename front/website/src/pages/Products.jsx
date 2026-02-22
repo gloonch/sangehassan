@@ -1,23 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 
-const PRODUCTS_STATE_KEY = "products-page-state";
+const PRODUCTS_PAGE_SIZE = 20;
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
   if (lang === "fa") return item.title_fa;
   if (lang === "ar") return item.title_ar;
   return item.title_en;
-};
-
-const getLocalizedTerm = (term, lang) => {
-  if (!term) return "";
-  if (lang === "fa") return term.label_fa || term.label_en || term.key || "";
-  if (lang === "ar") return term.label_ar || term.label_en || term.key || "";
-  return term.label_en || term.key || "";
 };
 
 const getTermIdentifier = (term) => {
@@ -49,52 +42,6 @@ const hasProductTerm = (product, taxonomy, termValue) => {
   return terms.some((term) => term?.taxonomy === taxonomy && getTermIdentifier(term) === termValue);
 };
 
-const USE_CASE_PRIORITY = {
-  use_case_application: 1,
-  use_case_space: 2,
-  use_case_form: 3,
-  use_case_project_type: 4,
-  use_case_special: 5
-};
-
-const CARD_TAG_LIMIT = 6;
-
-const getUseCaseTagsForCard = (product, lang) => {
-  const terms = Array.isArray(product?.terms) ? product.terms : [];
-  const seen = new Set();
-  const tags = [];
-
-  for (const term of terms) {
-    if (!term?.taxonomy || !USE_CASE_PRIORITY[term.taxonomy]) continue;
-    const termID = getTermIdentifier(term);
-    if (!termID) continue;
-    const uniqueKey = `${term.taxonomy}:${termID}`;
-    if (seen.has(uniqueKey)) continue;
-    const label = getLocalizedTerm(term, lang);
-    if (!label) continue;
-    seen.add(uniqueKey);
-    tags.push({ taxonomy: term.taxonomy, label });
-  }
-
-  tags.sort((a, b) => {
-    const priorityDiff = USE_CASE_PRIORITY[a.taxonomy] - USE_CASE_PRIORITY[b.taxonomy];
-    if (priorityDiff !== 0) return priorityDiff;
-    return a.label.localeCompare(b.label, lang === "fa" ? "fa" : lang === "ar" ? "ar" : "en", {
-      sensitivity: "base"
-    });
-  });
-
-  return tags.map((tag) => tag.label);
-};
-
-const getLimitedCardTags = (tags) => {
-  if (!Array.isArray(tags) || tags.length === 0) return [];
-  if (tags.length <= CARD_TAG_LIMIT) return tags.slice(0, CARD_TAG_LIMIT);
-  const limited = tags.slice(0, CARD_TAG_LIMIT);
-  limited[CARD_TAG_LIMIT - 1] = "...";
-  return limited;
-};
-
 export default function Products() {
   const { t, lang } = useTranslation();
   const [products, setProducts] = useState([]);
@@ -109,66 +56,88 @@ export default function Products() {
   const [minPriceInput, setMinPriceInput] = useState("");
   const [maxPriceInput, setMaxPriceInput] = useState("");
   const [sortMode, setSortMode] = useState("default");
-  const savedStateRef = useRef(null);
-  const [restoredScroll, setRestoredScroll] = useState(false);
+  const loadMoreTriggerRef = useRef(null);
+  const [nextOffset, setNextOffset] = useState(0);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const fetchProductPage = useCallback(async (offset) => {
+    const response = await fetchJSON(`/api/products?limit=${PRODUCTS_PAGE_SIZE}&offset=${offset}`);
+    return Array.isArray(response.data) ? response.data : [];
+  }, []);
+
+  const applyFetchedPage = useCallback((incomingProducts, offset, replace = false) => {
+    setProducts((previousProducts) => {
+      if (replace) return incomingProducts;
+      if (incomingProducts.length === 0) return previousProducts;
+      const seenIDs = new Set(previousProducts.map((product) => product.id));
+      const merged = [...previousProducts];
+      for (const product of incomingProducts) {
+        if (seenIDs.has(product.id)) continue;
+        seenIDs.add(product.id);
+        merged.push(product);
+      }
+      return merged;
+    });
+    setNextOffset(offset + incomingProducts.length);
+    setHasMoreProducts(incomingProducts.length === PRODUCTS_PAGE_SIZE);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
 
-    try {
-      const stored = sessionStorage.getItem(PRODUCTS_STATE_KEY);
-      if (stored) {
-        savedStateRef.current = JSON.parse(stored);
-        if (savedStateRef.current.activeCategory) {
-          setActiveCategory(savedStateRef.current.activeCategory);
-        }
-        if (savedStateRef.current.searchInput) {
-          setSearchInput(savedStateRef.current.searchInput);
-          setDebouncedSearch(savedStateRef.current.searchInput.trim().toLowerCase());
-        }
-        if (savedStateRef.current.stoneTypeFilter) {
-          setStoneTypeFilter(savedStateRef.current.stoneTypeFilter);
-        }
-        if (savedStateRef.current.useCaseFilter) {
-          setUseCaseFilter(savedStateRef.current.useCaseFilter);
-        }
-        if (savedStateRef.current.priceModeFilter) {
-          setPriceModeFilter(savedStateRef.current.priceModeFilter);
-        }
-        if (typeof savedStateRef.current.minPriceInput === "string") {
-          setMinPriceInput(savedStateRef.current.minPriceInput);
-        }
-        if (typeof savedStateRef.current.maxPriceInput === "string") {
-          setMaxPriceInput(savedStateRef.current.maxPriceInput);
-        }
-        if (savedStateRef.current.sortMode) {
-          setSortMode(savedStateRef.current.sortMode);
-        }
-      }
-    } catch (_) {
-      savedStateRef.current = null;
-    }
-
-    const load = async () => {
+    const loadInitial = async () => {
+      setLoading(true);
       try {
-        const [productRes, categoryRes] = await Promise.all([fetchJSON("/api/products"), fetchJSON("/api/categories")]);
+        const [categoryRes, firstPageProducts] = await Promise.all([fetchJSON("/api/categories"), fetchProductPage(0)]);
         if (!mounted) return;
-        setProducts(productRes.data || []);
         setCategories(categoryRes.data || []);
+        applyFetchedPage(firstPageProducts, 0, true);
       } catch (error) {
         if (!mounted) return;
         setProducts([]);
         setCategories([]);
+        setNextOffset(0);
+        setHasMoreProducts(false);
       } finally {
         if (mounted) setLoading(false);
       }
     };
-    load();
+
+    loadInitial();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fetchProductPage, applyFetchedPage]);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (loading || loadingMore || !hasMoreProducts) return;
+    setLoadingMore(true);
+    try {
+      const incomingProducts = await fetchProductPage(nextOffset);
+      applyFetchedPage(incomingProducts, nextOffset);
+    } catch (_) {
+      // keep current list on transient fetch errors
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loading, loadingMore, hasMoreProducts, fetchProductPage, nextOffset, applyFetchedPage]);
+
+  useEffect(() => {
+    const target = loadMoreTriggerRef.current;
+    if (!target || !hasMoreProducts) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMoreProducts();
+        }
+      },
+      { root: null, rootMargin: "320px 0px", threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMoreProducts, hasMoreProducts]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -336,42 +305,6 @@ export default function Products() {
     maxPriceInput,
     sortMode
   ]);
-
-  useEffect(() => {
-    if (!loading && !restoredScroll && savedStateRef.current?.scrollY >= 0) {
-      window.scrollTo({ top: savedStateRef.current.scrollY, behavior: "auto" });
-      setRestoredScroll(true);
-    }
-  }, [loading, restoredScroll]);
-
-  useEffect(() => {
-    const saveState = () => {
-      sessionStorage.setItem(
-        PRODUCTS_STATE_KEY,
-        JSON.stringify({
-          activeCategory,
-          searchInput,
-          stoneTypeFilter,
-          useCaseFilter,
-          priceModeFilter,
-          minPriceInput,
-          maxPriceInput,
-          sortMode,
-          scrollY: window.scrollY
-        })
-      );
-    };
-
-    const handleScroll = () => {
-      window.requestAnimationFrame(saveState);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      saveState();
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [activeCategory, searchInput, stoneTypeFilter, useCaseFilter, priceModeFilter, minPriceInput, maxPriceInput, sortMode]);
 
   const mainCategories = useMemo(() => {
     const topLevel = categories.filter((category) => !category.parent_id);
@@ -581,8 +514,6 @@ export default function Products() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product) => {
-            const useCaseTags = getUseCaseTagsForCard(product, lang);
-            const visibleTags = getLimitedCardTags(useCaseTags);
             return (
               <Link
                 key={product.id}
@@ -611,19 +542,6 @@ export default function Products() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-5">
-                  {visibleTags.length > 0 && (
-                    <div className="mt-3 grid h-[56px] grid-cols-3 gap-2 overflow-hidden">
-                      {visibleTags.map((tag, index) => (
-                        <span
-                          key={`${product.id}-tag-${tag}-${index}`}
-                          className="min-w-0 truncate rounded-full bg-accent px-2.5 py-1 text-center text-[11px] font-semibold leading-4 text-white"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="mt-auto pt-4 text-sm font-semibold text-accent">
                     {t("products.priceLabel")}: {product.price ? product.price : t("messages.empty")}
                   </div>
@@ -631,6 +549,15 @@ export default function Products() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mt-8">
+          {loadingMore && (
+            <p className="text-center text-sm text-primary/70">{t("messages.loading")}</p>
+          )}
+          {hasMoreProducts && <div ref={loadMoreTriggerRef} className="h-8 w-full" />}
         </div>
       )}
     </section>
