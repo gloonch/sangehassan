@@ -67,8 +67,8 @@ export default function ProductsLanding() {
                 src={resolveImageUrl(image)}
                 alt=""
                 className={`absolute inset-0 h-full w-full object-cover transition-all duration-[2200ms] ease-in-out ${index === activeSlide
-                    ? "translate-y-0 scale-105 opacity-100"
-                    : "-translate-y-2 scale-110 opacity-0"
+                  ? "translate-y-0 scale-105 opacity-100"
+                  : "-translate-y-2 scale-110 opacity-0"
                   }`}
               />
             ))

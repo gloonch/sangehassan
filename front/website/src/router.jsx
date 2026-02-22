@@ -9,7 +9,6 @@ import Profile from "./pages/Profile";
 import Gallery from "./pages/Gallery";
 import About from "./pages/About";
 import BlocksLanding from "./pages/BlocksLanding";
-import BlocksCatalog from "./pages/BlocksCatalog";
 import BlockDetail from "./pages/BlockDetail";
 import Ads from "./pages/Ads";
 import AdDetail from "./pages/AdDetail";
@@ -24,7 +23,6 @@ export default function AppRoutes() {
       <Route path="/products/overview" element={<Navigate to="/products" replace />} />
       <Route path="/products/:slug" element={<ProductDetail />} />
       <Route path="/blocks" element={<BlocksLanding />} />
-      <Route path="/blocks/catalog" element={<BlocksCatalog />} />
       <Route path="/blocks/:slug" element={<BlockDetail />} />
       <Route element={<RequireUserAuth />}>
         <Route path="/ads" element={<Ads />} />

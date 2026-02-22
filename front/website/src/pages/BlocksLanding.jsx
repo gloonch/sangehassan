@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { useTranslation } from "../lib/i18n";
+import BlocksCatalog from "./BlocksCatalog";
 
 const pickField = (section, field, lang) => {
   if (!section) return "";
@@ -19,7 +20,6 @@ const splitLines = (text) =>
 export default function BlocksLanding() {
   const { t, lang } = useTranslation();
   const [sections, setSections] = useState([]);
-  const [blocks, setBlocks] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
@@ -28,18 +28,12 @@ export default function BlocksLanding() {
       .catch(() => setSections([]));
   }, []);
 
-  useEffect(() => {
-    fetchJSON("/api/blocks?featured=true")
-      .then((res) => setBlocks(res.data || []))
-      .catch(() => setBlocks([]));
-  }, []);
-
   const heroSection = useMemo(() => sections.find((section) => section.key === "hero") || {}, [sections]);
   const title = pickField(heroSection, "title", lang) || t("blocks.title");
   const subtitle = pickField(heroSection, "subtitle", lang) || t("blocks.subtitle");
   const description = pickField(heroSection, "description", lang);
   const ctaLabel = pickField(heroSection, "cta_label", lang) || t("blocks.cta");
-  const ctaHref = heroSection.cta_href || "/blocks/catalog";
+  const ctaHref = heroSection.cta_href === "/blocks/catalog" ? "/blocks" : heroSection.cta_href || "/blocks";
   const lines = splitLines(description || "");
   const heroImages = useMemo(
     () => (Array.isArray(heroSection.images) ? heroSection.images.filter(Boolean) : []),
@@ -124,51 +118,7 @@ export default function BlocksLanding() {
         </div>
       </section>
 
-      <section className="section-shell pb-16 pt-12">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-primary/50">{t("blocks.catalogTitle")}</p>
-            <h2 className="mt-2 font-display text-2xl text-primary">{t("blocks.catalogSubtitle")}</h2>
-          </div>
-          <Link to="/blocks/catalog" className="text-sm font-semibold text-accent">
-            {t("blocks.cta")}
-          </Link>
-        </div>
-
-        {blocks.length === 0 ? (
-          <p className="text-sm text-primary/70">{t("blocks.empty")}</p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {blocks.slice(0, 6).map((block) => (
-              <Link
-                to={`/blocks/${block.slug}`}
-                key={block.id}
-                className="group relative overflow-hidden rounded-3xl border border-primary/10 bg-white/70 shadow-[0_18px_40px_rgba(8,58,79,0.12)]"
-              >
-                <div className="h-44 overflow-hidden">
-                  {block.image_url ? (
-                    <img
-                      src={resolveImageUrl(block.image_url)}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.3em] text-primary/40">
-                      {t("blocks.title")}
-                    </div>
-                  )}
-                </div>
-                <div className="p-5">
-                  <p className="text-sm font-semibold text-primary">{block.title_fa || block.title_en}</p>
-                  <p className="mt-1 text-xs text-primary/60">
-                    {block.stone_type ? `${t("blocks.stoneType")}: ${block.stone_type}` : t("blocks.stoneType")}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <BlocksCatalog embedded />
     </div>
   );
 }
