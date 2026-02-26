@@ -13,6 +13,7 @@ import BlockDetail from "./pages/BlockDetail";
 import Ads from "./pages/Ads";
 import AdDetail from "./pages/AdDetail";
 import NewAd from "./pages/NewAd";
+import Projects from "./pages/Projects";
 import RequireUserAuth from "./components/RequireUserAuth";
 
 export default function AppRoutes() {
@@ -30,6 +31,7 @@ export default function AppRoutes() {
         <Route path="/ads/:id" element={<AdDetail />} />
       </Route>
       <Route path="/blogs" element={<Blogs />} />
+      <Route path="/projects" element={<Projects />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/profile" element={<Profile />} />

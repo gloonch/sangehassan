@@ -26,6 +26,7 @@ func main() {
 	productRepo := postgres.NewProductRepository(db)
 	productTermRepo := postgres.NewProductTermRepository(db)
 	blogRepo := postgres.NewBlogRepository(db)
+	projectRepo := postgres.NewProjectRepository(db)
 	templateRepo := postgres.NewTemplateRepository(db)
 	blockRepo := postgres.NewBlockRepository(db)
 	contentSectionRepo := postgres.NewContentSectionRepository(db)
@@ -40,6 +41,7 @@ func main() {
 	productService := usecase.NewProductService(productRepo)
 	productTermService := usecase.NewProductTermService(productTermRepo)
 	blogService := usecase.NewBlogService(blogRepo)
+	projectService := usecase.NewProjectService(projectRepo)
 	templateService := usecase.NewTemplateService(templateRepo)
 	blockService := usecase.NewBlockService(blockRepo)
 	contentSectionService := usecase.NewContentSectionService(contentSectionRepo)
@@ -56,6 +58,7 @@ func main() {
 		productService,
 		productTermService,
 		blogService,
+		projectService,
 		templateService,
 		blockService,
 		contentSectionService,

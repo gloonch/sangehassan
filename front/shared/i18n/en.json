@@ -9,6 +9,7 @@
     "home": "Home",
     "products": "Products",
     "blocks": "Blocks",
+    "projects": "Projects",
     "blogs": "Blogs",
     "ads": "Stone Trade Board",
     "stoneFinishes": "Stone Finishes",
@@ -149,6 +150,14 @@
     "subtitle": "Insights, finishes, and research from the workshop.",
     "readMore": "Read more",
     "empty": "No blogs available yet."
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Selected facade and interior works delivered by our team.",
+    "empty": "No projects available yet.",
+    "noDescription": "No description provided yet.",
+    "prev": "Previous",
+    "next": "Next"
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -321,6 +330,13 @@
     "title": "Blogs",
     "empty": "No blogs available yet."
   },
+  "panelProjects": {
+    "title": "Projects",
+    "empty": "No projects available yet.",
+    "coverRequired": "Cover image is required.",
+    "maxGallery": "Maximum 5 gallery images are allowed.",
+    "galleryCount": "gallery images"
+  },
   "panelContent": {
     "title": "Landing content",
     "empty": "No sections available yet."
@@ -374,7 +390,10 @@
     "ctaLabel": "CTA label",
     "ctaHref": "CTA link",
     "orderIndex": "Order",
-    "isActive": "Active"
+    "isActive": "Active",
+    "descriptionEn": "Description (English)",
+    "descriptionFa": "Description (Persian)",
+    "descriptionAr": "Description (Arabic)"
   },
   "actions": {
     "create": "Create",

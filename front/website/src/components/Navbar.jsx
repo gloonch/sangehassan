@@ -8,6 +8,7 @@ import logoWhiteImage from "@shared/assets/logo_white.png";
 const navItems = [
   { key: "products", path: "/products" },
   { key: "blocks", path: "/blocks" },
+  { key: "projects", path: "/projects" },
   { key: "ads", path: "/ads" },
   { key: "blogs", path: "/blogs" },
   { key: "about", path: "/about" },

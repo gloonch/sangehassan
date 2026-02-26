@@ -18,6 +18,7 @@ func NewRouter(
 	productService *usecase.ProductService,
 	productTermService *usecase.ProductTermService,
 	blogService *usecase.BlogService,
+	projectService *usecase.ProjectService,
 	templateService *usecase.TemplateService,
 	blockService *usecase.BlockService,
 	contentSectionService *usecase.ContentSectionService,
@@ -53,6 +54,7 @@ func NewRouter(
 	productHandler := handlers.NewProductHandler(productService)
 	productTermHandler := handlers.NewProductTermHandler(productTermService)
 	blogHandler := handlers.NewBlogHandler(blogService)
+	projectHandler := handlers.NewProjectHandler(projectService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	blockHandler := handlers.NewBlockHandler(blockService)
 	contentSectionHandler := handlers.NewContentSectionHandler(contentSectionService)
@@ -80,6 +82,8 @@ func NewRouter(
 			adsAuth.DELETE("/:id", listingHandler.Delete)
 		}
 		api.GET("/blogs", blogHandler.List)
+		api.GET("/projects", projectHandler.ListPublic)
+		api.GET("/projects/:id", projectHandler.GetByID)
 		api.GET("/templates", templateHandler.List)
 		api.GET("/blocks", blockHandler.List)
 		api.GET("/blocks/:slug", blockHandler.GetBySlug)
@@ -106,6 +110,7 @@ func NewRouter(
 		api.POST("/admin/upload/block", uploadHandler.UploadBlock)
 		api.POST("/admin/upload/content", uploadHandler.UploadContent)
 		api.POST("/admin/upload/blog", uploadHandler.UploadBlog)
+		api.POST("/admin/upload/project", uploadHandler.UploadProject)
 
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)
@@ -138,6 +143,12 @@ func NewRouter(
 			admin.POST("/blogs", blogHandler.Create)
 			admin.PUT("/blogs/:id", blogHandler.Update)
 			admin.DELETE("/blogs/:id", blogHandler.Delete)
+
+			admin.GET("/projects", projectHandler.List)
+			admin.GET("/projects/:id", projectHandler.GetByID)
+			admin.POST("/projects", projectHandler.Create)
+			admin.PUT("/projects/:id", projectHandler.Update)
+			admin.DELETE("/projects/:id", projectHandler.Delete)
 
 			admin.GET("/templates", templateHandler.List)
 			admin.POST("/templates", templateHandler.Create)

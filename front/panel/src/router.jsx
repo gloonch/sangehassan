@@ -6,6 +6,7 @@ import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Blocks from "./pages/Blocks";
 import Blogs from "./pages/Blogs";
+import Projects from "./pages/Projects";
 import Templates from "./pages/Templates";
 import ContentSections from "./pages/ContentSections";
 import PanelLayout from "./components/PanelLayout";
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="products" element={<Products />} />
         <Route path="blocks" element={<Blocks />} />
         <Route path="blogs" element={<Blogs />} />
+        <Route path="projects" element={<Projects />} />
         <Route path="templates" element={<Templates />} />
         <Route path="content" element={<ContentSections />} />
       </Route>
