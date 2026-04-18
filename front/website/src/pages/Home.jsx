@@ -40,65 +40,178 @@ const splitLines = (text) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+const notificationTimes = [
+  "35 minutes ago",
+  "45 minutes ago",
+  "1 hour ago",
+  "2 hours ago",
+  "3 hours ago",
+  "4 hours ago",
+  "5 hours ago",
+  "6 hours ago",
+  "7 hours ago",
+  "8 hours ago",
+  "9 hours ago",
+  "10 hours ago",
+  "11 hours ago",
+  "12 hours ago",
+  "14 hours ago",
+  "16 hours ago",
+  "18 hours ago",
+  "20 hours ago",
+  "22 hours ago",
+  "1 day ago",
+  "2 days ago",
+  "3 days ago",
+  "4 days ago",
+  "5 days ago"
+];
+
+const buildDeals = ({
+  slabProducts,
+  blockProducts,
+  accessoryProducts,
+  slabAmounts,
+  blockAmounts,
+  accessoryAmounts
+}) => {
+  const deals = [];
+  let timeCursor = 0;
+
+  const appendGroup = (products, amounts) => {
+    products.forEach((product) => {
+      amounts.forEach((amount) => {
+        deals.push({
+          product,
+          amount,
+          time: notificationTimes[timeCursor % notificationTimes.length]
+        });
+        timeCursor += 1;
+      });
+    });
+  };
+
+  appendGroup(slabProducts, slabAmounts);
+  appendGroup(blockProducts, blockAmounts);
+  appendGroup(accessoryProducts, accessoryAmounts);
+
+  return deals;
+};
+
+const pickRandomIndex = (length) => (length > 0 ? Math.floor(Math.random() * length) : 0);
+
 const liveDealsByLang = {
   fa: {
     messagesLabel: "MESSAGES",
     senderName: "SangeHassan",
     messagePrefix: "معامله انجام شد",
     moreMessagesText: "28 more messages",
-    deals: [
-      { product: "اسلب گرانیت", amount: "۳۲ متر", time: "4 hours ago" },
-      { product: "کوپ تراورتن", amount: "۱ کوپ", time: "9 hours ago" },
-      { product: "اسلب چینی کریستال", amount: "۲۴ متر", time: "11 hours ago" },
-      { product: "اکسسوری مرمریت", amount: "۶ عدد", time: "7 hours ago" },
-      { product: "اسلب مرمر", amount: "۱۸ متر", time: "1 day ago" },
-      { product: "کوپ گرانیت", amount: "۲ کوپ", time: "2 days ago" },
-      { product: "اسلب تراورتن", amount: "۱۴ متر", time: "5 hours ago" },
-      { product: "اکسسوری چینی کریستال", amount: "۴ عدد", time: "45 minutes ago" }
-    ]
+    deals: buildDeals({
+      slabProducts: [
+        "اسلب گرانیت",
+        "اسلب تراورتن",
+        "اسلب مرمریت",
+        "اسلب مرمر",
+        "اسلب چینی کریستال",
+        "اسلب گرانودیوریت"
+      ],
+      blockProducts: [
+        "کوپ گرانیت",
+        "کوپ تراورتن",
+        "کوپ مرمریت",
+        "کوپ مرمر",
+        "کوپ چینی کریستال",
+        "کوپ گرانودیوریت"
+      ],
+      accessoryProducts: [
+        "اکسسوری گرانیت",
+        "اکسسوری تراورتن",
+        "اکسسوری مرمریت",
+        "اکسسوری مرمر",
+        "اکسسوری چینی کریستال",
+        "اکسسوری گرانودیوریت"
+      ],
+      slabAmounts: ["۱۰ متر", "۱۲ متر", "۱۸ متر", "۲۴ متر", "۳۲ متر", "۴۸ متر", "۶۴ متر"],
+      blockAmounts: ["۱ کوپ", "۲ کوپ", "۳ کوپ", "۴ کوپ", "۵ کوپ"],
+      accessoryAmounts: ["۴ عدد", "۸ عدد", "۱۲ عدد", "۱۶ عدد", "۲۰ عدد", "۲۴ عدد"]
+    })
   },
   en: {
     messagesLabel: "MESSAGES",
     senderName: "SangeHassan",
     messagePrefix: "Deal completed",
     moreMessagesText: "28 more messages",
-    deals: [
-      { product: "Granite Slab", amount: "32 sqm", time: "4 hours ago" },
-      { product: "Travertine Block", amount: "1 block", time: "9 hours ago" },
-      { product: "Chinese Crystal Slab", amount: "24 sqm", time: "11 hours ago" },
-      { product: "Marmarite Accessory", amount: "6 units", time: "7 hours ago" },
-      { product: "Marmar Slab", amount: "18 sqm", time: "1 day ago" },
-      { product: "Granite Block", amount: "2 blocks", time: "2 days ago" },
-      { product: "Travertine Slab", amount: "14 sqm", time: "5 hours ago" },
-      { product: "Chinese Crystal Accessory", amount: "4 units", time: "45 minutes ago" }
-    ]
+    deals: buildDeals({
+      slabProducts: [
+        "Granite Slab",
+        "Travertine Slab",
+        "Marmarite Slab",
+        "Marmar Slab",
+        "Chinese Crystal Slab",
+        "Granodiorite Slab"
+      ],
+      blockProducts: [
+        "Granite Block",
+        "Travertine Block",
+        "Marmarite Block",
+        "Marmar Block",
+        "Chinese Crystal Block",
+        "Granodiorite Block"
+      ],
+      accessoryProducts: [
+        "Granite Accessory",
+        "Travertine Accessory",
+        "Marmarite Accessory",
+        "Marmar Accessory",
+        "Chinese Crystal Accessory",
+        "Granodiorite Accessory"
+      ],
+      slabAmounts: ["10 sqm", "12 sqm", "18 sqm", "24 sqm", "32 sqm", "48 sqm", "64 sqm"],
+      blockAmounts: ["1 block", "2 blocks", "3 blocks", "4 blocks", "5 blocks"],
+      accessoryAmounts: ["4 units", "8 units", "12 units", "16 units", "20 units", "24 units"]
+    })
   },
   ar: {
     messagesLabel: "MESSAGES",
     senderName: "SangeHassan",
     messagePrefix: "تمت الصفقة",
     moreMessagesText: "28 more messages",
-    deals: [
-      { product: "ألواح جرانيت", amount: "٣٢ متر", time: "4 hours ago" },
-      { product: "بلوك ترافرتين", amount: "١ بلوك", time: "9 hours ago" },
-      { product: "ألواح كريستال صيني", amount: "٢٤ متر", time: "11 hours ago" },
-      { product: "إكسسوار مرمريت", amount: "٦ قطع", time: "7 hours ago" },
-      { product: "ألواح مرمر", amount: "١٨ متر", time: "1 day ago" },
-      { product: "بلوك جرانيت", amount: "٢ بلوك", time: "2 days ago" },
-      { product: "ألواح ترافرتين", amount: "١٤ متر", time: "5 hours ago" },
-      { product: "إكسسوار كريستال صيني", amount: "٤ قطع", time: "45 minutes ago" }
-    ]
+    deals: buildDeals({
+      slabProducts: [
+        "ألواح جرانيت",
+        "ألواح ترافرتين",
+        "ألواح مرمريت",
+        "ألواح مرمر",
+        "ألواح كريستال صيني",
+        "ألواح جرانوديوريت"
+      ],
+      blockProducts: [
+        "بلوك جرانيت",
+        "بلوك ترافرتين",
+        "بلوك مرمريت",
+        "بلوك مرمر",
+        "بلوك كريستال صيني",
+        "بلوك جرانوديوريت"
+      ],
+      accessoryProducts: [
+        "إكسسوار جرانيت",
+        "إكسسوار ترافرتين",
+        "إكسسوار مرمريت",
+        "إكسسوار مرمر",
+        "إكسسوار كريستال صيني",
+        "إكسسوار جرانوديوريت"
+      ],
+      slabAmounts: ["١٠ متر", "١٢ متر", "١٨ متر", "٢٤ متر", "٣٢ متر", "٤٨ متر", "٦٤ متر"],
+      blockAmounts: ["١ بلوك", "٢ بلوك", "٣ بلوك", "٤ بلوك", "٥ بلوك"],
+      accessoryAmounts: ["٤ قطع", "٨ قطع", "١٢ قطع", "١٦ قطع", "٢٠ قطع", "٢٤ قطع"]
+    })
   }
 };
 
 export default function Home() {
   const { t, lang } = useTranslation();
   const [sections, setSections] = useState([]);
-  const [activeDealIndex, setActiveDealIndex] = useState(0);
-  const [incomingDealIndex, setIncomingDealIndex] = useState(null);
-  const [isDealTransitioning, setIsDealTransitioning] = useState(false);
   const rootRef = useRef(null);
-  const dealSwitchTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -296,44 +409,10 @@ export default function Home() {
   const liveDealsSenderName = liveDealsConfig.senderName;
   const liveDealsMessagePrefix = liveDealsConfig.messagePrefix;
   const liveDealsMoreMessagesText = liveDealsConfig.moreMessagesText;
+  const activeDealIndex = useMemo(() => pickRandomIndex(liveDeals.length), [lang, liveDeals.length]);
   const activeDeal = liveDeals[activeDealIndex] || liveDeals[0];
-  const incomingDeal = incomingDealIndex !== null ? liveDeals[incomingDealIndex] : null;
   const previewDealOne = liveDeals.length > 1 ? liveDeals[(activeDealIndex + 1) % liveDeals.length] : null;
   const previewDealTwo = liveDeals.length > 2 ? liveDeals[(activeDealIndex + 2) % liveDeals.length] : null;
-
-  useEffect(() => {
-    setActiveDealIndex(0);
-    setIncomingDealIndex(null);
-    setIsDealTransitioning(false);
-    if (dealSwitchTimeoutRef.current) {
-      window.clearTimeout(dealSwitchTimeoutRef.current);
-    }
-  }, [lang]);
-
-  useEffect(() => {
-    if (liveDeals.length <= 1 || isDealTransitioning) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      const nextIndex = (activeDealIndex + 1) % liveDeals.length;
-      setIncomingDealIndex(nextIndex);
-      setIsDealTransitioning(true);
-      if (dealSwitchTimeoutRef.current) {
-        window.clearTimeout(dealSwitchTimeoutRef.current);
-      }
-      dealSwitchTimeoutRef.current = window.setTimeout(() => {
-        setActiveDealIndex(nextIndex);
-        setIncomingDealIndex(null);
-        setIsDealTransitioning(false);
-      }, 680);
-    }, 5600);
-
-    return () => {
-      window.clearInterval(intervalId);
-      if (dealSwitchTimeoutRef.current) {
-        window.clearTimeout(dealSwitchTimeoutRef.current);
-      }
-    };
-  }, [activeDealIndex, isDealTransitioning, liveDeals.length]);
 
   const renderDealMessage = (deal) => `${liveDealsMessagePrefix}: ${deal.amount} | ${deal.product}`;
 
@@ -490,7 +569,7 @@ export default function Home() {
       </section>
       <div
         dir="ltr"
-        className="pointer-events-none absolute left-1/2 top-1/2 z-30 h-[10.4rem] w-[min(94vw,25rem)] -translate-x-1/2 -translate-y-1/2 [perspective:1000px] sm:h-[10.8rem]"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-30 h-[10.4rem] w-[min(94vw,25rem)] -translate-x-1/2 -translate-y-1/2 [perspective:1000px] sm:h-[10.8rem] lg:top-[41%]"
       >
         {previewDealTwo ? (
           <div
@@ -510,16 +589,9 @@ export default function Home() {
         ) : null}
         {activeDeal ? (
           <div
-            className={`absolute inset-x-0 top-0 h-[7.8rem] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDealTransitioning ? "translate-y-[76px] opacity-0" : "translate-y-0 opacity-100"}`}
+            className="absolute inset-x-0 top-0 h-[7.8rem]"
           >
             {renderDealNotification(activeDeal)}
-          </div>
-        ) : null}
-        {incomingDeal ? (
-          <div
-            className={`absolute inset-x-0 top-0 h-[7.8rem] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDealTransitioning ? "translate-y-0 opacity-100" : "-translate-y-[76px] opacity-0"}`}
-          >
-            {renderDealNotification(incomingDeal)}
           </div>
         ) : null}
       </div>
