@@ -5,6 +5,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.png";
 import finishesOverlayVideo from "@shared/assets/landing_page/landingpage_finishes_overlay.mp4";
+import miniHeroMessagesIcon from "@shared/assets/landing_page/mini-hero-messages.png";
 
 const homeSeoContent = {
   fa: {
@@ -39,10 +40,65 @@ const splitLines = (text) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+const liveDealsByLang = {
+  fa: {
+    messagesLabel: "MESSAGES",
+    senderName: "SangeHassan",
+    messagePrefix: "معامله انجام شد",
+    moreMessagesText: "28 more messages",
+    deals: [
+      { product: "اسلب گرانیت", amount: "۳۲ متر", time: "4 hours ago" },
+      { product: "کوپ تراورتن", amount: "۱ کوپ", time: "9 hours ago" },
+      { product: "اسلب چینی کریستال", amount: "۲۴ متر", time: "11 hours ago" },
+      { product: "اکسسوری مرمریت", amount: "۶ عدد", time: "7 hours ago" },
+      { product: "اسلب مرمر", amount: "۱۸ متر", time: "1 day ago" },
+      { product: "کوپ گرانیت", amount: "۲ کوپ", time: "2 days ago" },
+      { product: "اسلب تراورتن", amount: "۱۴ متر", time: "5 hours ago" },
+      { product: "اکسسوری چینی کریستال", amount: "۴ عدد", time: "45 minutes ago" }
+    ]
+  },
+  en: {
+    messagesLabel: "MESSAGES",
+    senderName: "SangeHassan",
+    messagePrefix: "Deal completed",
+    moreMessagesText: "28 more messages",
+    deals: [
+      { product: "Granite Slab", amount: "32 sqm", time: "4 hours ago" },
+      { product: "Travertine Block", amount: "1 block", time: "9 hours ago" },
+      { product: "Chinese Crystal Slab", amount: "24 sqm", time: "11 hours ago" },
+      { product: "Marmarite Accessory", amount: "6 units", time: "7 hours ago" },
+      { product: "Marmar Slab", amount: "18 sqm", time: "1 day ago" },
+      { product: "Granite Block", amount: "2 blocks", time: "2 days ago" },
+      { product: "Travertine Slab", amount: "14 sqm", time: "5 hours ago" },
+      { product: "Chinese Crystal Accessory", amount: "4 units", time: "45 minutes ago" }
+    ]
+  },
+  ar: {
+    messagesLabel: "MESSAGES",
+    senderName: "SangeHassan",
+    messagePrefix: "تمت الصفقة",
+    moreMessagesText: "28 more messages",
+    deals: [
+      { product: "ألواح جرانيت", amount: "٣٢ متر", time: "4 hours ago" },
+      { product: "بلوك ترافرتين", amount: "١ بلوك", time: "9 hours ago" },
+      { product: "ألواح كريستال صيني", amount: "٢٤ متر", time: "11 hours ago" },
+      { product: "إكسسوار مرمريت", amount: "٦ قطع", time: "7 hours ago" },
+      { product: "ألواح مرمر", amount: "١٨ متر", time: "1 day ago" },
+      { product: "بلوك جرانيت", amount: "٢ بلوك", time: "2 days ago" },
+      { product: "ألواح ترافرتين", amount: "١٤ متر", time: "5 hours ago" },
+      { product: "إكسسوار كريستال صيني", amount: "٤ قطع", time: "45 minutes ago" }
+    ]
+  }
+};
+
 export default function Home() {
   const { t, lang } = useTranslation();
   const [sections, setSections] = useState([]);
+  const [activeDealIndex, setActiveDealIndex] = useState(0);
+  const [incomingDealIndex, setIncomingDealIndex] = useState(null);
+  const [isDealTransitioning, setIsDealTransitioning] = useState(false);
   const rootRef = useRef(null);
+  const dealSwitchTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -234,6 +290,89 @@ export default function Home() {
 
   const blocksSection = sectionsByKey.blocks || fallbackSections.blocks;
   const finishedSection = sectionsByKey.finished || fallbackSections.finished;
+  const liveDealsConfig = liveDealsByLang[lang] || liveDealsByLang.fa;
+  const liveDeals = liveDealsConfig.deals;
+  const liveDealsMessagesLabel = liveDealsConfig.messagesLabel;
+  const liveDealsSenderName = liveDealsConfig.senderName;
+  const liveDealsMessagePrefix = liveDealsConfig.messagePrefix;
+  const liveDealsMoreMessagesText = liveDealsConfig.moreMessagesText;
+  const activeDeal = liveDeals[activeDealIndex] || liveDeals[0];
+  const incomingDeal = incomingDealIndex !== null ? liveDeals[incomingDealIndex] : null;
+  const previewDealOne = liveDeals.length > 1 ? liveDeals[(activeDealIndex + 1) % liveDeals.length] : null;
+  const previewDealTwo = liveDeals.length > 2 ? liveDeals[(activeDealIndex + 2) % liveDeals.length] : null;
+
+  useEffect(() => {
+    setActiveDealIndex(0);
+    setIncomingDealIndex(null);
+    setIsDealTransitioning(false);
+    if (dealSwitchTimeoutRef.current) {
+      window.clearTimeout(dealSwitchTimeoutRef.current);
+    }
+  }, [lang]);
+
+  useEffect(() => {
+    if (liveDeals.length <= 1 || isDealTransitioning) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      const nextIndex = (activeDealIndex + 1) % liveDeals.length;
+      setIncomingDealIndex(nextIndex);
+      setIsDealTransitioning(true);
+      if (dealSwitchTimeoutRef.current) {
+        window.clearTimeout(dealSwitchTimeoutRef.current);
+      }
+      dealSwitchTimeoutRef.current = window.setTimeout(() => {
+        setActiveDealIndex(nextIndex);
+        setIncomingDealIndex(null);
+        setIsDealTransitioning(false);
+      }, 680);
+    }, 5600);
+
+    return () => {
+      window.clearInterval(intervalId);
+      if (dealSwitchTimeoutRef.current) {
+        window.clearTimeout(dealSwitchTimeoutRef.current);
+      }
+    };
+  }, [activeDealIndex, isDealTransitioning, liveDeals.length]);
+
+  const renderDealMessage = (deal) => `${liveDealsMessagePrefix}: ${deal.amount} | ${deal.product}`;
+
+  const renderDealDepthLayer = (level, deal) => (
+    <div
+      dir="ltr"
+      className={`relative h-full overflow-hidden rounded-[1.08rem] border ${level === 1 ? "border-white/26 bg-white/[0.11]" : "border-white/20 bg-white/[0.08]"} backdrop-blur-[14px]`}
+    >
+      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.03)_55%,rgba(255,255,255,0)_100%)]" />
+      <div className="relative px-4 py-3">
+        <span className={`block h-1.5 rounded-full ${level === 1 ? "w-20 bg-sand/28" : "w-16 bg-sand/20"}`} />
+        <p className={`mt-2 truncate text-[10px] ${level === 1 ? "text-sand/36" : "text-sand/28"}`}>{deal.product}</p>
+      </div>
+    </div>
+  );
+
+  const renderDealNotification = (deal) => (
+    <div
+      dir="ltr"
+      className="relative h-full overflow-hidden rounded-[1.15rem] border border-white/35 bg-white/[0.12] px-4 py-3 text-left text-sand shadow-[0_28px_75px_rgba(10,8,5,0.45)] backdrop-blur-[20px] sm:px-5 sm:py-3.5"
+    >
+      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.06)_38%,rgba(255,255,255,0)_100%)]" />
+      <span className="pointer-events-none absolute -left-10 top-0 h-full w-16 rotate-[14deg] bg-white/15 blur-2xl" />
+      <div className="relative">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <img src={miniHeroMessagesIcon} alt="" className="h-5 w-5 rounded-[6px]" />
+            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.18em] text-sand/80 sm:text-[10px]">
+              {liveDealsMessagesLabel}
+            </p>
+          </div>
+          <p className="shrink-0 text-[10px] text-sand/70 sm:text-[11px]">{deal.time}</p>
+        </div>
+        <p className="mt-2 text-[12px] font-semibold text-sand sm:text-[13px]">{liveDealsSenderName}</p>
+        <p className="mt-1 text-[11px] leading-snug text-sand/92 sm:text-[12px]">{renderDealMessage(deal)}</p>
+        <p className="mt-1.5 text-[10px] font-medium text-sand/68 sm:text-[11px]">{liveDealsMoreMessagesText}</p>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     const root = rootRef.current;
@@ -349,6 +488,41 @@ export default function Home() {
         <span className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-20 -translate-y-1/2 bg-gradient-to-b from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:hidden" />
         <span className="pointer-events-none absolute inset-y-0 left-1/2 z-20 hidden w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:block" />
       </section>
+      <div
+        dir="ltr"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-30 h-[10.4rem] w-[min(94vw,25rem)] -translate-x-1/2 -translate-y-1/2 [perspective:1000px] sm:h-[10.8rem]"
+      >
+        {previewDealTwo ? (
+          <div
+            className="absolute inset-x-[7%] top-[2.2rem] h-[7.8rem] opacity-40"
+            style={{ transform: "scale(0.92) rotateX(11deg)" }}
+          >
+            {renderDealDepthLayer(2, previewDealTwo)}
+          </div>
+        ) : null}
+        {previewDealOne ? (
+          <div
+            className="absolute inset-x-[3.5%] top-[1.25rem] h-[7.8rem] opacity-55"
+            style={{ transform: "scale(0.965) rotateX(7deg)" }}
+          >
+            {renderDealDepthLayer(1, previewDealOne)}
+          </div>
+        ) : null}
+        {activeDeal ? (
+          <div
+            className={`absolute inset-x-0 top-0 h-[7.8rem] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDealTransitioning ? "translate-y-[76px] opacity-0" : "translate-y-0 opacity-100"}`}
+          >
+            {renderDealNotification(activeDeal)}
+          </div>
+        ) : null}
+        {incomingDeal ? (
+          <div
+            className={`absolute inset-x-0 top-0 h-[7.8rem] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDealTransitioning ? "translate-y-0 opacity-100" : "-translate-y-[76px] opacity-0"}`}
+          >
+            {renderDealNotification(incomingDeal)}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
