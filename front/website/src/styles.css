@@ -10,10 +10,149 @@
   --color-base: #e5e1dd;
 }
 
+html,
+body {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-base);
   color: var(--color-primary);
   min-height: 100vh;
+}
+
+/* Hide scrollbars globally while preserving scrolling */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.route-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.route-overlay__panel {
+  position: relative;
+  height: 100%;
+  transform: translateY(0%);
+  will-change: transform;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.route-overlay__panel.tile-1 {
+  background: rgba(8, 58, 79, 0.26);
+}
+
+.route-overlay__panel.tile-2 {
+  background: rgba(8, 58, 79, 0.34);
+}
+
+.route-overlay__panel.tile-3 {
+  background: rgba(8, 58, 79, 0.26);
+}
+
+.hotspot-pin {
+  position: absolute;
+  display: inline-flex;
+  height: 1.25rem;
+  width: 1.25rem;
+  transform: translate(-50%, -50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease-in-out;
+}
+
+.hotspot-pin::before {
+  content: "";
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  animation: hotspot-pulse 2s infinite;
+}
+
+.hotspot-pin:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.product-detail-swiper .swiper,
+.product-detail-swiper .swiper-wrapper,
+.product-detail-swiper .swiper-slide {
+  height: 100%;
+}
+
+.product-detail-swiper-fraction {
+  min-width: 96px;
+  text-align: center;
+}
+
+.product-detail-swiper-fraction .swiper-pagination-current,
+.product-detail-swiper-fraction .swiper-pagination-total {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.product-detail-swiper-prev.swiper-button-disabled,
+.product-detail-swiper-next.swiper-button-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@keyframes hotspot-pulse {
+  0% {
+    transform: scale(0);
+    opacity: 0.7;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+  }
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+    box-shadow: 0 0 0 14px rgba(255, 255, 255, 0);
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes about-projects-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-1 * var(--about-marquee-shift, 166.666%)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto;
+  }
+
+  .hotspot-pin::before {
+    animation: none;
+  }
+
+  .about-projects-marquee {
+    animation: none !important;
+  }
 }
 
 @layer components {
@@ -24,13 +163,69 @@ body {
   .section-shell {
     @apply mx-auto w-full max-w-6xl px-6;
   }
+
+  .feature-item {
+    @apply flex flex-col items-center justify-center text-center;
+    gap: 0.65rem;
+  }
+
+  .feature-icon-shell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.75rem;
+    height: 4.75rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow:
+      0 16px 24px -14px rgba(8, 58, 79, 0.26),
+      0 2px 6px rgba(8, 58, 79, 0.06),
+      0 0 24px rgba(255, 255, 255, 0.32);
+  }
+
+  .feature-icon-shell::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  .feature-icon {
+    width: 3rem;
+    height: 3rem;
+    color: rgba(8, 58, 79, 0.84);
+  }
+
+  .feature-title {
+    @apply text-xs sm:text-sm;
+    color: rgba(8, 58, 79, 0.8);
+  }
 }
 
 @layer utilities {
+  .about-projects-marquee {
+    animation: about-projects-marquee var(--about-marquee-duration, 26s) linear infinite;
+    will-change: transform;
+  }
+
   .bg-quiet-grid {
     background-image: linear-gradient(rgba(8, 58, 79, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(8, 58, 79, 0.05) 1px, transparent 1px);
     background-size: 48px 48px;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   .mask-fade {

@@ -32,6 +32,10 @@ type productPayload struct {
 	ShortDescriptionHTMLEn string   `json:"short_description_html_en"`
 	ShortDescriptionHTMLFa string   `json:"short_description_html_fa"`
 	ShortDescriptionHTMLAr string   `json:"short_description_html_ar"`
+	Aliases                []string `json:"aliases"`
+	Variants               []string `json:"variants"`
+	Mines                  []string `json:"mines"`
+	Finishes               []string `json:"finishes"`
 	Price                  float64  `json:"price"`
 	PriceHTML              string   `json:"price_html"`
 	ImageURL               string   `json:"image_url"`
@@ -142,6 +146,10 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		ShortDescriptionHTMLEn: shortEN,
 		ShortDescriptionHTMLFa: payload.ShortDescriptionHTMLFa,
 		ShortDescriptionHTMLAr: payload.ShortDescriptionHTMLAr,
+		Aliases:                payload.Aliases,
+		Variants:               payload.Variants,
+		Mines:                  payload.Mines,
+		Finishes:               payload.Finishes,
 		Price:                  payload.Price,
 		PriceHTML:              payload.PriceHTML,
 		ImageURL:               normalizeImageRef(payload.ImageURL),
@@ -200,6 +208,10 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		ShortDescriptionHTMLEn: shortEN,
 		ShortDescriptionHTMLFa: payload.ShortDescriptionHTMLFa,
 		ShortDescriptionHTMLAr: payload.ShortDescriptionHTMLAr,
+		Aliases:                payload.Aliases,
+		Variants:               payload.Variants,
+		Mines:                  payload.Mines,
+		Finishes:               payload.Finishes,
 		Price:                  payload.Price,
 		PriceHTML:              payload.PriceHTML,
 		ImageURL:               normalizeImageRef(payload.ImageURL),

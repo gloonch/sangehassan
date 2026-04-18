@@ -41,45 +41,13 @@ export default function BlocksCatalog({ embedded = false } = {}) {
     return status;
   };
 
-  const sectionClass = embedded ? "section-shell pb-16 pt-12" : "section-shell py-12";
+  const sectionClass = embedded ? "section-shell pt-16 pb-16" : "section-shell pt-16 pb-12";
 
   const content = (
     <section className={sectionClass}>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-primary/50">{t("blocks.catalogTitle")}</p>
-          <h1 className="mt-2 font-display text-3xl text-primary">{t("blocks.subtitle")}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <label className="flex flex-col gap-1 text-xs text-primary/60">
-            {t("blocks.filterType")}
-            <select
-              className="rounded-full border border-primary/20 bg-white px-4 py-2 text-xs font-semibold text-primary/80"
-              value={filterType}
-              onChange={(event) => setFilterType(event.target.value)}
-            >
-              <option value="all">{t("blocks.filterAll")}</option>
-              {stoneTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-primary/60">
-            {t("blocks.filterStatus")}
-            <select
-              className="rounded-full border border-primary/20 bg-white px-4 py-2 text-xs font-semibold text-primary/80"
-              value={filterStatus}
-              onChange={(event) => setFilterStatus(event.target.value)}
-            >
-              <option value="all">{t("blocks.filterAll")}</option>
-              <option value="available">{t("blocks.statusAvailable")}</option>
-              <option value="reserved">{t("blocks.statusReserved")}</option>
-              <option value="sold">{t("blocks.statusSold")}</option>
-            </select>
-          </label>
-        </div>
+      <div className="mb-8 flex flex-col gap-4">
+        <p className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("blocks.title")}</p>
+        <h1 className="font-display text-3xl md:text-4xl">{t("blocks.subtitle")}</h1>
       </div>
 
       <div className="mt-8">

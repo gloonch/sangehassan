@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
+import { getTileCompletionTime } from "../lib/routeReveal";
 import logoImage from "@shared/assets/logo.png";
 import logoWhiteImage from "@shared/assets/logo_white.png";
 
@@ -17,6 +20,8 @@ const navItems = [
 export default function Navbar() {
   const { t } = useTranslation();
   const location = useLocation();
+  const headerRef = useRef(null);
+  const mobileMenuPanelRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const isHome = location.pathname === "/";
@@ -82,6 +87,97 @@ export default function Navbar() {
     setOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || !window.matchMedia) return;
+    const panel = mobileMenuPanelRef.current;
+    if (!panel) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rows = panel.querySelectorAll("[data-mobile-item='true']");
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        panel,
+        { xPercent: 16 },
+        {
+          xPercent: 0,
+          duration: reduceMotion ? 0.3 : 0.65,
+          ease: "power3.out",
+          force3D: true
+        }
+      );
+
+      if (rows.length) {
+        gsap.fromTo(
+          rows,
+          { x: 20, autoAlpha: 0 },
+          {
+            x: 0,
+            autoAlpha: 1,
+            duration: reduceMotion ? 0.22 : 0.42,
+            delay: reduceMotion ? 0.06 : 0.14,
+            stagger: reduceMotion ? 0.012 : 0.04,
+            ease: "power2.out"
+          }
+        );
+      }
+    }, panel);
+
+    return () => ctx.revert();
+  }, [open]);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof window === "undefined" || !window.matchMedia) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isLandingPage = location.pathname === "/";
+
+    const left = header.querySelector("[data-nav-block='left']");
+    const center = header.querySelector("[data-nav-block='center']");
+    const rightCandidates = Array.from(header.querySelectorAll("[data-nav-block='right']"));
+    const right =
+      rightCandidates.find((element) => element.offsetParent !== null) ||
+      rightCandidates[0] ||
+      null;
+    const blocks = [left, center, right].filter(Boolean);
+    if (!blocks.length) return;
+
+    if (!isLandingPage) {
+      gsap.set(blocks, { autoAlpha: 1, y: 0, clearProps: "transform,opacity" });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.set(blocks, { autoAlpha: 0, y: 26, force3D: true });
+
+      const timeline = gsap.timeline();
+      blocks.forEach((block, index) => {
+        timeline.to(
+          block,
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: reduceMotion ? 0.38 : 0.82,
+            ease: "power3.out",
+            clearProps: "transform,opacity"
+          },
+          getTileCompletionTime(index, reduceMotion)
+        );
+      });
+    }, header);
+
+    return () => ctx.revert();
+  }, [location.pathname]);
+
   const displayName = user?.full_name || user?.email;
   const avatarChar = (displayName || "U").trim().charAt(0).toUpperCase();
   const visibleNavItems = navItems.filter((item) => item.key !== "ads" || Boolean(user));
@@ -94,15 +190,91 @@ export default function Navbar() {
     ? "text-sand/80 hover:text-sand"
     : "text-primary/70 hover:text-primary";
   const navActiveClass = isHome ? "text-sand" : "text-accent";
+  const mobileOverlayBaseClass = "fixed inset-0 z-[9999] bg-[#E5E1DD] text-primary lg:hidden";
+
+  const mobileMenu =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div className={mobileOverlayBaseClass} style={{ backgroundColor: "#E5E1DD", opacity: 1 }}>
+            <div ref={mobileMenuPanelRef} className="h-full w-full">
+              <div className="section-shell flex h-20 items-center justify-between gap-4">
+                <Link to="/" onClick={() => setOpen(false)} className="inline-flex items-center" aria-label={t("brand")}>
+                  <img src={logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
+                </Link>
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:bg-primary/10"
+                  onClick={() => setOpen(false)}
+                  aria-label={t("actions.close")}
+                >
+                  <span className="relative block h-4 w-4">
+                    <span className="absolute left-0 top-[7px] h-0.5 w-full -rotate-45 rounded-full bg-primary" />
+                    <span className="absolute left-0 top-[7px] h-0.5 w-full rotate-45 rounded-full bg-primary" />
+                  </span>
+                </button>
+              </div>
+
+              <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col items-center justify-center overflow-y-auto py-8 text-center">
+                <nav className="flex w-full max-w-md flex-col items-center">
+                  {visibleNavItems.map((item) => (
+                    <NavLink
+                      key={item.key}
+                      to={item.path}
+                      onClick={() => setOpen(false)}
+                      end={item.end}
+                      data-mobile-item="true"
+                      className={({ isActive }) =>
+                        `w-full border-b border-primary/15 py-4 text-center text-xl font-semibold tracking-[0.02em] text-primary transition hover:text-primary ${
+                          isActive ? "border-primary/35 text-primary" : "text-primary/80"
+                        }`
+                      }
+                    >
+                      {t(`nav.${item.key}`)}
+                    </NavLink>
+                  ))}
+                </nav>
+
+                <div className="mt-6 w-full max-w-md border-t border-primary/15 pt-6">
+                  {user ? (
+                    <NavLink
+                      to="/profile"
+                      onClick={() => setOpen(false)}
+                      data-mobile-item="true"
+                      className="mx-auto inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold uppercase text-sand transition hover:bg-primary/90"
+                      aria-label={displayName}
+                      title={displayName}
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sand/20 text-xs">
+                        {avatarChar}
+                      </span>
+                      <span>{displayName}</span>
+                    </NavLink>
+                  ) : (
+                    <NavLink
+                      to="/login"
+                      onClick={() => setOpen(false)}
+                      data-mobile-item="true"
+                      className="w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-sand transition hover:bg-primary/90"
+                    >
+                      {t("actions.loginRegister")}
+                    </NavLink>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
-    <header className={`fixed left-0 right-0 top-0 z-50 transition-colors duration-300 ${navHeaderClass}`}>
+    <header ref={headerRef} className={`fixed left-0 right-0 top-0 z-50 transition-colors duration-300 ${navHeaderClass}`}>
       <div className="section-shell flex h-20 items-center justify-between gap-4">
-        <Link to="/" className="inline-flex items-center" aria-label={t("brand")}>
+        <Link to="/" className="inline-flex items-center will-change-transform" aria-label={t("brand")} data-nav-block="left">
           <img src={isHome ? logoWhiteImage : logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium lg:flex will-change-transform" data-nav-block="center">
           {visibleNavItems.map((item) => (
             <NavLink
               key={item.key}
@@ -117,7 +289,7 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden items-center gap-3 lg:flex will-change-transform" data-nav-block="right">
           {user ? (
             <NavLink
               to="/profile"
@@ -131,115 +303,48 @@ export default function Navbar() {
               {avatarChar}
             </NavLink>
           ) : (
-            <>
-              <NavLink
-                to="/login"
-                className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${isHome
-                  ? "border-sand/35 text-sand/90 hover:border-sand/60 hover:text-sand"
-                  : "border-primary/20 text-primary/80 hover:border-primary/50"
-                  }`}
-              >
-                {t("actions.login")}
-              </NavLink>
-              <NavLink
-                to="/signup"
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition ${isHome
-                  ? "border border-sand/35 bg-sand/15 text-sand hover:bg-sand/25"
-                  : "bg-primary text-sand hover:bg-primary/90"
-                  }`}
-              >
-                {t("actions.signup")}
-              </NavLink>
-            </>
+            <NavLink
+              to="/login"
+              className={`rounded-full px-4 py-2 text-xs font-semibold transition ${isHome
+                ? "border border-sand/35 bg-sand/15 text-sand hover:bg-sand/25"
+                : "bg-primary text-sand hover:bg-primary/90"
+                }`}
+            >
+              {t("actions.loginRegister")}
+            </NavLink>
           )}
         </div>
 
         <button
           type="button"
-          className={`flex h-10 w-10 items-center justify-center rounded-full border text-base font-semibold leading-none transition lg:hidden ${
-            isHome
-              ? "border-sand/40 bg-sand/10 text-sand hover:bg-sand/20"
-              : "border-primary/25 bg-white/70 text-primary hover:bg-white"
-          }`}
+          data-nav-block="right"
+          className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold leading-none transition will-change-transform lg:hidden ${isHome
+            ? "bg-sand/10 text-sand hover:bg-sand/20"
+            : "bg-transparent text-primary hover:bg-primary/10"
+            }`}
           onClick={() => setOpen((prev) => !prev)}
           aria-expanded={open}
           aria-label={t("actions.menu")}
         >
-          i
+          <span className="sr-only">{t("actions.menu")}</span>
+          <span className="relative block h-4 w-5">
+            <span
+              className={`absolute left-0 top-0 h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "translate-y-[7px] rotate-45" : ""
+                }`}
+            />
+            <span
+              className={`absolute left-0 top-[7px] h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "opacity-0" : "opacity-100"
+                }`}
+            />
+            <span
+              className={`absolute left-0 top-[14px] h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "-translate-y-[7px] -rotate-45" : ""
+                }`}
+            />
+          </span>
         </button>
       </div>
 
-      {open && (
-        <div className={`lg:hidden ${isHome ? "bg-primary/50 backdrop-blur-xl" : "bg-sand/95 backdrop-blur-lg"}`}>
-          <div className={`section-shell py-4 ${isHome ? "border-t border-sand/25" : "border-t border-primary/10"}`}>
-            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-              {visibleNavItems.map((item) => (
-                <NavLink
-                  key={item.key}
-                  to={item.path}
-                  onClick={() => setOpen(false)}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    `whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      isActive
-                        ? isHome
-                          ? "border-sand/50 bg-sand/15 text-sand"
-                          : "border-primary/30 bg-primary text-sand"
-                        : isHome
-                          ? "border-sand/30 text-sand/85"
-                          : "border-primary/20 text-primary/70"
-                    }`
-                  }
-                >
-                  {t(`nav.${item.key}`)}
-                </NavLink>
-              ))}
-            </div>
-            <div className="mt-3 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-              {user ? (
-                <NavLink
-                  to="/profile"
-                  onClick={() => setOpen(false)}
-                  className={`flex h-9 min-w-9 items-center justify-center rounded-full text-xs font-semibold uppercase shadow transition ${
-                    isHome
-                      ? "border border-sand/30 bg-sand/15 text-sand hover:bg-sand/25"
-                      : "bg-primary text-sand hover:bg-primary/90"
-                  }`}
-                  aria-label={displayName}
-                  title={displayName}
-                >
-                  {avatarChar}
-                </NavLink>
-              ) : (
-                <>
-                  <NavLink
-                    to="/login"
-                    onClick={() => setOpen(false)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      isHome
-                        ? "border-sand/35 text-sand/90 hover:border-sand/60 hover:text-sand"
-                        : "border-primary/20 text-primary/80 hover:border-primary/50"
-                    }`}
-                  >
-                    {t("actions.login")}
-                  </NavLink>
-                  <NavLink
-                    to="/signup"
-                    onClick={() => setOpen(false)}
-                    className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                      isHome
-                        ? "border border-sand/35 bg-sand/15 text-sand hover:bg-sand/25"
-                        : "bg-primary text-sand hover:bg-primary/90"
-                    }`}
-                  >
-                    {t("actions.signup")}
-                  </NavLink>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {mobileMenu}
     </header>
   );
 }

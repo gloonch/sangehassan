@@ -1,273 +1,291 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 
-const getColumnsForWidth = (width) => {
-  if (width >= 1024) return 3;
-  if (width >= 768) return 2;
-  return 1;
+const projectsSeoContent = {
+  fa: {
+    title: "پروژه‌ها | سنگ حسن",
+    description:
+      "نمونه پروژه‌های اجراشده سنگ حسن در نما و طراحی داخلی؛ شامل خروجی واقعی، کیفیت اجرا و جزئیات کاربرد سنگ.",
+    locale: "fa_IR"
+  },
+  en: {
+    title: "Projects | SangeHassan",
+    description:
+      "Explore SangeHassan's completed stone projects across facade and interior applications with real-world execution results.",
+    locale: "en_US"
+  },
+  ar: {
+    title: "المشاريع | سانج حسن",
+    description:
+      "اطّلع على مشاريع سانج حسن المنجزة في الواجهات والتصميم الداخلي مع نتائج تنفيذ واقعية.",
+    locale: "ar_SA"
+  }
 };
 
-const pickLocalizedDescription = (project, lang) => {
+const getLocalizedProjectDescription = (project, lang) => {
   if (!project) return "";
   if (lang === "fa") return project.description_fa || project.description_en || project.description_ar || project.description || "";
   if (lang === "ar") return project.description_ar || project.description_en || project.description_fa || project.description || "";
   return project.description_en || project.description_fa || project.description_ar || project.description || "";
 };
 
+const getLocalizedProjectTitle = (project, lang, t) => {
+  if (!project) return "";
+
+  const explicitTitle =
+    lang === "fa"
+      ? project.title_fa || project.title_en || project.title_ar
+      : lang === "ar"
+        ? project.title_ar || project.title_en || project.title_fa
+        : project.title_en || project.title_fa || project.title_ar;
+
+  if (explicitTitle) return explicitTitle;
+
+  const description = getLocalizedProjectDescription(project, lang).trim();
+  if (description) {
+    const firstLine = description.split(/\r?\n/)[0].trim();
+    if (firstLine) return firstLine.length > 56 ? `${firstLine.slice(0, 56)}...` : firstLine;
+  }
+
+  return `${t("projects.itemTitle")} ${project.id}`;
+};
+
 export default function Projects() {
   const { t, lang } = useTranslation();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [columns, setColumns] = useState(() => {
-    if (typeof window === "undefined") return 3;
-    return getColumnsForWidth(window.innerWidth);
-  });
-  const [openProjectId, setOpenProjectId] = useState(null);
-  const [detailsById, setDetailsById] = useState({});
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [fullscreenImage, setFullscreenImage] = useState("");
-  const [descriptionVisible, setDescriptionVisible] = useState(false);
 
   useEffect(() => {
     let active = true;
+
+    const loadDetails = async (cards) => {
+      const details = await Promise.allSettled(
+        cards.map((project) => fetchJSON(`/api/projects/${project.id}`))
+      );
+      if (!active) return;
+
+      const enriched = cards.map((project, index) => {
+        const detail = details[index];
+        if (detail.status !== "fulfilled" || !detail.value?.data) return project;
+        return {
+          ...project,
+          ...detail.value.data,
+          cover_image_url: detail.value.data.cover_image_url || project.cover_image_url
+        };
+      });
+
+      setProjects(enriched);
+    };
+
     const load = async () => {
       try {
         const response = await fetchJSON("/api/projects");
         if (!active) return;
-        setProjects(response.data || []);
+        const cards = Array.isArray(response.data) ? response.data : [];
+        setProjects(cards);
+        setLoading(false);
+        if (cards.length > 0) {
+          loadDetails(cards).catch(() => { });
+        }
       } catch (_) {
         if (!active) return;
         setProjects([]);
-      } finally {
-        if (active) setLoading(false);
+        setLoading(false);
       }
     };
+
     load();
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    const onResize = () => setColumns(getColumnsForWidth(window.innerWidth));
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const directionClass = useMemo(() => {
+    const isRTL = lang === "fa" || lang === "ar";
+    return isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
+  }, [lang]);
 
-  const fetchProjectDetails = async (projectId) => {
-    setDetailsById((prev) => {
-      const cached = prev[projectId];
-      if (cached?.status === "loading" || cached?.status === "loaded") return prev;
-      return {
-        ...prev,
-        [projectId]: { status: "loading", data: null, error: "" }
-      };
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const seo = projectsSeoContent[lang] || projectsSeoContent.fa;
+    const pageUrl = `${window.location.origin}/projects`;
+    const previousTitle = document.title;
+    const cleanups = [];
+
+    const firstCover = projects.find((project) => project?.cover_image_url)?.cover_image_url;
+    const ogImage = firstCover ? resolveImageUrl(firstCover) : "";
+
+    const upsertMeta = (selector, createAttrs, value) => {
+      if (!value) return;
+
+      let el = document.head.querySelector(selector);
+      const created = !el;
+
+      if (!el) {
+        el = document.createElement("meta");
+        Object.entries(createAttrs).forEach(([key, attrValue]) => {
+          el.setAttribute(key, attrValue);
+        });
+        document.head.appendChild(el);
+      }
+
+      const prevContent = el.getAttribute("content");
+      el.setAttribute("content", value);
+
+      cleanups.push(() => {
+        if (created) {
+          el.remove();
+          return;
+        }
+        if (prevContent === null) {
+          el.removeAttribute("content");
+          return;
+        }
+        el.setAttribute("content", prevContent);
+      });
+    };
+
+    const upsertCanonical = (href) => {
+      let el = document.head.querySelector('link[rel="canonical"]');
+      const created = !el;
+
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", "canonical");
+        document.head.appendChild(el);
+      }
+
+      const prevHref = el.getAttribute("href");
+      el.setAttribute("href", href);
+
+      cleanups.push(() => {
+        if (created) {
+          el.remove();
+          return;
+        }
+        if (prevHref === null) {
+          el.removeAttribute("href");
+          return;
+        }
+        el.setAttribute("href", prevHref);
+      });
+    };
+
+    const upsertJsonLd = (payload) => {
+      const scriptId = "projects-jsonld";
+      let script = document.getElementById(scriptId);
+      const created = !script;
+
+      if (!script) {
+        script = document.createElement("script");
+        script.setAttribute("id", scriptId);
+        script.setAttribute("type", "application/ld+json");
+        document.head.appendChild(script);
+      }
+
+      const prevContent = script.textContent;
+      script.textContent = JSON.stringify(payload);
+
+      cleanups.push(() => {
+        if (created) {
+          script.remove();
+          return;
+        }
+        script.textContent = prevContent;
+      });
+    };
+
+    document.title = seo.title;
+    upsertCanonical(pageUrl);
+    upsertMeta('meta[name="description"]', { name: "description" }, seo.description);
+    upsertMeta('meta[name="robots"]', { name: "robots" }, "index,follow,max-image-preview:large");
+    upsertMeta('meta[property="og:type"]', { property: "og:type" }, "website");
+    upsertMeta('meta[property="og:title"]', { property: "og:title" }, seo.title);
+    upsertMeta('meta[property="og:description"]', { property: "og:description" }, seo.description);
+    upsertMeta('meta[property="og:url"]', { property: "og:url" }, pageUrl);
+    upsertMeta('meta[property="og:locale"]', { property: "og:locale" }, seo.locale);
+    upsertMeta('meta[property="og:image"]', { property: "og:image" }, ogImage);
+    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card" }, "summary_large_image");
+    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, seo.title);
+    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, seo.description);
+    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, ogImage);
+
+    upsertJsonLd({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      inLanguage: lang,
+      name: seo.title,
+      description: seo.description,
+      url: pageUrl,
+      mainEntity: {
+        "@type": "ItemList",
+        itemListElement: projects.slice(0, 12).map((project, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${window.location.origin}/projects/${project.id}`,
+          name: getLocalizedProjectTitle(project, lang, t),
+          image: project.cover_image_url ? resolveImageUrl(project.cover_image_url) : undefined
+        }))
+      }
     });
 
-    try {
-      const response = await fetchJSON(`/api/projects/${projectId}`);
-      const data = response?.data || null;
-      setDetailsById((prev) => ({
-        ...prev,
-        [projectId]: { status: "loaded", data, error: "" }
-      }));
-    } catch (error) {
-      setDetailsById((prev) => ({
-        ...prev,
-        [projectId]: { status: "error", data: null, error: error?.message || t("messages.error") }
-      }));
-    }
-  };
-
-  const handleProjectClick = (projectId) => {
-    if (projectId === openProjectId) {
-      setOpenProjectId(null);
-      setActiveSlideIndex(0);
-      return;
-    }
-
-    setOpenProjectId(projectId);
-    setActiveSlideIndex(0);
-    fetchProjectDetails(projectId);
-  };
-
-  const openIndex = useMemo(
-    () => projects.findIndex((project) => project.id === openProjectId),
-    [projects, openProjectId]
-  );
-
-  const insertAfterIndex = useMemo(() => {
-    if (openIndex < 0) return -1;
-    const row = Math.floor(openIndex / columns);
-    return Math.min((row + 1) * columns - 1, projects.length - 1);
-  }, [openIndex, columns, projects.length]);
-
-  const openProjectDetails = openProjectId ? detailsById[openProjectId] : null;
-  const galleryImages = openProjectDetails?.data?.gallery_images || [];
-  const localizedDescription = pickLocalizedDescription(openProjectDetails?.data, lang) || t("projects.noDescription");
-
-  useEffect(() => {
-    if (!openProjectId || openProjectDetails?.status !== "loaded") return;
-    setDescriptionVisible(false);
-    const raf = window.requestAnimationFrame(() => setDescriptionVisible(true));
-    return () => window.cancelAnimationFrame(raf);
-  }, [openProjectId, activeSlideIndex, openProjectDetails?.status, lang]);
-
-  useEffect(() => {
-    if (!fullscreenImage) return undefined;
-
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") setFullscreenImage("");
-    };
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-
     return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKeyDown);
+      document.title = previousTitle;
+      cleanups.reverse().forEach((fn) => fn());
     };
-  }, [fullscreenImage]);
-
-  useEffect(() => {
-    if (!openProjectId || galleryImages.length === 0) return;
-    if (activeSlideIndex > galleryImages.length - 1) setActiveSlideIndex(0);
-  }, [openProjectId, galleryImages, activeSlideIndex]);
+  }, [lang, projects, t]);
 
   return (
-    <section className="section-shell ">
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-8 flex min-h-[30vh] flex-col justify-end border-b border-primary/25 pb-6 md:mb-10 md:pb-8">
-          <p className="text-xs uppercase tracking-[0.42em] text-primary/55 md:text-sm">{t("projects.title")}</p>
-          <h1 className="mt-3 font-display text-4xl leading-[1.02] tracking-tight text-primary md:text-6xl lg:text-7xl">
-            {t("projects.subtitle")}
-          </h1>
-        </div>
+    <section className="section-shell pt-16 pb-12">
+      <div className="mb-8 flex flex-col gap-4">
+        <p className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("projects.title")}</p>
+        <h1 className="font-display text-3xl md:text-4xl">{t("projects.subtitle")}</h1>
+      </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 gap-0 border-l border-t border-primary/20 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, index) => (
-              <div key={index} className="aspect-[3/4] animate-pulse border-b border-r border-primary/20 bg-primary/10" />
-            ))}
-          </div>
-        ) : projects.length === 0 ? (
-          <p className="text-sm text-primary/70">{t("projects.empty")}</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-0 border-l border-t border-primary/20 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project, index) => (
-              <Fragment key={project.id}>
-                <button
-                  type="button"
-                  onClick={() => handleProjectClick(project.id)}
-                  className={`group relative aspect-[3/4] overflow-hidden border-b border-r transition ${openProjectId === project.id
-                    ? "border-accent"
-                    : "border-primary/20 hover:border-primary/40"
-                    }`}
-                >
+      {loading ? (
+        <p className="text-sm text-primary/70">{t("messages.loading")}</p>
+      ) : projects.length === 0 ? (
+        <p className="text-sm text-primary/70">{t("projects.empty")}</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {projects.map((project) => {
+            const title = getLocalizedProjectTitle(project, lang, t);
+            const description = getLocalizedProjectDescription(project, lang);
+
+            return (
+              <Link
+                key={project.id}
+                to={`/projects/${project.id}`}
+                className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
+              >
+                <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
                   {project.cover_image_url ? (
                     <img
                       src={resolveImageUrl(project.cover_image_url)}
-                      alt="Project cover"
-                      className="h-full w-full object-cover object-center"
+                      alt={title}
                       loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-primary/60">
-                      {t("messages.empty")}
+                    <div className="flex h-full items-center justify-center text-sm text-primary/60">
+                      {t("productDetail.noImages")}
                     </div>
                   )}
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-                </button>
 
-                {openProjectId && index === insertAfterIndex && (
-                  <div className="col-span-1 border-b border-r border-primary/20 md:col-span-2 lg:col-span-3">
-                    {openProjectDetails?.status === "loading" || !openProjectDetails ? (
-                      <div className="space-y-2 p-4 animate-pulse">
-                        <div className="h-4 w-2/3 bg-primary/10" />
-                        <div className="h-4 w-1/2 bg-primary/10" />
-                        <div className="h-56 bg-primary/10" />
-                      </div>
-                    ) : openProjectDetails.status === "error" ? (
-                      <p className="p-4 text-sm text-red-500">{openProjectDetails.error || t("messages.error")}</p>
-                    ) : galleryImages.length > 0 ? (
-                      <div className="relative w-full overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => setActiveSlideIndex((prev) => Math.max(prev - 1, 0))}
-                          disabled={activeSlideIndex === 0}
-                          className="absolute left-4 top-1/2 z-20 -translate-y-1/2 bg-transparent p-0 text-5xl font-light leading-none text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.55)] transition disabled:cursor-not-allowed disabled:opacity-35 md:text-6xl"
-                          aria-label={t("projects.prev")}
-                        >
-                          {"<"}
-                        </button>
+                  <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${directionClass} from-black/70 via-black/25 to-transparent p-4`}>
+                    <h3 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">{title}</h3>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveSlideIndex((prev) => Math.min(prev + 1, galleryImages.length - 1))
-                          }
-                          disabled={activeSlideIndex === galleryImages.length - 1}
-                          className="absolute right-4 top-1/2 z-20 -translate-y-1/2 bg-transparent p-0 text-5xl font-light leading-none text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.55)] transition disabled:cursor-not-allowed disabled:opacity-35 md:text-6xl"
-                          aria-label={t("projects.next")}
-                        >
-                          {">"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setFullscreenImage(galleryImages[activeSlideIndex])}
-                          className="block h-full w-full"
-                        >
-                          <img
-                            src={resolveImageUrl(galleryImages[activeSlideIndex])}
-                            alt="Project gallery"
-                            className="h-[420px] w-full cursor-zoom-in object-cover object-center md:h-[620px]"
-                            loading="lazy"
-                          />
-                        </button>
-
-                        <div
-                          className={`absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-primary/88 via-primary/50 to-transparent px-6 pb-7 pt-20 text-base leading-8 text-white md:text-xl md:leading-10 transition-opacity duration-500 ${descriptionVisible ? "opacity-100" : "opacity-0"
-                            }`}
-                        >
-                          {localizedDescription}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-primary/5 p-5 text-base leading-8 text-primary/80 md:text-lg md:leading-9">
-                        {localizedDescription}
-                      </div>
-                    )}
                   </div>
-                )}
-              </Fragment>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {fullscreenImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/88 px-4 py-8"
-          onClick={() => setFullscreenImage("")}
-        >
-          <button
-            type="button"
-            onClick={() => setFullscreenImage("")}
-            className="absolute right-4 top-4 border border-white/40 bg-white/10 px-3 py-2 text-lg text-white"
-            aria-label={t("actions.close")}
-          >
-            x
-          </button>
-          <img
-            src={resolveImageUrl(fullscreenImage)}
-            alt="Project fullscreen"
-            className="max-h-full max-w-full object-contain"
-            onClick={(event) => event.stopPropagation()}
-          />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </section>

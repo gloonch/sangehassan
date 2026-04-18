@@ -29,7 +29,7 @@ export default function Blogs() {
   }, []);
 
   return (
-    <section className="section-shell py-16">
+    <section className="section-shell pt-16 pb-12">
       <div className="mb-8">
         <p className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("blogs.title")}</p>
         <h1 className="mt-2 font-display text-3xl md:text-4xl">{t("blogs.subtitle")}</h1>

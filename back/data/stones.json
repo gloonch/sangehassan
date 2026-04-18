@@ -1,0 +1,717 @@
+{
+  "stats": {
+    "total_products": 97,
+    "by_category": {
+      "گرانیت": 24,
+      "تراورتن": 21,
+      "مرمریت": 41,
+      "چینی": 11
+    }
+  },
+  "category_defaults": {
+    "تراورتن": {
+      "possible_variants": [
+        "ابر و باد",
+        "نسکافه ای",
+        "عسلی",
+        "بدون موج",
+        "موج دار",
+        "موج پیچ",
+        "کپیول"
+      ],
+      "possible_finishes": [
+        "فیلد",
+        "آنفیلد",
+        "هوند",
+        "چرم"
+      ]
+    }
+  },
+  "products": [
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت فیروزه نیشابور",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت مروارید مشهد",
+      "variants": [],
+      "mines": ["ریاحی", "هاشمی", "خاتم"],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت قرمز یزد",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت نهبندان",
+      "variants": ["پرتقالی", "طوسی", "آستان", "لطف اللهی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت قرمز نائین",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت مشکی نطنز",
+      "variants": ["رنگ شده", "نچرال"],
+      "mines": ["علیزاده", "حسینی"],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت مشکی تویسرکان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت مشکی چایان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت جت بلک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت کسپر",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت گل پنبه ای هگمتانه",
+      "variants": ["همدان"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت بروجرد",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت کلاردشت",
+      "variants": ["هلویی ایرانی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت زاهدان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت سفید نطنز",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت زنجان",
+      "variants": ["طوسی", "مشکی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت بهاره زنجان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت اشنویه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت شیرکوه یزد",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت سبز جنگلی بیرجند",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت سبز کاهویی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت الموت قزوین",
+      "variants": ["دانه درشت", "دانه ریز"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت هلویی وارداتی",
+      "variants": ["پیچ رد"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "گرانیت",
+      "name_fa": "گرانیت پرتقالی وارداتی",
+      "variants": ["دانه درشت", "دانه ریز"],
+      "mines": [],
+      "finishes": []
+    },
+
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن آتشکوه",
+      "variants": ["شهاب سنگ"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن حاجی آباد",
+      "variants": [],
+      "mines": ["توکلی", "نیکفر", "کربلایی"],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن دره بخاری",
+      "variants": [],
+      "mines": ["آذرنوش", "حوزه"],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن حسن",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن طرق",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن شکلاتی آقا محمدی کاشان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن ابیانه",
+      "variants": [],
+      "mines": ["صلصالی", "اسماعیلی", "سلمی"],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن عباس آباد",
+      "variants": ["موج دار", "موج کبریتی", "دنده گاوی", "بدون موج"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن آبگرم",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن خورهه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن کمشچه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن پاییز",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن قره آغاج",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن ماکو",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن تکاب",
+      "variants": ["سیلور"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن بوکان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن آذرشهر",
+      "variants": ["لیموئی", "قرمز"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن درپوش",
+      "variants": ["فلاشینگ"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن گردویی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن تنه درختی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "تراورتن",
+      "name_fa": "تراورتن طرح چوب",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت گوهره",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت ال آی پی",
+      "variants": [],
+      "mines": [],
+      "finishes": [],
+      "aliases": ["LIP"]
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم باختران",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت لایمستون",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم آباده",
+      "variants": ["دانه برنجی", "مینیاتوری", "موج دار", "زیتونی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت ابرکوه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت خوی",
+      "variants": ["کرم", "طلایی", "زیتونی", "کاربنی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم دهبید",
+      "variants": [],
+      "mines": ["چاه مرغی", "انگورک", "حسن آباد", "زارع"],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت شبنم",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت سفید کوه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کوه سفید",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت جوشقان",
+      "variants": ["کالباسی", "موج دار"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت صورتی بجستان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت انارک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی لاشتر",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی نجف آباد",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی تری دی بلک",
+      "variants": [],
+      "mines": [],
+      "finishes": [],
+      "aliases": ["3D BLACK"]
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت گلدن بلک",
+      "variants": [],
+      "mines": [],
+      "finishes": [],
+      "aliases": ["GOLDEN BLACK"]
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی دهبید",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی زاغ",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مهکام",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت طوسی ملیکا",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت ارسنجان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت نوارقلبی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت صلصالی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت اداوی",
+      "variants": ["کرم", "صورتی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم ایرجی",
+      "variants": ["دانه برنجی"],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت نسکافه ای",
+      "variants": [],
+      "mines": ["دانشور"],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم یزد",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم پارادایس",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت نیشابور",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم هرسین",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم نی زار",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم سمیرم",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم پرطاووسی",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت پاییز",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت طوسی پرشین سیلک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت کرم چهرک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت گندمک",
+      "variants": [],
+      "mines": [],
+      "finishes": ["تیشه ای", "بوشهمر", "بادبر", "راک", "فلیم چرمی"]
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت مشکی دبل بلک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "مرمریت",
+      "name_fa": "مرمریت صورتی هستیجان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال قروه",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی سیرجان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی الیگودرز",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی ارب اسکاتو",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال نی ریز",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال ازنا",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال لایبید",
+      "variants": [],
+      "mines": ["احرار"],
+      "finishes": ["ابری", "بوشهمر", "فلیم", "فلیم چرمی", "تیشه ای"]
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی هرات",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال مارمارا",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کشکک",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    },
+    {
+      "category": "چینی",
+      "name_fa": "چینی کریستال سایمان",
+      "variants": [],
+      "mines": [],
+      "finishes": []
+    }
+  ]
+}

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/lib/pq"
+
 	"sangehassan/back/internal/domain"
 )
 
@@ -21,6 +23,7 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]domain.Product, error) {
 	query := `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.aliases, p.variants, p.mines, p.finishes,
 			       p.description_html, p.short_description_html,
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
@@ -55,6 +58,10 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 	var products []domain.Product
 	for rows.Next() {
 		var product domain.Product
+		var aliases pq.StringArray
+		var variants pq.StringArray
+		var mines pq.StringArray
+		var finishes pq.StringArray
 		var description sql.NullString
 		var shortDescription sql.NullString
 		var descriptionEN sql.NullString
@@ -80,6 +87,10 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			&product.TitleFA,
 			&product.TitleAR,
 			&product.Slug,
+			&aliases,
+			&variants,
+			&mines,
+			&finishes,
 			&description,
 			&shortDescription,
 			&descriptionEN,
@@ -105,6 +116,10 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 		); err != nil {
 			return nil, err
 		}
+		product.Aliases = aliases
+		product.Variants = variants
+		product.Mines = mines
+		product.Finishes = finishes
 		product.DescriptionHTML = description.String
 		product.Description = product.DescriptionHTML
 		product.ShortDescriptionHTML = shortDescription.String
@@ -155,6 +170,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, error) {
 	rows, err := r.db.QueryContext(ctx, `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.aliases, p.variants, p.mines, p.finishes,
 			       p.description_html, p.short_description_html,
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
@@ -176,6 +192,10 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 	var products []domain.Product
 	for rows.Next() {
 		var product domain.Product
+		var aliases pq.StringArray
+		var variants pq.StringArray
+		var mines pq.StringArray
+		var finishes pq.StringArray
 		var description sql.NullString
 		var shortDescription sql.NullString
 		var descriptionEN sql.NullString
@@ -201,6 +221,10 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&product.TitleFA,
 			&product.TitleAR,
 			&product.Slug,
+			&aliases,
+			&variants,
+			&mines,
+			&finishes,
 			&description,
 			&shortDescription,
 			&descriptionEN,
@@ -226,6 +250,10 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 		); err != nil {
 			return nil, err
 		}
+		product.Aliases = aliases
+		product.Variants = variants
+		product.Mines = mines
+		product.Finishes = finishes
 		product.DescriptionHTML = description.String
 		product.Description = product.DescriptionHTML
 		product.ShortDescriptionHTML = shortDescription.String
@@ -276,6 +304,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Product, error) {
 	row := r.db.QueryRowContext(ctx, `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.aliases, p.variants, p.mines, p.finishes,
 			       p.description_html, p.short_description_html,
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
@@ -290,6 +319,10 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 	`, id)
 
 	var product domain.Product
+	var aliases pq.StringArray
+	var variants pq.StringArray
+	var mines pq.StringArray
+	var finishes pq.StringArray
 	var description sql.NullString
 	var shortDescription sql.NullString
 	var descriptionEN sql.NullString
@@ -316,6 +349,10 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&product.TitleFA,
 		&product.TitleAR,
 		&product.Slug,
+		&aliases,
+		&variants,
+		&mines,
+		&finishes,
 		&description,
 		&shortDescription,
 		&descriptionEN,
@@ -345,6 +382,10 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 	product.DescriptionHTML = description.String
 	product.Description = product.DescriptionHTML
 	product.ShortDescriptionHTML = shortDescription.String
+	product.Aliases = aliases
+	product.Variants = variants
+	product.Mines = mines
+	product.Finishes = finishes
 	product.DescriptionHTMLEn = descriptionEN.String
 	product.DescriptionHTMLFa = descriptionFA.String
 	product.DescriptionHTMLAr = descriptionAR.String
@@ -387,6 +428,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	escapedSlug := url.PathEscape(slug)
 	row := r.db.QueryRowContext(ctx, `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
+			       p.aliases, p.variants, p.mines, p.finishes,
 			       p.description_html, p.short_description_html,
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
@@ -401,6 +443,10 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	`, slug, escapedSlug)
 
 	var product domain.Product
+	var aliases pq.StringArray
+	var variants pq.StringArray
+	var mines pq.StringArray
+	var finishes pq.StringArray
 	var description sql.NullString
 	var shortDescription sql.NullString
 	var descriptionEN sql.NullString
@@ -427,6 +473,10 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&product.TitleFA,
 		&product.TitleAR,
 		&product.Slug,
+		&aliases,
+		&variants,
+		&mines,
+		&finishes,
 		&description,
 		&shortDescription,
 		&descriptionEN,
@@ -456,6 +506,10 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	product.DescriptionHTML = description.String
 	product.Description = product.DescriptionHTML
 	product.ShortDescriptionHTML = shortDescription.String
+	product.Aliases = aliases
+	product.Variants = variants
+	product.Mines = mines
+	product.Finishes = finishes
 	product.DescriptionHTMLEn = descriptionEN.String
 	product.DescriptionHTMLFa = descriptionFA.String
 	product.DescriptionHTMLAr = descriptionAR.String
@@ -501,18 +555,45 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO products (
 		  title_en, title_fa, title_ar, slug,
+		  aliases, variants, mines, finishes,
 		  description_html, short_description_html,
 		  description_html_en, description_html_fa, description_html_ar,
 		  short_description_html_en, short_description_html_fa, short_description_html_ar,
 		  price, price_html, image_url, main_category_id, is_popular
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+		ON CONFLICT (slug) DO UPDATE SET
+		  title_en = EXCLUDED.title_en,
+		  title_fa = EXCLUDED.title_fa,
+		  title_ar = EXCLUDED.title_ar,
+		  aliases = EXCLUDED.aliases,
+		  variants = EXCLUDED.variants,
+		  mines = EXCLUDED.mines,
+		  finishes = EXCLUDED.finishes,
+		  description_html = EXCLUDED.description_html,
+		  short_description_html = EXCLUDED.short_description_html,
+		  description_html_en = EXCLUDED.description_html_en,
+		  description_html_fa = EXCLUDED.description_html_fa,
+		  description_html_ar = EXCLUDED.description_html_ar,
+		  short_description_html_en = EXCLUDED.short_description_html_en,
+		  short_description_html_fa = EXCLUDED.short_description_html_fa,
+		  short_description_html_ar = EXCLUDED.short_description_html_ar,
+		  price = EXCLUDED.price,
+		  price_html = EXCLUDED.price_html,
+		  image_url = EXCLUDED.image_url,
+		  main_category_id = EXCLUDED.main_category_id,
+		  is_popular = EXCLUDED.is_popular,
+		  updated_at = NOW()
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
 		product.TitleFA,
 		product.TitleAR,
 		product.Slug,
+		pq.Array(product.Aliases),
+		pq.Array(product.Variants),
+		pq.Array(product.Mines),
+		pq.Array(product.Finishes),
 		nullableString(product.DescriptionHTML),
 		nullableString(product.ShortDescriptionHTML),
 		nullableString(product.DescriptionHTMLEn),
@@ -543,27 +624,35 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		    title_fa = $2,
 		    title_ar = $3,
 		    slug = $4,
-		    description_html = $5,
-		    short_description_html = $6,
-		    description_html_en = $7,
-		    description_html_fa = $8,
-		    description_html_ar = $9,
-		    short_description_html_en = $10,
-		    short_description_html_fa = $11,
-		    short_description_html_ar = $12,
-		    price = $13,
-		    price_html = $14,
-		    image_url = $15,
-		    main_category_id = $16,
-		    is_popular = $17,
+		    aliases = $5,
+		    variants = $6,
+		    mines = $7,
+		    finishes = $8,
+		    description_html = $9,
+		    short_description_html = $10,
+		    description_html_en = $11,
+		    description_html_fa = $12,
+		    description_html_ar = $13,
+		    short_description_html_en = $14,
+		    short_description_html_fa = $15,
+		    short_description_html_ar = $16,
+		    price = $17,
+		    price_html = $18,
+		    image_url = $19,
+		    main_category_id = $20,
+		    is_popular = $21,
 		    updated_at = NOW()
-		WHERE id = $18
+		WHERE id = $22
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
 		product.TitleFA,
 		product.TitleAR,
 		product.Slug,
+		pq.Array(product.Aliases),
+		pq.Array(product.Variants),
+		pq.Array(product.Mines),
+		pq.Array(product.Finishes),
 		nullableString(product.DescriptionHTML),
 		nullableString(product.ShortDescriptionHTML),
 		nullableString(product.DescriptionHTMLEn),

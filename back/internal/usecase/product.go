@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"strings"
 
 	"sangehassan/back/internal/domain"
 	"sangehassan/back/internal/ports"
@@ -32,6 +33,16 @@ func (s *ProductService) GetBySlug(ctx context.Context, slug string) (domain.Pro
 }
 
 func (s *ProductService) Create(ctx context.Context, product domain.Product) (domain.Product, error) {
+	product.Aliases = normalizeStringList(product.Aliases)
+	product.Variants = normalizeStringList(product.Variants)
+	product.Mines = normalizeStringList(product.Mines)
+	product.Finishes = normalizeStringList(product.Finishes)
+	if product.TitleEN == "" {
+		product.TitleEN = product.TitleFA
+	}
+	if product.TitleAR == "" {
+		product.TitleAR = product.TitleFA
+	}
 	if product.Slug == "" {
 		product.Slug = slugify(product.TitleEN)
 	}
@@ -63,6 +74,16 @@ func (s *ProductService) Create(ctx context.Context, product domain.Product) (do
 }
 
 func (s *ProductService) Update(ctx context.Context, product domain.Product) (domain.Product, error) {
+	product.Aliases = normalizeStringList(product.Aliases)
+	product.Variants = normalizeStringList(product.Variants)
+	product.Mines = normalizeStringList(product.Mines)
+	product.Finishes = normalizeStringList(product.Finishes)
+	if product.TitleEN == "" {
+		product.TitleEN = product.TitleFA
+	}
+	if product.TitleAR == "" {
+		product.TitleAR = product.TitleFA
+	}
 	if product.Slug == "" {
 		product.Slug = slugify(product.TitleEN)
 	}
@@ -119,4 +140,22 @@ func categoryIDsFromProduct(product domain.Product) []int64 {
 		return nil
 	}
 	return []int64{*product.MainCategoryID}
+}
+
+// normalizeStringList trims whitespace, drops empties, deduplicates while keeping order.
+func normalizeStringList(values []string) []string {
+	seen := make(map[string]struct{})
+	out := make([]string, 0, len(values))
+	for _, val := range values {
+		clean := strings.TrimSpace(val)
+		if clean == "" {
+			continue
+		}
+		if _, ok := seen[clean]; ok {
+			continue
+		}
+		seen[clean] = struct{}{}
+		out = append(out, clean)
+	}
+	return out
 }

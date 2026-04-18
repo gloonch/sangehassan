@@ -124,25 +124,25 @@ export default function Footer() {
   const socialJustify = isRTL ? "justify-center md:justify-end" : "justify-center md:justify-start";
 
   return (
-    <footer className="mt-24 overflow-hidden bg-primary text-sand">
-      <div className="section-shell py-14 md:py-16">
-        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[1.2fr_1fr_1.2fr]">
-          <div className={`flex flex-col items-center gap-4 ${firstColumnAlign}`}>
-            <p className="text-sm tracking-[0.04em] text-sand/82">
+    <footer className="mt-12 overflow-hidden bg-primary text-sand md:mt-24">
+      <div className="section-shell py-5 md:py-13">
+        <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1.2fr_1fr_1.2fr] md:gap-10">
+          <div className={`flex flex-col items-center gap-2.5 md:gap-4 ${firstColumnAlign}`}>
+            <p className="text-xs tracking-[0.04em] text-sand/82 md:text-sm">
               <span className="font-semibold text-sand">Stay Connected</span>
             </p>
-            <div className={`flex w-full flex-wrap items-center gap-2 ${socialJustify}`}>
+            <div className={`flex w-full flex-wrap items-center gap-1.5 md:gap-2 ${socialJustify}`}>
               {socialItems.map(({ key, label, href, Icon }, index) => {
                 const isExternal = href.startsWith("http");
                 return (
-                  <span key={key} className="inline-flex items-center gap-2">
+                  <span key={key} className="inline-flex items-center gap-1.5 md:gap-2">
                     <a
                       href={href}
-                      className="inline-flex h-8 w-8 items-center justify-center text-sand/80 transition hover:text-sand"
+                      className="inline-flex h-7 w-7 items-center justify-center text-sand/80 transition hover:text-sand md:h-8 md:w-8"
                       aria-label={label}
                       {...(isExternal ? { target: "_blank", rel: "noreferrer" } : {})}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
                     </a>
                     {index < socialItems.length - 1 ? <span className="text-sand/35">|</span> : null}
                   </span>
@@ -151,19 +151,19 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="relative h-28 overflow-visible md:h-40 lg:h-48">
+          <div className="relative h-14 overflow-visible md:h-40 lg:h-48">
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <img
                 src={logoWhiteImage}
                 alt=""
                 aria-hidden="true"
-                className="h-auto w-[150%] max-w-none opacity-[0.14] md:w-[200%] lg:w-[225%]"
+                className="h-auto w-[120%] max-w-none opacity-[0.14] md:w-[200%] lg:w-[225%]"
               />
             </div>
           </div>
 
-          <div className={`flex flex-col items-center gap-4 ${lastColumnAlign}`}>
-            <p className="font-display text-2xl leading-tight text-sand/92">Let&apos;s build in stone</p>
+          <div className={`flex flex-col items-center gap-2.5 md:gap-4 ${lastColumnAlign}`}>
+            <p className="font-display text-lg leading-tight text-sand/92 md:text-2xl">Let&apos;s build in stone</p>
             <LanguageSwitch tone="footer" />
           </div>
         </div>

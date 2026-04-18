@@ -1,5 +1,5 @@
 {
-  "brand": "Sange Hasan",
+  "brand": "SangeHassan",
   "language": {
     "en": "English",
     "fa": "Persian",
@@ -142,6 +142,9 @@
     "useCaseApplications": "Applications",
     "useCaseProjects": "Project types",
     "useCaseSpecial": "Special notes",
+    "variants": "Variants",
+    "mines": "Mines",
+    "finishes": "Finishes",
     "prev": "Previous",
     "next": "Next"
   },
@@ -156,14 +159,30 @@
     "subtitle": "Selected facade and interior works delivered by our team.",
     "empty": "No projects available yet.",
     "noDescription": "No description provided yet.",
+    "itemTitle": "Project",
+    "backToProjects": "Back to projects",
+    "descriptionTitle": "Description",
+    "notFound": "Project not found.",
     "prev": "Previous",
     "next": "Next"
   },
   "auth": {
-    "loginTitle": "Welcome back",
-    "loginSubtitle": "Sign in to continue to your account.",
-    "signupTitle": "Create your account",
-    "signupSubtitle": "Join us to track favorites and requests.",
+    "loginTitle": "Why do I need an account?",
+    "loginSubtitle": "Because viewing stone ads, submitting expert review and purchase requests, tracking orders, and accessing other core features are only available with an account.",
+    "signupTitle": "Why do I need an account?",
+    "signupSubtitle": "Because access to stone sale ads, order tracking, and expert review and purchase requests is only available to registered users.",
+    "loginHighlights": [
+      "View sale ads",
+      "Submit expert review & purchase requests",
+      "Track order status"
+    ],
+    "signupHighlights": [
+      "View sale ads",
+      "Submit expert review & purchase requests",
+      "Track order status"
+    ],
+    "loginHighlightsFootnote": "and accessing other core features are only available with an account.",
+    "signupHighlightsFootnote": "and other essential features are only available to registered users.",
     "username": "Username",
     "password": "Password",
     "email": "Email",
@@ -171,7 +190,25 @@
     "phone": "Phone",
     "loginButton": "Sign in",
     "signupButton": "Create account",
-    "logout": "Log out"
+    "logout": "Log out",
+    "switchToSignupPrompt": "Do not have an account yet?",
+    "switchToSignupAction": "Register here",
+    "switchToLoginPrompt": "Already have an account?",
+    "switchToLoginAction": "Log in",
+    "sideKicker": "Account benefits",
+    "sideTitle": "Why sign in?",
+    "sideDescription": "Signing in gives you access to stone ads, expert review and purchase requests, and order status in one place.",
+    "sideTitleLogin": "Why sign in?",
+    "sideDescriptionLogin": "Signing in gives you access to stone ads, expert review and purchase requests, and order status in one place.",
+    "sideTitleSignup": "What do I get with an account?",
+    "sideDescriptionSignup": "With your account, you can view available stone ads, submit expert review and purchase requests, and follow your order from request to delivery.",
+    "sideBenefits": [
+      "Access up-to-date stone block ads",
+      "Submit expert review and purchase requests",
+      "Track order status clearly until delivery"
+    ],
+    "sideExample": "From factory release to cutting, loading, and final delivery at your project site, each step is visible in your account.",
+    "sidePreviewPlaceholder": "Order dashboard preview will appear here soon."
   },
   "profile": {
     "title": "Your profile",
@@ -205,7 +242,7 @@
     "instagramValue": "instagram.com/sangehassan_com",
     "emailLabel": "Email",
     "emailValue": "info@sangehassan.com",
-    "aboutTitle": "About Sange Hasan",
+    "aboutTitle": "About SangeHassan",
     "aboutText": "Premium natural stones with honest sourcing and craftsmanship."
   },
   "contact": {
@@ -356,7 +393,12 @@
     "singleSelect": "single select",
     "newTermPlaceholder": "New tag label",
     "addTerm": "Add",
-    "noTerms": "No tags yet."
+    "noTerms": "No tags yet.",
+    "detailsTitle": "Variants, quarries, finishes",
+    "variants": "Variants",
+    "mines": "Mines",
+    "finishes": "Finishes",
+    "aliases": "Aliases"
   },
   "form": {
     "title": "Title",
@@ -409,6 +451,7 @@
     "logout": "Log out",
     "login": "Log in",
     "signup": "Sign up",
+    "loginRegister": "Login | Register",
     "menu": "Menu"
   },
   "messages": {

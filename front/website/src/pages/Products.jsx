@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
@@ -36,6 +37,23 @@ const getFilterOptionLabel = (option, lang) => {
   return option.label_en || option.value;
 };
 
+const normalizeCategory = (category) => {
+  if (!category) return category;
+  const slug = normalizeChiniSlug(category.slug, category.title_fa);
+  if (slug !== category.slug || category.title_fa === "چینی") {
+    return { ...category, title_fa: "چینی کریستال", slug };
+  }
+  return category;
+};
+
+const normalizeChiniSlug = (slug, titleFa) => {
+  // Normalize all older/short slugs to the proper spelling.
+  if (slug === "chinese-crystal") return "chinese-crystal";
+  if (slug === "chini-crystal" || slug === "chini" || slug === "chyny-krystal") return "chinese-crystal";
+  if (titleFa === "چینی" || titleFa === "چینی کریستال") return "chinese-crystal";
+  return slug;
+};
+
 const hasProductTerm = (product, taxonomy, termValue) => {
   if (!product || !taxonomy || !termValue) return false;
   const terms = Array.isArray(product.terms) ? product.terms : [];
@@ -44,6 +62,8 @@ const hasProductTerm = (product, taxonomy, termValue) => {
 
 export default function Products() {
   const { t, lang } = useTranslation();
+  const pageRef = useRef(null);
+  const hasEntranceAnimatedRef = useRef(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -61,6 +81,31 @@ export default function Products() {
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const normalizedProducts = useMemo(
+    () =>
+      products.map((product) => ({
+        ...product,
+        category: normalizeCategory(product.category),
+        categories: Array.isArray(product.categories) ? product.categories.map(normalizeCategory) : product.categories
+      })),
+    [products]
+  );
+
+  const normalizedCategories = useMemo(() => {
+    const map = new Map();
+    for (const cat of categories) {
+      const norm = normalizeCategory(cat);
+      if (!norm?.slug) continue;
+      if (!map.has(norm.slug)) map.set(norm.slug, norm);
+    }
+    return Array.from(map.values());
+  }, [categories]);
+
+  const normalizedActiveCategory =
+    activeCategory === "chini" || activeCategory === "chini-crystal" || activeCategory === "chyny-krystal"
+      ? "chinese-crystal"
+      : activeCategory;
 
   const fetchProductPage = useCallback(async (offset) => {
     const response = await fetchJSON(`/api/products?limit=${PRODUCTS_PAGE_SIZE}&offset=${offset}`);
@@ -207,13 +252,15 @@ export default function Products() {
   }, [stoneTypeFilter, useCaseFilter, termFilterOptions]);
 
   const filtered = useMemo(() => {
-    let base = products;
+    let base = normalizedProducts;
 
-    if (activeCategory !== "all") {
+    if (normalizedActiveCategory !== "all") {
       base = base.filter((product) => {
-        if (product.category?.slug === activeCategory) return true;
+        if (normalizeChiniSlug(product.category?.slug, product.category?.title_fa) === normalizedActiveCategory) return true;
         if (Array.isArray(product.categories)) {
-          return product.categories.some((category) => category?.slug === activeCategory);
+          return product.categories.some(
+            (category) => normalizeChiniSlug(category?.slug, category?.title_fa) === normalizedActiveCategory
+          );
         }
         return false;
       });
@@ -294,8 +341,8 @@ export default function Products() {
 
     return sorted;
   }, [
-    activeCategory,
-    products,
+    normalizedActiveCategory,
+    normalizedProducts,
     debouncedSearch,
     lang,
     stoneTypeFilter,
@@ -307,10 +354,10 @@ export default function Products() {
   ]);
 
   const mainCategories = useMemo(() => {
-    const topLevel = categories.filter((category) => !category.parent_id);
+    const topLevel = normalizedCategories.filter((category) => !category.parent_id);
     if (topLevel.length > 0) return topLevel;
-    return categories;
-  }, [categories]);
+    return normalizedCategories;
+  }, [normalizedCategories]);
 
   const handleSearchChange = (event) => {
     const value = event.target.value;
@@ -335,11 +382,60 @@ export default function Products() {
     setSortMode("default");
   };
 
+  useEffect(() => {
+    if (loading) return;
+    const page = pageRef.current;
+    if (!page || typeof window === "undefined" || !window.matchMedia) return;
+    if (hasEntranceAnimatedRef.current) return;
+    hasEntranceAnimatedRef.current = true;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const leadItems = page.querySelectorAll("[data-products-anim='lead']");
+    const cardItems = Array.from(page.querySelectorAll("[data-products-anim='card']"));
+    const cardsToAnimate = cardItems.slice(0, reduceMotion ? 4 : 8);
+    if (!leadItems.length && !cardsToAnimate.length) return;
+
+    const ctx = gsap.context(() => {
+      if (leadItems.length) {
+        gsap.fromTo(
+          leadItems,
+          { autoAlpha: 0, y: 10 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: reduceMotion ? 0.28 : 0.42,
+            stagger: reduceMotion ? 0.015 : 0.03,
+            ease: "power2.out",
+            overwrite: "auto"
+          }
+        );
+      }
+
+      if (cardsToAnimate.length) {
+        gsap.fromTo(
+          cardsToAnimate,
+          { autoAlpha: 0, y: 16 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: reduceMotion ? 0.32 : 0.5,
+            delay: reduceMotion ? 0.02 : 0.06,
+            stagger: reduceMotion ? 0.02 : 0.04,
+            ease: "power2.out",
+            overwrite: "auto"
+          }
+        );
+      }
+    }, page);
+
+    return () => ctx.revert();
+  }, [loading]);
+
   return (
-    <section className="section-shell py-16">
+    <section ref={pageRef} className="section-shell pt-16 pb-12">
       <div className="mb-8 flex flex-col gap-4">
-        <p className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("products.title")}</p>
-        <h1 className="font-display text-3xl md:text-4xl">{t("products.subtitle")}</h1>
+        <p data-products-anim="lead" className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("products.title")}</p>
+        <h1 data-products-anim="lead" className="font-display text-3xl md:text-4xl">{t("products.subtitle")}</h1>
       </div>
 
       <div className="mb-8 space-y-3">
@@ -347,28 +443,31 @@ export default function Products() {
           <button
             type="button"
             onClick={() => setActiveCategory("all")}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-              activeCategory === "all"
-                ? "border-primary bg-primary text-sand"
-                : "border-primary/20 text-primary/70 hover:border-primary/50"
-            }`}
+            data-products-anim="lead"
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === "all"
+              ? "border-primary bg-primary text-sand"
+              : "border-primary/20 text-primary/70 hover:border-primary/50"
+              }`}
           >
             {t("products.filterAll")}
           </button>
-          {mainCategories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => setActiveCategory(category.slug)}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                activeCategory === category.slug
+          {mainCategories.map((category) => {
+            const slug = normalizeChiniSlug(category.slug, category.title_fa);
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setActiveCategory(slug)}
+                data-products-anim="lead"
+                className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${normalizedActiveCategory === slug
                   ? "border-primary bg-primary text-sand"
                   : "border-primary/20 text-primary/70 hover:border-primary/50"
-              }`}
-            >
-              {getLocalized(category, lang)}
-            </button>
-          ))}
+                  }`}
+              >
+                {getLocalized(category, lang)}
+              </button>
+            );
+          })}
         </div>
 
         <label className="sr-only" htmlFor="product-search">
@@ -380,6 +479,7 @@ export default function Products() {
             type="search"
             value={searchInput}
             onChange={handleSearchChange}
+            data-products-anim="lead"
             placeholder={t("products.searchPlaceholder")}
             className="w-full rounded-full border border-primary/20 bg-white/70 px-4 py-2.5 pr-9 text-sm font-semibold text-primary outline-none transition focus:border-primary/60"
           />
@@ -391,120 +491,6 @@ export default function Products() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          <div className="relative">
-            <label className="sr-only" htmlFor="products-filter-stone-type">
-              {t("products.filterStoneType")}
-            </label>
-            <select
-              id="products-filter-stone-type"
-              value={stoneTypeFilter}
-              onChange={(event) => setStoneTypeFilter(event.target.value)}
-              className="h-10 w-full appearance-none rounded-full border border-primary/20 bg-white/75 pl-4 pr-10 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-            >
-              <option value="all">{t("products.filterAny")}</option>
-              {termFilterOptions.stoneTypes.map((option) => (
-                <option key={`stone-type-filter-${option.value}`} value={option.value}>
-                  {getFilterOptionLabel(option, lang)}
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">▾</span>
-          </div>
-
-          <div className="relative">
-            <label className="sr-only" htmlFor="products-filter-use-case">
-              {t("products.filterUseCase")}
-            </label>
-            <select
-              id="products-filter-use-case"
-              value={useCaseFilter}
-              onChange={(event) => setUseCaseFilter(event.target.value)}
-              className="h-10 w-full appearance-none rounded-full border border-primary/20 bg-white/75 pl-4 pr-10 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-            >
-              <option value="all">{t("products.filterAny")}</option>
-              {termFilterOptions.useCases.map((option) => (
-                <option key={`use-case-filter-${option.value}`} value={option.value}>
-                  {getFilterOptionLabel(option, lang)}
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">▾</span>
-          </div>
-
-          <div className="relative">
-            <label className="sr-only" htmlFor="products-filter-price-mode">
-              {t("products.filterPriceMode")}
-            </label>
-            <select
-              id="products-filter-price-mode"
-              value={priceModeFilter}
-              onChange={(event) => setPriceModeFilter(event.target.value)}
-              className="h-10 w-full appearance-none rounded-full border border-primary/20 bg-white/75 pl-4 pr-10 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-            >
-              <option value="all">{t("products.priceModeAll")}</option>
-              <option value="priced">{t("products.priceModeWith")}</option>
-              <option value="unpriced">{t("products.priceModeWithout")}</option>
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">▾</span>
-          </div>
-
-          <div className="relative">
-            <label className="sr-only" htmlFor="products-filter-sort">
-              {t("products.filterSort")}
-            </label>
-            <select
-              id="products-filter-sort"
-              value={sortMode}
-              onChange={(event) => setSortMode(event.target.value)}
-              className="h-10 w-full appearance-none rounded-full border border-primary/20 bg-white/75 pl-4 pr-10 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-            >
-              <option value="default">{t("products.sortDefault")}</option>
-              <option value="price_asc">{t("products.sortPriceLowToHigh")}</option>
-              <option value="price_desc">{t("products.sortPriceHighToLow")}</option>
-            </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">▾</span>
-          </div>
-
-          <label className="sr-only" htmlFor="products-filter-min-price">
-            {t("products.filterMinPrice")}
-          </label>
-          <input
-            id="products-filter-min-price"
-            type="number"
-            min="0"
-            value={minPriceInput}
-            onChange={(event) => setMinPriceInput(event.target.value)}
-            placeholder={t("products.filterMinPrice")}
-            className="h-10 w-full rounded-full border border-primary/20 bg-white/75 px-4 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-          />
-
-          <label className="sr-only" htmlFor="products-filter-max-price">
-            {t("products.filterMaxPrice")}
-          </label>
-          <input
-            id="products-filter-max-price"
-            type="number"
-            min="0"
-            value={maxPriceInput}
-            onChange={(event) => setMaxPriceInput(event.target.value)}
-            placeholder={t("products.filterMaxPrice")}
-            className="h-10 w-full rounded-full border border-primary/20 bg-white/75 px-4 text-xs font-semibold text-primary/80 outline-none transition focus:border-primary/60"
-          />
-
-          <button
-            type="button"
-            onClick={resetAdvancedFilters}
-            disabled={!hasAdvancedFilters}
-            className={`h-10 w-full rounded-full border px-4 text-xs font-semibold transition ${
-              hasAdvancedFilters
-                ? "border-primary/30 text-primary hover:border-primary/60"
-                : "cursor-not-allowed border-primary/10 text-primary/40"
-            }`}
-          >
-            {t("products.filtersReset")}
-          </button>
-        </div>
       </div>
 
       {loading ? (
@@ -514,36 +500,46 @@ export default function Products() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product) => {
+            const categoryLabel =
+              product.category || (Array.isArray(product.categories) && product.categories.length > 0 ? product.categories[0] : null);
+            const isRTL = lang === "fa" || lang === "ar";
+            const gradientDir = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
             return (
               <Link
                 key={product.id}
                 to={`/products/${product.slug}`}
-                className="glass-panel group flex h-full flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+                data-products-anim="card"
+                className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
               >
-                <div className="relative h-48 w-full overflow-hidden bg-primary/10">
+                <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
                   {product.image_url ? (
                     <img
                       src={resolveImageUrl(product.image_url)}
                       alt={getLocalized(product, lang) || product.title_en}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-primary/60">{t("productDetail.noImages")}</div>
                   )}
 
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-white/95 via-white/70 to-transparent p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">
-                      {product.category ? getLocalized(product.category, lang) : t("products.categoryLabel")}
-                    </p>
-                    <h3 className="mt-1 font-display text-xl leading-tight text-primary">
+                  <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${gradientDir} from-black/70 via-black/25 to-transparent p-4`}>
+                    <h3 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
                       {getLocalized(product, lang) || product.title_en}
                     </h3>
-                  </div>
-                </div>
-
-                <div className="flex flex-1 flex-col p-5">
-                  <div className="mt-auto pt-4 text-sm font-semibold text-accent">
-                    {t("products.priceLabel")}: {product.price ? product.price : t("messages.empty")}
+                    <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]">
+                      {Array.isArray(product.finishes) && product.finishes.length > 0 && (
+                        <p className="truncate">{product.finishes.join(" • ")}</p>
+                      )}
+                      {Array.isArray(product.variants) && product.variants.length > 0 && (
+                        <p className="truncate">{product.variants.join(" • ")}</p>
+                      )}
+                      {Array.isArray(product.mines) && product.mines.length > 0 && (
+                        <p className="truncate">{product.mines.join(" • ")}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>

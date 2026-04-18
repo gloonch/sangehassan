@@ -4,7 +4,6 @@ import ProductsLanding from "./pages/ProductsLanding";
 import ProductDetail from "./pages/ProductDetail";
 import Blogs from "./pages/Blogs";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Gallery from "./pages/Gallery";
 import About from "./pages/About";
@@ -14,6 +13,7 @@ import Ads from "./pages/Ads";
 import AdDetail from "./pages/AdDetail";
 import NewAd from "./pages/NewAd";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import RequireUserAuth from "./components/RequireUserAuth";
 
 export default function AppRoutes() {
@@ -32,8 +32,9 @@ export default function AppRoutes() {
       </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/projects" element={<Projects />} />
+      <Route path="/projects/:id" element={<ProjectDetail />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/signup" element={<Navigate to="/login?mode=signup" replace />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/about" element={<About />} />
