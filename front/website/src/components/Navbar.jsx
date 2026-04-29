@@ -17,6 +17,14 @@ const navItems = [
   { key: "about", path: "/about" },
 ];
 
+const getUserDisplayName = (user) => {
+  const fullName = typeof user?.full_name === "string" ? user.full_name.trim() : "";
+  if (fullName) return fullName;
+  const phone = typeof user?.phone === "string" ? user.phone.trim() : "";
+  if (phone) return phone;
+  return "";
+};
+
 export default function Navbar() {
   const { t } = useTranslation();
   const location = useLocation();
@@ -33,7 +41,7 @@ export default function Navbar() {
         const stored = sessionStorage.getItem("sh_me");
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed?.email) {
+          if (parsed?.id) {
             setUser(parsed);
           }
         }
@@ -178,9 +186,11 @@ export default function Navbar() {
     return () => ctx.revert();
   }, [location.pathname]);
 
-  const displayName = user?.full_name || user?.email;
-  const avatarChar = (displayName || "U").trim().charAt(0).toUpperCase();
-  const visibleNavItems = navItems.filter((item) => item.key !== "ads" || Boolean(user));
+  const displayName = getUserDisplayName(user);
+  const avatarSource = displayName.startsWith("+") ? displayName.slice(1) : displayName;
+  const avatarChar = (avatarSource || "U").trim().charAt(0).toUpperCase();
+  const profileLabel = displayName || t("nav.profile");
+  const visibleNavItems = navItems;
   const navHeaderClass = isHome
     ? open
       ? "border-b border-sand/25 bg-primary/45 backdrop-blur-xl"
@@ -241,13 +251,13 @@ export default function Navbar() {
                       onClick={() => setOpen(false)}
                       data-mobile-item="true"
                       className="mx-auto inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold uppercase text-sand transition hover:bg-primary/90"
-                      aria-label={displayName}
-                      title={displayName}
+                      aria-label={profileLabel}
+                      title={profileLabel}
                     >
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sand/20 text-xs">
                         {avatarChar}
                       </span>
-                      <span>{displayName}</span>
+                      <span>{profileLabel}</span>
                     </NavLink>
                   ) : (
                     <NavLink
@@ -297,8 +307,8 @@ export default function Navbar() {
                 ? "border border-sand/30 bg-sand/15 text-sand hover:bg-sand/25"
                 : "bg-primary text-sand hover:bg-primary/90"
                 }`}
-              aria-label={displayName}
-              title={displayName}
+              aria-label={profileLabel}
+              title={profileLabel}
             >
               {avatarChar}
             </NavLink>

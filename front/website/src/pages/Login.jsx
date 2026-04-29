@@ -113,10 +113,8 @@ export default function Login() {
   const initialMode = searchParams.get("mode") === SIGNUP_MODE ? SIGNUP_MODE : LOGIN_MODE;
 
   const [mode, setMode] = useState(initialMode);
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupFullName, setSignupFullName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -173,7 +171,7 @@ export default function Login() {
       await fetchJSON("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          email: loginEmail,
+          phone: loginPhone,
           password: loginPassword
         })
       });
@@ -199,10 +197,8 @@ export default function Login() {
       await fetchJSON("/api/v1/auth/signup", {
         method: "POST",
         body: JSON.stringify({
-          email: signupEmail,
           password: signupPassword,
-          full_name: signupFullName || undefined,
-          phone: signupPhone || undefined
+          phone: signupPhone
         })
       });
 
@@ -347,43 +343,17 @@ export default function Login() {
           <div className="flex justify-center p-6 sm:p-8">
             <div className="w-full max-w-md">
               <form className="space-y-4" onSubmit={isSignup ? handleSignupSubmit : handleLoginSubmit}>
-                {isSignup && (
-                  <label className="block text-xs font-semibold text-primary/70">
-                    {t("auth.fullName")}
-                    <input
-                      type="text"
-                      className="mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm"
-                      placeholder={t("auth.fullName")}
-                      value={signupFullName}
-                      onChange={(e) => setSignupFullName(e.target.value)}
-                    />
-                  </label>
-                )}
-
                 <label className="block text-xs font-semibold text-primary/70">
-                  {t("auth.email")}
+                  {t("auth.phone")}
                   <input
-                    type="email"
+                    type="tel"
                     className="mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm"
-                    placeholder={t("auth.email")}
-                    value={isSignup ? signupEmail : loginEmail}
-                    onChange={(e) => (isSignup ? setSignupEmail(e.target.value) : setLoginEmail(e.target.value))}
+                    placeholder={t("auth.phone")}
+                    value={isSignup ? signupPhone : loginPhone}
+                    onChange={(e) => (isSignup ? setSignupPhone(e.target.value) : setLoginPhone(e.target.value))}
                     required
                   />
                 </label>
-
-                {isSignup && (
-                  <label className="block text-xs font-semibold text-primary/70">
-                    {t("auth.phone")}
-                    <input
-                      type="tel"
-                      className="mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm"
-                      placeholder={t("auth.phone")}
-                      value={signupPhone}
-                      onChange={(e) => setSignupPhone(e.target.value)}
-                    />
-                  </label>
-                )}
 
                 <label className="block text-xs font-semibold text-primary/70">
                   {t("auth.password")}

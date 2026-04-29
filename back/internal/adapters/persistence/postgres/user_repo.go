@@ -35,6 +35,15 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (domain.U
 	return scanUser(row)
 }
 
+func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (domain.User, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, email, password_hash, full_name, phone, role, is_active, created_at, updated_at, last_login_at
+		FROM users
+		WHERE phone = $1
+	`, phone)
+	return scanUser(row)
+}
+
 func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, email, password_hash, full_name, phone, role, is_active, created_at, updated_at, last_login_at
@@ -47,10 +56,10 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, e
 func (r *UserRepository) UpdateProfile(ctx context.Context, user domain.User) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE users
-		SET full_name = $2, phone = $3, updated_at = NOW()
+		SET email = $2, full_name = $3, phone = $4, updated_at = NOW()
 		WHERE id = $1
 		RETURNING id, email, password_hash, full_name, phone, role, is_active, created_at, updated_at, last_login_at
-	`, user.ID, user.FullName, user.Phone)
+	`, user.ID, user.Email, user.FullName, user.Phone)
 	return scanUser(row)
 }
 

@@ -7,9 +7,13 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
 	"sangehassan/back/internal/domain"
@@ -18,6 +22,8 @@ import (
 
 var (
 	ErrEmailExists    = errors.New("email already exists")
+	ErrPhoneExists    = errors.New("phone already exists")
+	ErrPhoneRequired  = errors.New("phone is required")
 	ErrUserNotFound   = errors.New("user not found")
 	ErrRefreshInvalid = errors.New("invalid refresh token")
 	ErrRefreshExpired = errors.New("refresh token expired")
@@ -54,10 +60,15 @@ func NewUserAuthService(users ports.UserRepository, refresh ports.RefreshTokenRe
 	}
 }
 
-func (s *UserAuthService) SignUp(ctx context.Context, email, password string, fullName, phone *string) (domain.UserInfo, TokenPair, error) {
-	_, err := s.users.GetByEmail(ctx, email)
+func (s *UserAuthService) SignUp(ctx context.Context, phone, password string) (domain.UserInfo, TokenPair, error) {
+	normalizedPhone := normalizePhone(phone)
+	if normalizedPhone == "" {
+		return domain.UserInfo{}, TokenPair{}, ErrPhoneRequired
+	}
+
+	_, err := s.users.GetByPhone(ctx, normalizedPhone)
 	if err == nil {
-		return domain.UserInfo{}, TokenPair{}, ErrEmailExists
+		return domain.UserInfo{}, TokenPair{}, ErrPhoneExists
 	}
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return domain.UserInfo{}, TokenPair{}, err
@@ -69,14 +80,16 @@ func (s *UserAuthService) SignUp(ctx context.Context, email, password string, fu
 	}
 
 	user, err := s.users.Create(ctx, domain.User{
-		Email:        email,
+		Email:        phoneAliasEmail(normalizedPhone),
 		PasswordHash: string(hash),
-		FullName:     fullName,
-		Phone:        phone,
+		Phone:        &normalizedPhone,
 		Role:         "user",
 		IsActive:     true,
 	})
 	if err != nil {
+		if conflictErr := resolveUniqueConflict(err); conflictErr != nil {
+			return domain.UserInfo{}, TokenPair{}, conflictErr
+		}
 		return domain.UserInfo{}, TokenPair{}, err
 	}
 
@@ -88,8 +101,13 @@ func (s *UserAuthService) SignUp(ctx context.Context, email, password string, fu
 	return user.SafeInfo(), pair, nil
 }
 
-func (s *UserAuthService) Login(ctx context.Context, email, password string) (domain.UserInfo, TokenPair, error) {
-	user, err := s.users.GetByEmail(ctx, email)
+func (s *UserAuthService) Login(ctx context.Context, phone, password string) (domain.UserInfo, TokenPair, error) {
+	normalizedPhone := normalizePhone(phone)
+	if normalizedPhone == "" {
+		return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
+	}
+
+	user, err := s.users.GetByPhone(ctx, normalizedPhone)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
@@ -166,15 +184,51 @@ func (s *UserAuthService) GetMe(ctx context.Context, userID string) (domain.User
 	return user.SafeInfo(), nil
 }
 
-func (s *UserAuthService) UpdateMe(ctx context.Context, userID string, fullName, phone *string) (domain.UserInfo, error) {
+func (s *UserAuthService) UpdateMe(ctx context.Context, userID string, fullName, phone, email *string) (domain.UserInfo, error) {
 	user, err := s.users.GetByID(ctx, userID)
 	if err != nil {
 		return domain.UserInfo{}, err
 	}
-	user.FullName = fullName
-	user.Phone = phone
+
+	trimmedFullName := trimOptional(fullName)
+	user.FullName = trimmedFullName
+
+	if phone != nil {
+		normalizedPhone := normalizePhone(*phone)
+		if normalizedPhone == "" {
+			return domain.UserInfo{}, ErrPhoneRequired
+		}
+		if currentPhone := trimOptional(user.Phone); currentPhone == nil || *currentPhone != normalizedPhone {
+			existing, lookupErr := s.users.GetByPhone(ctx, normalizedPhone)
+			if lookupErr == nil && existing.ID != userID {
+				return domain.UserInfo{}, ErrPhoneExists
+			}
+			if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
+				return domain.UserInfo{}, lookupErr
+			}
+		}
+		user.Phone = &normalizedPhone
+	}
+
+	if email != nil {
+		trimmedEmail := strings.TrimSpace(*email)
+		if trimmedEmail != "" && trimmedEmail != user.Email {
+			existing, lookupErr := s.users.GetByEmail(ctx, trimmedEmail)
+			if lookupErr == nil && existing.ID != userID {
+				return domain.UserInfo{}, ErrEmailExists
+			}
+			if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
+				return domain.UserInfo{}, lookupErr
+			}
+			user.Email = trimmedEmail
+		}
+	}
+
 	updated, err := s.users.UpdateProfile(ctx, user)
 	if err != nil {
+		if conflictErr := resolveUniqueConflict(err); conflictErr != nil {
+			return domain.UserInfo{}, conflictErr
+		}
 		return domain.UserInfo{}, err
 	}
 	return updated.SafeInfo(), nil
@@ -243,6 +297,71 @@ func (s *UserAuthService) ParseAccess(tokenString string) (string, error) {
 		return "", errors.New("invalid token issuer")
 	}
 	return claims.Subject, nil
+}
+
+func normalizePhone(raw string) string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return ""
+	}
+
+	var cleaned strings.Builder
+	cleaned.Grow(len(value))
+	for _, r := range value {
+		if unicode.IsSpace(r) || r == '-' || r == '_' || r == '(' || r == ')' {
+			continue
+		}
+		cleaned.WriteRune(r)
+	}
+	normalized := cleaned.String()
+	if strings.HasPrefix(normalized, "00") {
+		normalized = "+" + strings.TrimPrefix(normalized, "00")
+	}
+	return normalized
+}
+
+func phoneAliasEmail(phone string) string {
+	var digits strings.Builder
+	digits.Grow(len(phone))
+	for _, r := range phone {
+		if unicode.IsDigit(r) {
+			digits.WriteRune(r)
+		}
+	}
+	value := digits.String()
+	if value == "" {
+		value = "user"
+	}
+	return fmt.Sprintf("u%s@phone.sangehassan.local", value)
+}
+
+func trimOptional(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+func resolveUniqueConflict(err error) error {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if string(pqErr.Code) != "23505" {
+			return nil
+		}
+		info := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%s %s", pqErr.Constraint, pqErr.Detail)))
+		if strings.Contains(info, "email") {
+			return ErrEmailExists
+		}
+		if strings.Contains(info, "phone") {
+			return ErrPhoneExists
+		}
+		return ErrPhoneExists
+	}
+	return nil
 }
 
 func generateSecureToken() (string, error) {

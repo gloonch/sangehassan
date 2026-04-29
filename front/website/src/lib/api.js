@@ -1,10 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export async function fetchJSON(path, options = {}) {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {})
     },
     credentials: "include"

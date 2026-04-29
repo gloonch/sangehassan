@@ -77,6 +77,7 @@ func NewRouter(
 		adsAuth.Use(userMiddleware.RequireUser)
 		{
 			adsAuth.POST("", listingHandler.Create)
+			adsAuth.POST("/upload-image", uploadHandler.UploadListing)
 			adsAuth.PUT("/:id", listingHandler.Update)
 			adsAuth.POST("/:id/requests", listingHandler.CreateDealRequest)
 			adsAuth.DELETE("/:id", listingHandler.Delete)

@@ -25,10 +25,10 @@ export default function AppRoutes() {
       <Route path="/products/:slug" element={<ProductDetail />} />
       <Route path="/blocks" element={<BlocksLanding />} />
       <Route path="/blocks/:slug" element={<BlockDetail />} />
+      <Route path="/ads" element={<Ads />} />
+      <Route path="/ads/:id" element={<AdDetail />} />
       <Route element={<RequireUserAuth />}>
-        <Route path="/ads" element={<Ads />} />
         <Route path="/ads/new" element={<NewAd />} />
-        <Route path="/ads/:id" element={<AdDetail />} />
       </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/projects" element={<Projects />} />

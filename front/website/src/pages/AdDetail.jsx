@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
+import { PRICE_UNIT_VALUES, formatPriceUnit, formatPriceValue } from "../lib/listings";
+import { resolveImageUrl } from "../lib/assets";
 
 const inputClass =
   "w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none";
@@ -18,13 +20,31 @@ export default function AdDetail() {
   const [requestType, setRequestType] = useState("INSPECTION");
   const [requestNote, setRequestNote] = useState("");
   const [reqStatus, setReqStatus] = useState("");
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [submittedRequestType, setSubmittedRequestType] = useState("INSPECTION");
   const [formState, setFormState] = useState({});
   const [saveMsg, setSaveMsg] = useState("");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const isOwner = useMemo(() => {
     if (!ad || !user) return false;
     return ad.created_by && ad.created_by === user.id;
   }, [ad, user]);
+
+  const imageUrls = useMemo(() => {
+    if (!ad) return [];
+    return (ad.images || []).map((img) => img?.image_url).filter(Boolean);
+  }, [ad]);
+
+  useEffect(() => {
+    if (imageUrls.length === 0) {
+      if (activeImageIndex !== 0) setActiveImageIndex(0);
+      return;
+    }
+    if (activeImageIndex >= imageUrls.length) {
+      setActiveImageIndex(0);
+    }
+  }, [activeImageIndex, imageUrls.length]);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +97,9 @@ export default function AdDetail() {
         body: JSON.stringify({ request_type: requestType, buyer_note: requestNote })
       });
       setReqStatus(t("messages.sent") || "Sent");
+      setSubmittedRequestType(requestType);
+      setRequestModalOpen(true);
+      setRequestNote("");
     } catch (err) {
       if (err?.status === 401) {
         sessionStorage.setItem("sh_after_login", window.location.pathname);
@@ -142,6 +165,11 @@ export default function AdDetail() {
   if (!ad) return null;
 
   const extraEntries = Object.entries(ad.extra_props || {});
+  const requestTypeKey = `ads.requestTypeOptions.${submittedRequestType}`;
+  const submittedRequestTypeLabel =
+    t(requestTypeKey) === requestTypeKey ? submittedRequestType : t(requestTypeKey);
+  const requestModalMessage = t("ads.requestSubmitted.message").replace("{type}", submittedRequestTypeLabel);
+  const activeImageUrl = imageUrls[activeImageIndex] || "";
 
   return (
     <section className="section-shell py-16">
@@ -151,12 +179,50 @@ export default function AdDetail() {
             {ad.form || "—"} · {ad.city || ad.province || "—"}
           </p>
           <h1 className="mt-2 font-display text-3xl">{ad.title || ad.stone_type || t("ads.title")}</h1>
+          <div className="mt-4">
+            {activeImageUrl ? (
+              <>
+                <div className="overflow-hidden rounded-2xl border border-primary/10 bg-primary/5">
+                  <img
+                    src={resolveImageUrl(activeImageUrl)}
+                    alt={ad.title || ad.stone_type || t("ads.title")}
+                    className="h-72 w-full object-cover"
+                  />
+                </div>
+                {imageUrls.length > 1 && (
+                  <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
+                    {imageUrls.map((imageUrl, index) => (
+                      <button
+                        type="button"
+                        key={`${imageUrl}-${index}`}
+                        onClick={() => setActiveImageIndex(index)}
+                        className={`overflow-hidden rounded-xl border ${
+                          index === activeImageIndex ? "border-primary shadow-sm" : "border-primary/10"
+                        }`}
+                      >
+                        <img
+                          src={resolveImageUrl(imageUrl)}
+                          alt={`${ad.title || ad.stone_type || t("ads.title")} ${index + 1}`}
+                          className="h-16 w-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex h-56 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-sm font-semibold text-primary/60">
+                {t("productDetail.noImages")}
+              </div>
+            )}
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-primary/80">
             <Info label="Stone">{ad.stone_type || "—"}</Info>
             <Info label="Form">{ad.form || "—"}</Info>
             <Info label="Tonnage">{ad.tonnage ? `${ad.tonnage} t` : "—"}</Info>
             <Info label="Price">
-              {ad.price_amount ? `${ad.price_amount} ${ad.price_unit}` : "—"}
+              {formatPriceValue(ad.price_amount, ad.price_unit, t)}
             </Info>
             <Info label="Location">
               {[ad.province, ad.city].filter(Boolean).join(" / ") || "—"}
@@ -227,9 +293,11 @@ export default function AdDetail() {
                     onChange={(e) => setFormState((p) => ({ ...p, price_unit: e.target.value }))}
                     className={inputClass}
                   >
-                    <option value="per_ton">per_ton</option>
-                    <option value="total">total</option>
-                    <option value="negotiable">negotiable</option>
+                    {PRICE_UNIT_VALUES.map((unitValue) => (
+                      <option key={unitValue} value={unitValue}>
+                        {formatPriceUnit(unitValue, t)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <textarea
@@ -245,13 +313,6 @@ export default function AdDetail() {
                   placeholder="extra props (JSON)"
                   value={formState.extra_props}
                   onChange={(e) => setFormState((p) => ({ ...p, extra_props: e.target.value }))}
-                />
-                <textarea
-                  className={`${inputClass} text-xs`}
-                  rows={2}
-                  placeholder="image URLs comma separated"
-                  value={formState.images}
-                  onChange={(e) => setFormState((p) => ({ ...p, images: e.target.value }))}
                 />
                 <div className="flex items-center gap-2">
                   <button
@@ -277,9 +338,9 @@ export default function AdDetail() {
               <p className="text-xs uppercase tracking-[0.2em] text-primary/60">{t("ads.request")}</p>
               <div className="mt-3 space-y-3">
                 <select value={requestType} onChange={(e) => setRequestType(e.target.value)} className={inputClass}>
-                  <option value="INSPECTION">INSPECTION</option>
-                  <option value="PURCHASE">PURCHASE</option>
-                  <option value="BOTH">BOTH</option>
+                  <option value="INSPECTION">{t("ads.requestTypeOptions.INSPECTION")}</option>
+                  <option value="PURCHASE">{t("ads.requestTypeOptions.PURCHASE")}</option>
+                  <option value="BOTH">{t("ads.requestTypeOptions.BOTH")}</option>
                 </select>
                 <textarea
                   className={inputClass}
@@ -295,12 +356,31 @@ export default function AdDetail() {
                 >
                   {t("ads.submit")}
                 </button>
-                {reqStatus && <p className="text-xs font-semibold text-primary">{reqStatus}</p>}
+                {reqStatus && <p className="text-xs font-semibold text-green-700">{reqStatus}</p>}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {requestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/60 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-primary/10 bg-white p-6 shadow-2xl">
+            <p className="text-xs uppercase tracking-[0.2em] text-primary/60">{t("ads.requestSubmitted.kicker")}</p>
+            <h3 className="mt-2 font-display text-2xl text-primary">{t("ads.requestSubmitted.title")}</h3>
+            <p className="mt-3 text-sm leading-6 text-primary/80">{requestModalMessage}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRequestModalOpen(false)}
+                className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-sand hover:bg-primary/90"
+              >
+                {t("actions.close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 

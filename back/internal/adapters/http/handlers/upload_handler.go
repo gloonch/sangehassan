@@ -46,6 +46,10 @@ func (h *UploadHandler) UploadProject(c *gin.Context) {
 	h.uploadFile(c, "projects")
 }
 
+func (h *UploadHandler) UploadListing(c *gin.Context) {
+	h.uploadFile(c, "listings")
+}
+
 func (h *UploadHandler) uploadFile(c *gin.Context, subdir string) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {

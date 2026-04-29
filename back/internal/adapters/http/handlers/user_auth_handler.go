@@ -24,29 +24,37 @@ func NewUserAuthHandler(service *usecase.UserAuthService, cookieSecure bool) *Us
 }
 
 type userSignupPayload struct {
-	Email    string  `json:"email"`
-	Password string  `json:"password"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+}
+
+type userLoginPayload struct {
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+}
+
+type userUpdatePayload struct {
+	Email    *string `json:"email"`
 	FullName *string `json:"full_name"`
 	Phone    *string `json:"phone"`
 }
 
-type userLoginPayload struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *UserAuthHandler) Signup(c *gin.Context) {
 	var payload userSignupPayload
-	if err := c.ShouldBindJSON(&payload); err != nil || payload.Email == "" || payload.Password == "" {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.Phone == "" || payload.Password == "" {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
 
-	user, pair, err := h.service.SignUp(c.Request.Context(), payload.Email, payload.Password, payload.FullName, payload.Phone)
+	user, pair, err := h.service.SignUp(c.Request.Context(), payload.Phone, payload.Password)
 	if err != nil {
 		switch err {
 		case usecase.ErrEmailExists:
 			respondError(c, http.StatusConflict, "email already exists")
+		case usecase.ErrPhoneExists:
+			respondError(c, http.StatusConflict, "phone already exists")
+		case usecase.ErrPhoneRequired:
+			respondError(c, http.StatusBadRequest, "phone is required")
 		default:
 			respondError(c, http.StatusBadRequest, err.Error())
 		}
@@ -59,12 +67,12 @@ func (h *UserAuthHandler) Signup(c *gin.Context) {
 
 func (h *UserAuthHandler) Login(c *gin.Context) {
 	var payload userLoginPayload
-	if err := c.ShouldBindJSON(&payload); err != nil || payload.Email == "" || payload.Password == "" {
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.Phone == "" || payload.Password == "" {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
 
-	user, pair, err := h.service.Login(c.Request.Context(), payload.Email, payload.Password)
+	user, pair, err := h.service.Login(c.Request.Context(), payload.Phone, payload.Password)
 	if err != nil {
 		respondError(c, http.StatusUnauthorized, "invalid credentials")
 		return
@@ -114,14 +122,21 @@ func (h *UserAuthHandler) Me(c *gin.Context) {
 func (h *UserAuthHandler) UpdateMe(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	idStr, _ := userID.(string)
-	var payload userSignupPayload
+	var payload userUpdatePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
-	user, err := h.service.UpdateMe(c.Request.Context(), idStr, payload.FullName, payload.Phone)
+	user, err := h.service.UpdateMe(c.Request.Context(), idStr, payload.FullName, payload.Phone, payload.Email)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		switch err {
+		case usecase.ErrEmailExists:
+			respondError(c, http.StatusConflict, "email already exists")
+		case usecase.ErrPhoneExists:
+			respondError(c, http.StatusConflict, "phone already exists")
+		default:
+			respondError(c, http.StatusBadRequest, err.Error())
+		}
 		return
 	}
 	respondOK(c, user)

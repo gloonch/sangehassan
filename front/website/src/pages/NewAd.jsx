@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
+import { PRICE_UNIT_VALUES, formatPriceUnit } from "../lib/listings";
+
+let extraRowId = 0;
+
+const createExtraRow = () => {
+  extraRowId += 1;
+  return { id: extraRowId, key: "", value: "" };
+};
 
 export default function NewAd() {
   const { t } = useTranslation();
@@ -15,15 +23,80 @@ export default function NewAd() {
     city: "",
     price_amount: "",
     price_unit: "per_ton",
-    description: "",
-    extra_props: "{}",
-    images: ""
+    description: ""
   });
+  const [extraRows, setExtraRows] = useState([createExtraRow()]);
+  const [images, setImages] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  useEffect(() => {
+    return () => {
+      images.forEach((item) => {
+        if (item?.preview) {
+          URL.revokeObjectURL(item.preview);
+        }
+      });
+    };
+  }, [images]);
+
+  const updateExtraRow = (id, key, value) => {
+    setExtraRows((prev) => prev.map((row) => (row.id === id ? { ...row, [key]: value } : row)));
+  };
+
+  const addExtraRow = () => setExtraRows((prev) => [...prev, createExtraRow()]);
+
+  const removeExtraRow = (id) => {
+    setExtraRows((prev) => {
+      const next = prev.filter((row) => row.id !== id);
+      return next.length > 0 ? next : [createExtraRow()];
+    });
+  };
+
+  const buildExtraProps = () => {
+    const extra = {};
+    for (const row of extraRows) {
+      const key = row.key.trim();
+      const value = row.value.trim();
+      if (!key && !value) continue;
+      if (!key || !value) {
+        return { error: t("ads.form.extraInvalidRow") };
+      }
+      extra[key] = value;
+    }
+    return { extra };
+  };
+
+  const handleImageChange = (e) => {
+    const selected = Array.from(e.target.files || []).map((file, index) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+    setImages(selected);
+  };
+
+  const uploadImages = async () => {
+    if (!images.length) return [];
+    setUploading(true);
+    const uploaded = [];
+    for (const item of images) {
+      const body = new FormData();
+      body.append("file", item.file);
+      const res = await fetchJSON("/api/ads/upload-image", {
+        method: "POST",
+        body
+      });
+      const data = res?.data || res;
+      if (data?.image_url) uploaded.push(data.image_url);
+    }
+    setUploading(false);
+    return uploaded;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,14 +104,13 @@ export default function NewAd() {
     setSuccess("");
     setSaving(true);
     try {
-      let extra = {};
-      try {
-        extra = form.extra_props ? JSON.parse(form.extra_props) : {};
-      } catch {
-        setError("Invalid JSON in extra properties");
+      const { extra, error: extraError } = buildExtraProps();
+      if (extraError) {
+        setError(extraError);
         setSaving(false);
         return;
       }
+      const uploadedImages = await uploadImages();
       const payload = {
         title: form.title || null,
         stone_type: form.stone_type || null,
@@ -50,12 +122,7 @@ export default function NewAd() {
         price_unit: form.price_unit || null,
         description: form.description || null,
         extra_props: extra,
-        images: form.images
-          ? form.images
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : []
+        images: uploadedImages
       };
       const res = await fetchJSON("/api/ads", {
         method: "POST",
@@ -73,6 +140,7 @@ export default function NewAd() {
         setError(err?.message || t("messages.error"));
       }
     } finally {
+      setUploading(false);
       setSaving(false);
     }
   };
@@ -126,9 +194,11 @@ export default function NewAd() {
           </Field>
           <Field label={t("ads.form.priceUnit")}>
             <select value={form.price_unit} onChange={(e) => update("price_unit", e.target.value)} className={inputClass}>
-              <option value="per_ton">per_ton</option>
-              <option value="total">total</option>
-              <option value="negotiable">negotiable</option>
+              {PRICE_UNIT_VALUES.map((unitValue) => (
+                <option key={unitValue} value={unitValue}>
+                  {formatPriceUnit(unitValue, t)}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label={t("ads.form.description")} full>
@@ -140,24 +210,76 @@ export default function NewAd() {
             />
           </Field>
           <Field label={t("ads.form.extra")} full>
-            <textarea
-              value={form.extra_props}
-              onChange={(e) => update("extra_props", e.target.value)}
-              className={`${inputClass} font-mono text-xs`}
-              rows={3}
-            />
+            <div className="space-y-2">
+              {extraRows.map((row) => (
+                <div key={row.id} className="grid gap-2 md:grid-cols-[1fr_1fr_auto] md:items-center">
+                  <input
+                    value={row.key}
+                    onChange={(e) => updateExtraRow(row.id, "key", e.target.value)}
+                    placeholder={t("ads.form.extraKeyPlaceholder")}
+                    className={inputClass}
+                  />
+                  <input
+                    value={row.value}
+                    onChange={(e) => updateExtraRow(row.id, "value", e.target.value)}
+                    placeholder={t("ads.form.extraValuePlaceholder")}
+                    className={inputClass}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExtraRow(row.id)}
+                    className="h-fit rounded-full border border-primary/20 px-3 py-2 text-[11px] font-semibold text-primary hover:border-primary/40"
+                  >
+                    {t("ads.form.removeRow")}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addExtraRow}
+              className="mt-1 inline-flex h-fit w-fit rounded-full bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary hover:bg-primary/20"
+            >
+              {t("ads.form.addRow")}
+            </button>
+            <p className="text-[11px] font-medium normal-case tracking-normal text-primary/60">
+              {t("ads.form.extraHint")}
+            </p>
           </Field>
-          <Field label="Images (comma separated URLs)" full>
-            <input value={form.images} onChange={(e) => update("images", e.target.value)} className={inputClass} />
+          <Field label={t("ads.form.images")} full>
+            <input
+              type="file"
+              multiple
+              accept=".png,.jpg,.jpeg,.webp"
+              onChange={handleImageChange}
+              className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-sand`}
+            />
+            <p className="text-[11px] font-medium text-primary/60">{t("ads.form.imagesHint")}</p>
+            {images.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {images.map((item) => (
+                  <figure key={item.id} className="rounded-xl border border-primary/10 bg-white/80 p-2">
+                    <img
+                      src={item.preview}
+                      alt={item.file.name}
+                      className="h-20 w-full rounded-lg object-cover"
+                    />
+                    <figcaption className="mt-1 truncate text-[11px] normal-case tracking-normal text-primary/75">
+                      {item.file.name}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            )}
           </Field>
 
           <div className="md:col-span-2 flex items-center gap-3">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploading}
               className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-sand hover:bg-primary/90 disabled:opacity-60"
             >
-              {saving ? t("messages.loading") : t("ads.create")}
+              {saving || uploading ? t("messages.loading") : t("ads.create")}
             </button>
             {success && <span className="text-xs font-semibold text-green-700">{success}</span>}
             {error && <span className="text-xs font-semibold text-red-600">{error}</span>}

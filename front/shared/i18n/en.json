@@ -26,8 +26,18 @@
     "myListings": "My sale offers",
     "request": "Submit request",
     "requestType": "Request type",
+    "requestTypeOptions": {
+      "INSPECTION": "Inspection",
+      "PURCHASE": "Purchase",
+      "BOTH": "Inspection and purchase"
+    },
     "requestNote": "Your notes",
     "submit": "Send",
+    "requestSubmitted": {
+      "kicker": "Request received",
+      "title": "Your request has been submitted",
+      "message": "Your request for {type} has been registered. After it is reviewed by our operators, you will be contacted as soon as possible."
+    },
     "owned": "This sale offer is yours",
     "edit": "Update offer",
     "delete": "Delete offer",
@@ -39,6 +49,13 @@
     "privacyNote": "Buyer and seller identities are hidden from users. Only admins can view full identity details.",
     "viewDetails": "View offer",
     "empty": "No sale offers available yet.",
+    "priceUnitOptions": {
+      "per_ton": "Per ton",
+      "per_meter": "Per meter",
+      "per_cubic_meter": "Per cubic meter",
+      "total": "Total",
+      "negotiable": "Negotiable"
+    },
     "form": {
       "title": "Title",
       "stoneType": "Stone type",
@@ -49,7 +66,15 @@
       "price": "Price",
       "priceUnit": "Price unit",
       "description": "Description",
-      "extra": "Extra properties (JSON)"
+      "extra": "Extra specifications",
+      "extraHint": "Add each specification as a label and value pair.",
+      "extraKeyPlaceholder": "Label",
+      "extraValuePlaceholder": "Value",
+      "addRow": "Add row",
+      "removeRow": "Remove",
+      "extraInvalidRow": "Each extra specification row must include both label and value.",
+      "images": "Images",
+      "imagesHint": "Upload one or more images (png, jpg, jpeg, webp)."
     }
   },
   "hero": {
@@ -168,9 +193,9 @@
   },
   "auth": {
     "loginTitle": "Why do I need an account?",
-    "loginSubtitle": "Because viewing stone ads, submitting expert review and purchase requests, tracking orders, and accessing other core features are only available with an account.",
+    "loginSubtitle": "Sign in with your phone number to access stone ads, submit expert review and purchase requests, and track orders.",
     "signupTitle": "Why do I need an account?",
-    "signupSubtitle": "Because access to stone sale ads, order tracking, and expert review and purchase requests is only available to registered users.",
+    "signupSubtitle": "Create your account with your phone number. You can complete the rest of your profile details later.",
     "loginHighlights": [
       "View sale ads",
       "Submit expert review & purchase requests",
@@ -216,8 +241,39 @@
     "basicInfo": "Basic info",
     "requestsTitle": "Requests",
     "requestsEmpty": "No requests yet.",
+    "tabAds": "Ads",
     "tabInfo": "Profile",
-    "tabRequests": "Requests"
+    "tabRequests": "Requests",
+    "tabContent": {
+      "adsTitle": "Your sale offers",
+      "adsSubtitle": "Manage your posted stone sale offers and add a new listing.",
+      "requestsTitle": "Your requests",
+      "requestsSubtitle": "Track your submitted inspection and purchase requests.",
+      "infoTitle": "Profile settings",
+      "infoSubtitle": "Update your personal details and account information."
+    },
+    "meta": {
+      "id": "ID",
+      "status": "Status",
+      "stoneType": "Stone type",
+      "form": "Form",
+      "tonnage": "Tonnage",
+      "location": "Location",
+      "price": "Price",
+      "priceUnit": "Price unit",
+      "images": "Images",
+      "imageUrls": "Image URLs",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "ownerId": "Owner ID",
+      "requestId": "Request ID",
+      "requestType": "Request type",
+      "listingId": "Listing ID",
+      "meetingAt": "Meeting",
+      "buyerNote": "Buyer note",
+      "adminNote": "Admin note",
+      "historyCount": "History updates"
+    }
   },
   "footer": {
     "title": "Let's build in stone",
