@@ -1,12 +1,55 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo, withIranAccessSeoNotice } from "../lib/seo";
+
+const blogsSeoContent = {
+  fa: {
+    title: "مقالات سنگ طبیعی | سنگ حسن",
+    description: "مقالات و راهنماهای سنگ حسن درباره انتخاب، کاربرد، کیفیت و تامین سنگ طبیعی برای پروژه‌های ساختمانی.",
+    locale: "fa_IR"
+  },
+  en: {
+    title: "Natural Stone Articles | SangeHassan",
+    description: "Read SangeHassan articles and guides about choosing, sourcing, and using natural stone in building projects.",
+    locale: "en_US"
+  },
+  ar: {
+    title: "مقالات الحجر الطبيعي | سانج حسن",
+    description: "مقالات وإرشادات سانج حسن حول اختيار وتوريد واستخدام الحجر الطبيعي في المشاريع.",
+    locale: "ar_SA"
+  }
+};
 
 export default function Blogs() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const seo = useMemo(() => withIranAccessSeoNotice(blogsSeoContent[lang] || blogsSeoContent.fa), [lang]);
+  const coverImage = useMemo(() => blogs.find((blog) => blog?.cover_image_url)?.cover_image_url || "", [blogs]);
+  const jsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      inLanguage: lang,
+      name: seo.title,
+      description: seo.description,
+      url: typeof window !== "undefined" ? `${window.location.origin}/blogs` : undefined
+    }),
+    [lang, seo.description, seo.title]
+  );
+
+  usePageSeo({
+    title: seo.title,
+    description: seo.description,
+    path: "/blogs",
+    lang,
+    locale: seo.locale,
+    image: coverImage ? resolveImageUrl(coverImage) : "",
+    jsonLdId: "blogs-jsonld",
+    jsonLd
+  });
 
   useEffect(() => {
     let mounted = true;

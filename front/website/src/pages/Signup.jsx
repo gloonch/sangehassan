@@ -2,14 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
+import { usePageSeo } from "../lib/seo";
 
 export default function Signup() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  usePageSeo({
+    title: `${t("auth.signupTitle")} | SangeHassan`,
+    description: t("auth.signupSubtitle"),
+    path: "/signup",
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    robots: "noindex,nofollow,noarchive"
+  });
 
   useEffect(() => {
     const checkSession = async () => {

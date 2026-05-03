@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { formatPriceValue } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo } from "../lib/seo";
 
 const getLatestImageUrl = (ad) => {
   const images = Array.isArray(ad?.images) ? ad.images : [];
@@ -15,12 +16,35 @@ const getLatestImageUrl = (ad) => {
 };
 
 export default function Ads() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const latestImage = useMemo(() => items.map(getLatestImageUrl).find(Boolean) || "", [items]);
+  const jsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      inLanguage: lang,
+      name: t("ads.title"),
+      description: t("ads.subtitle"),
+      url: typeof window !== "undefined" ? `${window.location.origin}/ads` : undefined
+    }),
+    [lang, t]
+  );
+
+  usePageSeo({
+    title: `${t("ads.title")} | SangeHassan`,
+    description: t("ads.subtitle"),
+    path: "/ads",
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    image: latestImage ? resolveImageUrl(latestImage) : "",
+    jsonLdId: "ads-jsonld",
+    jsonLd
+  });
 
   useEffect(() => {
     let active = true;

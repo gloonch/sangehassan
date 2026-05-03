@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
-import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.png";
-import finishesOverlayVideo from "@shared/assets/landing_page/landingpage_finishes_overlay.mp4";
-import miniHeroMessagesIcon from "@shared/assets/landing_page/mini-hero-messages.png";
+import { withIranAccessSeoNotice } from "../lib/seo";
+import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
+import finishesOverlayVideo from "@shared/assets/landing_page/landingpage_finishes_overlay.optimized.mp4";
+import miniHeroMessagesIcon from "@shared/assets/landing_page/mini-hero-messages.webp";
 
 const homeSeoContent = {
   fa: {
@@ -216,7 +217,7 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = homeSeoContent[lang] || homeSeoContent.fa;
+    const seo = withIranAccessSeoNotice(homeSeoContent[lang] || homeSeoContent.fa);
     const pageUrl = `${window.location.origin}/`;
     const ogImage = blocksOverlayImage.startsWith("http")
       ? blocksOverlayImage
@@ -588,11 +589,13 @@ export default function Home() {
           </div>
         ) : null}
         {activeDeal ? (
-          <div
-            className="absolute inset-x-0 top-0 h-[7.8rem]"
+          <Link
+            to="/ads"
+            className="pointer-events-auto absolute inset-x-0 top-0 h-[7.8rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-sand/80"
+            aria-label={t("ads.title")}
           >
             {renderDealNotification(activeDeal)}
-          </div>
+          </Link>
         ) : null}
       </div>
     </div>

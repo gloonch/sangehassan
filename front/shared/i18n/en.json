@@ -11,7 +11,7 @@
     "blocks": "Blocks",
     "projects": "Projects",
     "blogs": "Blogs",
-    "ads": "Stone Trade Board",
+    "ads": "Trade Board",
     "stoneFinishes": "Stone Finishes",
     "gallery": "Gallery",
     "about": "About Us",
@@ -20,7 +20,7 @@
     "dashboard": "Dashboard"
   },
   "ads": {
-    "title": "Stone Trade Board",
+    "title": "Trade Board",
     "subtitle": "Private members-only space for posting and browsing stone sale offers.",
     "create": "Post sale offer",
     "myListings": "My sale offers",

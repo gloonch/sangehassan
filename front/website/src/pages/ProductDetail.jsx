@@ -3,6 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo } from "../lib/seo";
+
+const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -90,6 +93,21 @@ export default function ProductDetail() {
     product?.description_html ||
     product?.description ||
     "";
+  const seoTitle = localizedTitle ? `${localizedTitle} | SangeHassan` : "Product Detail | SangeHassan";
+  const seoDescription =
+    stripHTML(localizedDescriptionHTML).slice(0, 160) ||
+    "Detailed natural stone product page from SangeHassan with images, finishes, variants, and sourcing information.";
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDescription,
+    path: `/products/${slug}`,
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    image: activeImage ? resolveImageUrl(activeImage) : "",
+    type: "product",
+    robots: product ? "index,follow,max-image-preview:large" : "noindex,follow"
+  });
 
   const terms = product?.terms || [];
   const categories = product?.categories?.length ? product.categories : product?.category ? [product.category] : [];
@@ -224,61 +242,24 @@ export default function ProductDetail() {
             </div>
 
             <div className="relative overflow-hidden bg-primary/10">
-            {activeImage ? (
-              <button
-                type="button"
-                className="group relative h-[42vh] min-h-[320px] w-full md:h-[52vh]"
-                onClick={() => setLightboxOpen(true)}
-              >
-                <img
-                  src={resolveImageUrl(activeImage)}
-                  alt={localizedTitle}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                />
-              </button>
-            ) : (
-              <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
-                {t("productDetail.noImages")}
-              </div>
-            )}
+              {activeImage ? (
+                <button
+                  type="button"
+                  className="group relative h-[42vh] min-h-[320px] w-full md:h-[52vh]"
+                  onClick={() => setLightboxOpen(true)}
+                >
+                  <img
+                    src={resolveImageUrl(activeImage)}
+                    alt={localizedTitle}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                  />
+                </button>
+              ) : (
+                <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
+                  {t("productDetail.noImages")}
+                </div>
+              )}
 
-            {activeImage && hotspots.length > 0 && (
-              <div className="pointer-events-none absolute inset-0 z-20">
-                {hotspots.map((hotspot) => {
-                  const isActive = activeHotspotId === hotspot.id;
-                  return (
-                    <div
-                      key={hotspot.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2"
-                      style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-                    >
-                      <button
-                        type="button"
-                        className={`hotspot-pin pointer-events-auto z-10 ${isActive ? "scale-110" : ""}`}
-                        onMouseEnter={() => setActiveHotspotId(hotspot.id)}
-                        onMouseLeave={() => setActiveHotspotId(null)}
-                        onFocus={() => setActiveHotspotId(hotspot.id)}
-                        onBlur={() => setActiveHotspotId(null)}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          event.preventDefault();
-                          setActiveHotspotId((prev) => (prev === hotspot.id ? null : hotspot.id));
-                        }}
-                        aria-label={hotspot.label}
-                      />
-                      {hotspot.label ? (
-                        <span
-                          className={`pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/35 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur transition-all duration-300 ${isActive ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-                            }`}
-                        >
-                          {hotspot.label}
-                        </span>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             </div>
 
             {images.length > 0 && (

@@ -4,13 +4,14 @@ import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { PRICE_UNIT_VALUES, formatPriceUnit, formatPriceValue } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo } from "../lib/seo";
 
 const inputClass =
   "w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none";
 
 export default function AdDetail() {
   const { id } = useParams();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
 
   const [ad, setAd] = useState(null);
@@ -35,6 +36,31 @@ export default function AdDetail() {
     if (!ad) return [];
     return (ad.images || []).map((img) => img?.image_url).filter(Boolean);
   }, [ad]);
+  const seoTitle = ad ? `${ad.title || ad.stone_type || t("ads.title")} | ${t("ads.title")} | SangeHassan` : `${t("ads.title")} | SangeHassan`;
+  const seoDescription =
+    ad
+      ? [
+          ad.form,
+          ad.stone_type,
+          ad.tonnage ? `${ad.tonnage} t` : "",
+          [ad.province, ad.city].filter(Boolean).join(" / "),
+          ad.description
+        ]
+          .filter(Boolean)
+          .join(" | ")
+          .slice(0, 170)
+      : t("ads.subtitle");
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDescription,
+    path: `/ads/${id}`,
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    image: imageUrls[0] ? resolveImageUrl(imageUrls[0]) : "",
+    type: "article",
+    robots: ad ? "index,follow,max-image-preview:large" : "noindex,follow"
+  });
 
   useEffect(() => {
     if (imageUrls.length === 0) {

@@ -4,6 +4,7 @@ import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { formatPriceValue, formatPriceUnit } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo } from "../lib/seo";
 
 const PHONE_ALIAS_EMAIL_SUFFIX = "@phone.sangehassan.local";
 const getLatestImageUrl = (ad) => {
@@ -29,6 +30,15 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+
+  usePageSeo({
+    title: `${t("profile.title")} | SangeHassan`,
+    description: t("profile.subtitle"),
+    path: "/profile",
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    robots: "noindex,nofollow,noarchive"
+  });
 
   const dateFormatter = useMemo(() => {
     const locale = lang === "fa" ? "fa-IR" : lang === "ar" ? "ar-SA" : "en-US";

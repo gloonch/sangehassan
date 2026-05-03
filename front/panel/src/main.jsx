@@ -8,7 +8,7 @@ import "./styles.css";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <LanguageProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/panel">
         <App />
       </BrowserRouter>
     </LanguageProvider>

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 export async function fetchJSON(path, options = {}) {
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;

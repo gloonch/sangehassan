@@ -4,8 +4,30 @@ import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { withIranAccessSeoNotice } from "../lib/seo";
 
 const PRODUCTS_PAGE_SIZE = 20;
+
+const productsSeoContent = {
+  fa: {
+    title: "محصولات سنگ طبیعی | سنگ حسن",
+    description:
+      "کاتالوگ محصولات سنگ حسن شامل اسلب، تایل و سنگ‌های فرآوری‌شده برای پروژه‌های ساختمانی، همکاری B2B و صادرات.",
+    locale: "fa_IR"
+  },
+  en: {
+    title: "Natural Stone Products | SangeHassan",
+    description:
+      "Browse SangeHassan natural stone products, including slabs, tiles, and finished stones for building projects, B2B supply, and export.",
+    locale: "en_US"
+  },
+  ar: {
+    title: "منتجات الحجر الطبيعي | سانج حسن",
+    description:
+      "تصفح منتجات الحجر الطبيعي من سانج حسن، بما في ذلك الألواح والبلاط والأحجار المعالجة للمشاريع والتصدير.",
+    locale: "ar_SA"
+  }
+};
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -81,6 +103,65 @@ export default function Products() {
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const seo = withIranAccessSeoNotice(productsSeoContent[lang] || productsSeoContent.fa);
+    const pageUrl = `${window.location.origin}/products`;
+    const previousTitle = document.title;
+    const previousDescription = document.head.querySelector('meta[name="description"]')?.getAttribute("content") ?? null;
+    const previousOgTitle = document.head.querySelector('meta[property="og:title"]')?.getAttribute("content") ?? null;
+    const previousOgDescription =
+      document.head.querySelector('meta[property="og:description"]')?.getAttribute("content") ?? null;
+
+    const upsertMeta = (selector, attrs, value) => {
+      let el = document.head.querySelector(selector);
+      if (!el) {
+        el = document.createElement("meta");
+        Object.entries(attrs).forEach(([key, attrValue]) => el.setAttribute(key, attrValue));
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value);
+    };
+
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    const createdCanonical = !canonical;
+    const previousCanonical = canonical?.getAttribute("href") ?? null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+
+    document.title = seo.title;
+    canonical.setAttribute("href", pageUrl);
+    upsertMeta('meta[name="description"]', { name: "description" }, seo.description);
+    upsertMeta('meta[property="og:title"]', { property: "og:title" }, seo.title);
+    upsertMeta('meta[property="og:description"]', { property: "og:description" }, seo.description);
+    upsertMeta('meta[property="og:url"]', { property: "og:url" }, pageUrl);
+    upsertMeta('meta[property="og:locale"]', { property: "og:locale" }, seo.locale);
+    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, seo.title);
+    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, seo.description);
+
+    return () => {
+      document.title = previousTitle;
+      const description = document.head.querySelector('meta[name="description"]');
+      const ogTitle = document.head.querySelector('meta[property="og:title"]');
+      const ogDescription = document.head.querySelector('meta[property="og:description"]');
+
+      if (previousDescription === null) description?.removeAttribute("content");
+      else description?.setAttribute("content", previousDescription);
+      if (previousOgTitle === null) ogTitle?.removeAttribute("content");
+      else ogTitle?.setAttribute("content", previousOgTitle);
+      if (previousOgDescription === null) ogDescription?.removeAttribute("content");
+      else ogDescription?.setAttribute("content", previousOgDescription);
+
+      if (createdCanonical) canonical?.remove();
+      else if (previousCanonical === null) canonical?.removeAttribute("href");
+      else canonical?.setAttribute("href", previousCanonical);
+    };
+  }, [lang]);
 
   const normalizedProducts = useMemo(
     () =>

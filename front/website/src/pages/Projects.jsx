@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { withIranAccessSeoNotice } from "../lib/seo";
 
 const projectsSeoContent = {
   fa: {
@@ -111,7 +112,7 @@ export default function Projects() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = projectsSeoContent[lang] || projectsSeoContent.fa;
+    const seo = withIranAccessSeoNotice(projectsSeoContent[lang] || projectsSeoContent.fa);
     const pageUrl = `${window.location.origin}/projects`;
     const previousTitle = document.title;
     const cleanups = [];

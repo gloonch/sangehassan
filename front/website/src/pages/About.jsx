@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { withIranAccessSeoNotice } from "../lib/seo";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const IMAGE_REV = import.meta.env.VITE_IMAGE_REV || "about-2026-04-17-r4";
 const imageUrl = (path) => `${API_BASE}/images/${path}?v=${IMAGE_REV}`;
 
@@ -781,7 +782,7 @@ export default function About() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = seoContent[lang] || seoContent.fa;
+    const seo = withIranAccessSeoNotice(seoContent[lang] || seoContent.fa);
     const pageUrl = `${window.location.origin}/about`;
     const heroImage = data.hero.image;
     const heroImageUrl = heroImage.startsWith("http") ? heroImage : `${window.location.origin}${heroImage}`;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { PRICE_UNIT_VALUES, formatPriceUnit } from "../lib/listings";
+import { usePageSeo } from "../lib/seo";
 
 let extraRowId = 0;
 
@@ -12,7 +13,7 @@ const createExtraRow = () => {
 };
 
 export default function NewAd() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
@@ -31,6 +32,15 @@ export default function NewAd() {
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  usePageSeo({
+    title: `${t("ads.create")} | SangeHassan`,
+    description: t("ads.subtitle"),
+    path: "/ads/new",
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    robots: "noindex,nofollow,noarchive"
+  });
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 

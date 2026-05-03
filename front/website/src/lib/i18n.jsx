@@ -16,17 +16,12 @@ const getValue = (obj, path) => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState(() => {
-    if (typeof window === "undefined") return "en";
-    const stored = window.localStorage.getItem("lang");
-    return supportedLangs.includes(stored) ? stored : "en";
-  });
+  const [lang, setLang] = useState("en");
   const setSafeLang = useCallback((nextLang) => {
     setLang(supportedLangs.includes(nextLang) ? nextLang : "en");
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("lang", lang);
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "fa" || lang === "ar" ? "rtl" : "ltr";
   }, [lang]);

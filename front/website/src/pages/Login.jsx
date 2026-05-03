@@ -5,7 +5,7 @@ import { useTranslation } from "../lib/i18n";
 
 const LOGIN_MODE = "login";
 const SIGNUP_MODE = "signup";
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const LOGIN_DESCRIPTION_IMAGE = `${API_BASE}/images/login/login_description.png`;
 
 const loginSeoContent = {

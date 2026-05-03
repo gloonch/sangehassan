@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { usePageSeo } from "../lib/seo";
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -48,6 +49,28 @@ export default function BlockDetail() {
 
   const activeImage = images[activeIndex] || images[0] || "";
   const localizedTitle = getLocalized(block, lang) || block?.title_en || "";
+  const seoDescription =
+    [
+      block?.stone_type ? `${t("blocks.stoneType")}: ${block.stone_type}` : "",
+      block?.quarry ? `${t("blocks.quarry")}: ${block.quarry}` : "",
+      block?.dimensions ? `${t("blocks.dimensions")}: ${block.dimensions}` : "",
+      block?.weight_ton ? `${t("blocks.weightTon")}: ${block.weight_ton}` : "",
+      block?.description || ""
+    ]
+      .filter(Boolean)
+      .join(" | ")
+      .slice(0, 170) || "Natural stone block detail from SangeHassan with quarry, dimensions, weight, and availability information.";
+
+  usePageSeo({
+    title: localizedTitle ? `${localizedTitle} | ${t("blocks.title")} | SangeHassan` : `${t("blocks.title")} | SangeHassan`,
+    description: seoDescription,
+    path: `/blocks/${slug}`,
+    lang,
+    locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
+    image: activeImage ? resolveImageUrl(activeImage) : "",
+    type: "product",
+    robots: block ? "index,follow,max-image-preview:large" : "noindex,follow"
+  });
 
   const statusLabel = (status) => {
     if (status === "available") return t("blocks.statusAvailable");
