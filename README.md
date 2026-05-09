@@ -24,24 +24,43 @@ Admin credentials (seeded in DB):
 - Password: `Admin123!`
 
 ## Prod (Docker)
+Each production target has its own compose, env, and nginx config.
+
+### prod-com (`sangehassan.com`, `91.239.211.60`)
 ```sh
 cd deploy
-docker compose -f docker-compose-prod.yml up --build
+cp .prod-com.env.example .prod-com.env
+# edit DB_PASSWORD and JWT_SECRET before first start
+docker compose --env-file .prod-com.env -f docker-compose-prod-com.yml up -d --build
 ```
 
-Services:
-- Website: http://localhost:3000
-- Admin panel: http://localhost:3001
-- API: http://localhost:8080
-- Images: http://localhost:8081/images/
+### prod-ir (`sangehassan.ir`, `185.53.141.157`)
+This target pulls Docker base images through `docker.abrha.net` and downloads Go modules through Liara's Go proxy.
+
+```sh
+cd deploy
+cp .prod-ir.env.example .prod-ir.env
+# edit DB_PASSWORD and JWT_SECRET before first start
+docker compose --env-file .prod-ir.env -f docker-compose-prod-ir.yml up -d --build
+```
+
+Production routes on both targets:
+- Website: `/`
+- Admin panel: `/panel/`
+- API: `/api/`
+- Images: `/images/`
 
 ## Env files
-Update secrets in:
-- `deploy/.dev.env`
-- `deploy/.prod.env`
+Update secrets in the env file used by the target:
+- Dev: `deploy/.dev.env`
+- Legacy production compose: `deploy/.prod.env`
+- prod-com: `deploy/.prod-com.env`
+- prod-ir: `deploy/.prod-ir.env`
 
 Image hosting base URL:
-- `VITE_IMAGE_BASE_URL` (defaults to `http://localhost:8081` if unset)
+- In production this is intentionally blank by default so the frontend uses same-origin `/api` and `/images`.
+- Set `VITE_API_BASE_URL` or `VITE_IMAGE_BASE_URL` only if API or images are served from a different origin.
+- Keep `COOKIE_SECURE=true` for HTTPS production domains. For temporary direct HTTP/IP testing, cookies require `COOKIE_SECURE=false`.
 
 ## DB schema updates (existing volumes)
 Postgres init SQL in `deploy/postgres/init/` only runs the first time a new volume is created. If you pull new code that adds tables (for example `content_sections` or `blocks`) and your existing DB volume was created before that, admin pages like `/dashboard/content` or `/dashboard/blocks` can fail with 500 errors.

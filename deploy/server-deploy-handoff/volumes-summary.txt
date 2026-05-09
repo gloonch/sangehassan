@@ -1,0 +1,18 @@
+# Production volumes summary
+
+Both production compose files use the same volume names because prod-com and prod-ir run on separate VPS hosts.
+
+Named volumes:
+- `pg_data_prod`: Postgres database files at `/var/lib/postgresql/data`
+- `images_data_prod`: uploaded/seeded image files shared between backend and nginx
+
+Container mount points:
+- backend writes images at `/app/storage/images`
+- nginx serves images from `/var/www/images`
+- Postgres init SQL is mounted from `./postgres/init` to `/docker-entrypoint-initdb.d`
+- repo seed images are mounted read-only from `../back/storage/images` to `/seed/images`
+
+Important behavior:
+- Postgres init SQL only runs when `pg_data_prod` is first created.
+- `images_data_prod` is seeded from `../back/storage/images` by `back/entrypoint.sh` on first backend start when the volume is empty.
+- Do not remove named volumes on a production VPS unless you intentionally want to wipe database or uploaded image data.

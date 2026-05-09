@@ -1,0 +1,33 @@
+# Production env keys
+
+Use one env file per VPS:
+- prod-com: `deploy/.prod-com.env`
+- prod-ir: `deploy/.prod-ir.env`
+
+Required backend/runtime keys:
+- `APP_ENV=production`
+- `PORT=8080`
+- `DB_HOST=db`
+- `DB_PORT=5432`
+- `DB_USER=sangehassan`
+- `DB_PASSWORD=<strong-secret>`
+- `DB_NAME=sangehassan`
+- `DB_SSLMODE=disable`
+- `JWT_SECRET=<strong-secret>`
+- `JWT_TTL_HOURS=24`
+- `ACCESS_TOKEN_MINUTES=15`
+- `REFRESH_TOKEN_DAYS=30`
+- `COOKIE_SECURE=true`
+- `ALLOWED_ORIGINS=<comma-separated allowed browser origins>`
+
+Frontend build keys:
+- `VITE_API_BASE_URL=` defaults to same-origin `/api`
+- `VITE_IMAGE_BASE_URL=` defaults to same-origin `/images`
+
+Current target origins:
+- prod-com: `https://sangehassan.com,https://www.sangehassan.com,http://sangehassan.com,http://www.sangehassan.com,http://91.239.211.60`
+- prod-ir: `https://sangehassan.ir,https://www.sangehassan.ir,http://sangehassan.ir,http://www.sangehassan.ir,http://185.53.141.157`
+
+Run commands:
+- prod-com: `docker compose --env-file .prod-com.env -f docker-compose-prod-com.yml up -d --build`
+- prod-ir: `docker compose --env-file .prod-ir.env -f docker-compose-prod-ir.yml up -d --build`

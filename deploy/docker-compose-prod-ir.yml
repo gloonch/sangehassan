@@ -1,0 +1,79 @@
+services:
+  db:
+    image: docker.abrha.net/postgres:15-alpine
+    container_name: sangehassan-db
+    env_file: .prod-ir.env
+    environment:
+      POSTGRES_USER: ${DB_USER:-sangehassan}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me}
+      POSTGRES_DB: ${DB_NAME:-sangehassan}
+    expose:
+      - "5432"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - pg_data_prod:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ../back
+      target: prod
+      args:
+        GO_IMAGE: docker.abrha.net/golang:1.22-alpine
+        ALPINE_IMAGE: docker.abrha.net/alpine:3.19
+        GOPROXY_URL: https://package-mirror.liara.ir/repository/go/
+    container_name: sangehassan-backend
+    env_file: .prod-ir.env
+    depends_on:
+      - db
+    expose:
+      - "8080"
+    volumes:
+      - images_data_prod:/app/storage/images
+      - ../back/storage/images:/seed/images:ro
+
+  website:
+    build:
+      context: ../front
+      dockerfile: website/Dockerfile
+      target: prod
+      args:
+        NODE_IMAGE: docker.abrha.net/node:20-alpine
+        NGINX_IMAGE: docker.abrha.net/nginx:alpine
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
+    container_name: sangehassan-website
+    env_file: .prod-ir.env
+    expose:
+      - "80"
+
+  panel:
+    build:
+      context: ../front
+      dockerfile: panel/Dockerfile
+      target: prod
+      args:
+        NODE_IMAGE: docker.abrha.net/node:20-alpine
+        NGINX_IMAGE: docker.abrha.net/nginx:alpine
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
+    container_name: sangehassan-panel
+    env_file: .prod-ir.env
+    expose:
+      - "80"
+
+  nginx:
+    image: docker.abrha.net/nginx:alpine
+    container_name: sangehassan-nginx
+    depends_on:
+      - backend
+      - website
+      - panel
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/prod-ir.conf:/etc/nginx/nginx.conf:ro
+      - images_data_prod:/var/www/images:ro
+
+volumes:
+  pg_data_prod:
+  images_data_prod:
