@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
+import { getAbsoluteUrl, getCanonicalUrl } from "../lib/seo";
 
 const LOGIN_MODE = "login";
 const SIGNUP_MODE = "signup";
@@ -220,8 +221,9 @@ export default function Login() {
 
     const localized = loginSeoContent[lang] || loginSeoContent.fa;
     const seo = isSignup ? localized.signup : localized.login;
-    const pageUrl = `${window.location.origin}/login${isSignup ? "?mode=signup" : ""}`;
-    const canonicalUrl = `${window.location.origin}/login`;
+    const pageUrl = getCanonicalUrl(`/login${isSignup ? "?mode=signup" : ""}`);
+    const canonicalUrl = getCanonicalUrl("/login");
+    const loginImageUrl = getAbsoluteUrl(LOGIN_DESCRIPTION_IMAGE);
     const previousTitle = document.title;
     const cleanups = [];
 
@@ -287,11 +289,11 @@ export default function Login() {
     upsertMeta('meta[property="og:title"]', { property: "og:title" }, seo.title);
     upsertMeta('meta[property="og:description"]', { property: "og:description" }, seo.description);
     upsertMeta('meta[property="og:url"]', { property: "og:url" }, pageUrl);
-    upsertMeta('meta[property="og:image"]', { property: "og:image" }, LOGIN_DESCRIPTION_IMAGE);
+    upsertMeta('meta[property="og:image"]', { property: "og:image" }, loginImageUrl);
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card" }, "summary_large_image");
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title" }, seo.title);
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description" }, seo.description);
-    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, LOGIN_DESCRIPTION_IMAGE);
+    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image" }, loginImageUrl);
 
     return () => {
       document.title = previousTitle;
@@ -309,7 +311,7 @@ export default function Login() {
               alt={t("auth.sidePreviewPlaceholder")}
               className="h-full w-full object-cover object-top"
               loading="eager"
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-sand/35 to-sand/85" />

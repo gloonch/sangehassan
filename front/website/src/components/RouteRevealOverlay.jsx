@@ -10,7 +10,7 @@ const prefersReducedMotion = () => {
 
 export default function RouteRevealOverlay() {
   const location = useLocation();
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const panelRefs = useRef([]);
   const timelineRef = useRef(null);
 

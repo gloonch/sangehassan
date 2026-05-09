@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
-import { usePageSeo, withIranAccessSeoNotice } from "../lib/seo";
+import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 
 const blogsSeoContent = {
   fa: {
@@ -26,7 +26,7 @@ export default function Blogs() {
   const { t, lang } = useTranslation();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const seo = useMemo(() => withIranAccessSeoNotice(blogsSeoContent[lang] || blogsSeoContent.fa), [lang]);
+  const seo = useMemo(() => blogsSeoContent[lang] || blogsSeoContent.fa, [lang]);
   const coverImage = useMemo(() => blogs.find((blog) => blog?.cover_image_url)?.cover_image_url || "", [blogs]);
   const jsonLd = useMemo(
     () => ({
@@ -35,7 +35,7 @@ export default function Blogs() {
       inLanguage: lang,
       name: seo.title,
       description: seo.description,
-      url: typeof window !== "undefined" ? `${window.location.origin}/blogs` : undefined
+      url: getCanonicalUrl("/blogs")
     }),
     [lang, seo.description, seo.title]
   );

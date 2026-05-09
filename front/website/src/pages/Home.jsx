@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
-import { withIranAccessSeoNotice } from "../lib/seo";
+import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
 import finishesOverlayVideo from "@shared/assets/landing_page/landingpage_finishes_overlay.optimized.mp4";
 import miniHeroMessagesIcon from "@shared/assets/landing_page/mini-hero-messages.webp";
@@ -217,11 +217,9 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = withIranAccessSeoNotice(homeSeoContent[lang] || homeSeoContent.fa);
-    const pageUrl = `${window.location.origin}/`;
-    const ogImage = blocksOverlayImage.startsWith("http")
-      ? blocksOverlayImage
-      : `${window.location.origin}${blocksOverlayImage.startsWith("/") ? "" : "/"}${blocksOverlayImage}`;
+    const seo = homeSeoContent[lang] || homeSeoContent.fa;
+    const pageUrl = getCanonicalUrl("/");
+    const ogImage = getAbsoluteUrl(blocksOverlayImage);
     const previousTitle = document.title;
     const cleanups = [];
 
@@ -328,7 +326,7 @@ export default function Home() {
       publisher: {
         "@type": "Organization",
         name: "SangeHassan",
-        url: window.location.origin
+        url: getSiteOrigin()
       }
     });
 

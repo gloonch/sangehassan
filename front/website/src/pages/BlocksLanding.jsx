@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import BlocksCatalog from "./BlocksCatalog";
 import { useTranslation } from "../lib/i18n";
-import { withIranAccessSeoNotice } from "../lib/seo";
+import { getCanonicalUrl } from "../lib/seo";
 
 const blocksSeoContent = {
   fa: {
@@ -30,8 +30,8 @@ export default function BlocksLanding() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = withIranAccessSeoNotice(blocksSeoContent[lang] || blocksSeoContent.fa);
-    const pageUrl = `${window.location.origin}/blocks`;
+    const seo = blocksSeoContent[lang] || blocksSeoContent.fa;
+    const pageUrl = getCanonicalUrl("/blocks");
     const previousTitle = document.title;
     const previousDescription = document.head.querySelector('meta[name="description"]')?.getAttribute("content") ?? null;
 

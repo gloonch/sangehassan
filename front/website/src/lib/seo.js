@@ -1,31 +1,26 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
-const COM_HOSTS = new Set(["sangehassan.com", "www.sangehassan.com"]);
-const IRAN_ACCESS_TITLE_SUFFIX = " | دسترسی داخل ایران: sangehassan.ir";
-const IRAN_ACCESS_DESCRIPTION =
-  "اگر از داخل ایران هستید، برای دسترسی سریع‌تر و بدون اختلال از sangehassan.ir استفاده کنید.";
+const configuredSiteUrl = (import.meta.env.VITE_SITE_URL || "").replace(/\/+$/, "");
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-const appendSentenceOnce = (text, sentence) => {
-  if (!text) return sentence;
-  if (text.includes(sentence)) return text;
-  return `${text} ${sentence}`;
+export const getSiteOrigin = () => {
+  if (configuredSiteUrl) return configuredSiteUrl;
+  if (typeof window === "undefined") return "";
+  return window.location.origin;
 };
 
-export const isSangehassanCom = () => {
-  if (typeof window === "undefined") return false;
-  return COM_HOSTS.has(window.location.hostname.toLowerCase());
+export const getCanonicalUrl = (path = "/") => {
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const origin = getSiteOrigin();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return origin ? `${origin}${normalizedPath}` : normalizedPath;
 };
 
-export const withIranAccessSeoNotice = (seo) => {
-  if (!isSangehassanCom()) return seo;
-
-  return {
-    ...seo,
-    title: seo.title.includes(IRAN_ACCESS_TITLE_SUFFIX)
-      ? seo.title
-      : `${seo.title}${IRAN_ACCESS_TITLE_SUFFIX}`,
-    description: appendSentenceOnce(seo.description, IRAN_ACCESS_DESCRIPTION)
-  };
+export const getAbsoluteUrl = (url = "") => {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return getCanonicalUrl(url.startsWith("/") ? url : `/${url}`);
 };
 
 export const usePageSeo = ({
@@ -40,16 +35,12 @@ export const usePageSeo = ({
   jsonLd = null,
   jsonLdId = ""
 }) => {
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return undefined;
     if (!title || !description || !path) return undefined;
 
-    const pageUrl = `${window.location.origin}${path}`;
-    const imageUrl = image
-      ? image.startsWith("http")
-        ? image
-        : `${window.location.origin}${image.startsWith("/") ? "" : "/"}${image}`
-      : "";
+    const pageUrl = getCanonicalUrl(path);
+    const imageUrl = getAbsoluteUrl(image);
     const cleanups = [];
 
     const upsertMeta = (selector, createAttrs, value) => {

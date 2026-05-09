@@ -4,6 +4,10 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    assetsInlineLimit: 0,
+    manifest: true
+  },
   server: {
     host: true,
     port: 5173,

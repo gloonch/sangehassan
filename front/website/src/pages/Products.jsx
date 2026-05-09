@@ -4,7 +4,7 @@ import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
-import { withIranAccessSeoNotice } from "../lib/seo";
+import { getCanonicalUrl } from "../lib/seo";
 
 const PRODUCTS_PAGE_SIZE = 20;
 
@@ -107,8 +107,8 @@ export default function Products() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = withIranAccessSeoNotice(productsSeoContent[lang] || productsSeoContent.fa);
-    const pageUrl = `${window.location.origin}/products`;
+    const seo = productsSeoContent[lang] || productsSeoContent.fa;
+    const pageUrl = getCanonicalUrl("/products");
     const previousTitle = document.title;
     const previousDescription = document.head.querySelector('meta[name="description"]')?.getAttribute("content") ?? null;
     const previousOgTitle = document.head.querySelector('meta[property="og:title"]')?.getAttribute("content") ?? null;

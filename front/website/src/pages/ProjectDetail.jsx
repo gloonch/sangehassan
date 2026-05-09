@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 
 const projectDetailSeoContent = {
   fa: {
@@ -115,7 +116,7 @@ export default function ProjectDetail() {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
     const localizedSeo = projectDetailSeoContent[lang] || projectDetailSeoContent.fa;
-    const pageUrl = `${window.location.origin}/projects/${id}`;
+    const pageUrl = getCanonicalUrl(`/projects/${id}`);
     const seoTitle = project
       ? `${localizedTitle} | ${localizedSeo.suffix}`
       : localizedSeo.suffix;
@@ -123,9 +124,9 @@ export default function ProjectDetail() {
       ? (localizedDescription || localizedSeo.descriptionFallback)
       : localizedSeo.descriptionFallback;
     const ogImage = project?.cover_image_url
-      ? resolveImageUrl(project.cover_image_url)
+      ? getAbsoluteUrl(resolveImageUrl(project.cover_image_url))
       : activeImage
-        ? resolveImageUrl(activeImage)
+        ? getAbsoluteUrl(resolveImageUrl(activeImage))
         : "";
     const previousTitle = document.title;
     const cleanups = [];
@@ -240,7 +241,7 @@ export default function ProjectDetail() {
         publisher: {
           "@type": "Organization",
           name: "SangeHassan",
-          url: window.location.origin
+          url: getSiteOrigin()
         }
       });
     }

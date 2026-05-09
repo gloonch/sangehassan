@@ -60,6 +60,9 @@ Update secrets in the env file used by the target:
 Image hosting base URL:
 - In production this is intentionally blank by default so the frontend uses same-origin `/api` and `/images`.
 - Set `VITE_API_BASE_URL` or `VITE_IMAGE_BASE_URL` only if API or images are served from a different origin.
+- Set `VITE_SITE_URL` to the canonical public origin, for example `https://sangehassan.com`, so canonical and Open Graph URLs do not follow `www` or IP hosts.
+- `npm run build` prerenders public static routes and writes `sitemap.xml` plus `robots.txt`. Set `VITE_PRERENDER_API_BASE_URL` only when a reachable API is available at build time and you also want product/block/project/ad detail pages prerendered.
+- `VITE_SITEMAP_LASTMOD` is optional. Leave it blank to use the build date, or set a `YYYY-MM-DD` value for deterministic sitemap `lastmod` entries.
 - Keep `COOKIE_SECURE=true` for HTTPS production domains. For temporary direct HTTP/IP testing, cookies require `COOKIE_SECURE=false`.
 
 ## DB schema updates (existing volumes)

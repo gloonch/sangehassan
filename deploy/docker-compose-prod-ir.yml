@@ -41,6 +41,9 @@ services:
         NGINX_IMAGE: docker.abrha.net/nginx:alpine
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
         VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
+        VITE_PRERENDER_API_BASE_URL: ${VITE_PRERENDER_API_BASE_URL:-}
+        VITE_SITEMAP_LASTMOD: ${VITE_SITEMAP_LASTMOD:-}
     container_name: sangehassan-website
     env_file: .prod-ir.env
     expose:

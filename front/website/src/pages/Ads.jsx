@@ -4,7 +4,7 @@ import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { formatPriceValue } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
-import { usePageSeo } from "../lib/seo";
+import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 
 const getLatestImageUrl = (ad) => {
   const images = Array.isArray(ad?.images) ? ad.images : [];
@@ -30,7 +30,7 @@ export default function Ads() {
       inLanguage: lang,
       name: t("ads.title"),
       description: t("ads.subtitle"),
-      url: typeof window !== "undefined" ? `${window.location.origin}/ads` : undefined
+      url: getCanonicalUrl("/ads")
     }),
     [lang, t]
   );

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
-import { withIranAccessSeoNotice } from "../lib/seo";
+import { getAbsoluteUrl, getCanonicalUrl } from "../lib/seo";
 
 const projectsSeoContent = {
   fa: {
@@ -112,13 +112,13 @@ export default function Projects() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = withIranAccessSeoNotice(projectsSeoContent[lang] || projectsSeoContent.fa);
-    const pageUrl = `${window.location.origin}/projects`;
+    const seo = projectsSeoContent[lang] || projectsSeoContent.fa;
+    const pageUrl = getCanonicalUrl("/projects");
     const previousTitle = document.title;
     const cleanups = [];
 
     const firstCover = projects.find((project) => project?.cover_image_url)?.cover_image_url;
-    const ogImage = firstCover ? resolveImageUrl(firstCover) : "";
+    const ogImage = firstCover ? getAbsoluteUrl(resolveImageUrl(firstCover)) : "";
 
     const upsertMeta = (selector, createAttrs, value) => {
       if (!value) return;
@@ -227,9 +227,9 @@ export default function Projects() {
         itemListElement: projects.slice(0, 12).map((project, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          url: `${window.location.origin}/projects/${project.id}`,
+          url: getCanonicalUrl(`/projects/${project.id}`),
           name: getLocalizedProjectTitle(project, lang, t),
-          image: project.cover_image_url ? resolveImageUrl(project.cover_image_url) : undefined
+          image: project.cover_image_url ? getAbsoluteUrl(resolveImageUrl(project.cover_image_url)) : undefined
         }))
       }
     });

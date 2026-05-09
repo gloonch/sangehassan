@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
-import { withIranAccessSeoNotice } from "../lib/seo";
+import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const IMAGE_REV = import.meta.env.VITE_IMAGE_REV || "about-2026-04-17-r4";
@@ -782,10 +782,10 @@ export default function About() {
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
-    const seo = withIranAccessSeoNotice(seoContent[lang] || seoContent.fa);
-    const pageUrl = `${window.location.origin}/about`;
+    const seo = seoContent[lang] || seoContent.fa;
+    const pageUrl = getCanonicalUrl("/about");
     const heroImage = data.hero.image;
-    const heroImageUrl = heroImage.startsWith("http") ? heroImage : `${window.location.origin}${heroImage}`;
+    const heroImageUrl = getAbsoluteUrl(heroImage);
     const previousTitle = document.title;
     const cleanups = [];
 
@@ -892,7 +892,7 @@ export default function About() {
       mainEntity: {
         "@type": "Organization",
         name: "SangeHassan",
-        url: window.location.origin
+        url: getSiteOrigin()
       }
     });
 
@@ -961,7 +961,7 @@ export default function About() {
                   alt={data.hero.title}
                   className="h-full w-full object-cover"
                   loading="eager"
-                  fetchPriority="high"
+                  fetchpriority="high"
                   decoding="async"
                 />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-sand/58 to-sand" />

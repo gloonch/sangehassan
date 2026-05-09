@@ -35,8 +35,11 @@ services:
       dockerfile: website/Dockerfile
       target: prod
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
+        VITE_PRERENDER_API_BASE_URL: ${VITE_PRERENDER_API_BASE_URL:-}
+        VITE_SITEMAP_LASTMOD: ${VITE_SITEMAP_LASTMOD:-}
     container_name: sangehassan-website
     env_file: .prod.env
     expose:
@@ -48,8 +51,8 @@ services:
       dockerfile: panel/Dockerfile
       target: prod
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
     container_name: sangehassan-panel
     env_file: .prod.env
     expose:

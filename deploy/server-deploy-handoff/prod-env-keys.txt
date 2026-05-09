@@ -23,6 +23,10 @@ Required backend/runtime keys:
 Frontend build keys:
 - `VITE_API_BASE_URL=` defaults to same-origin `/api`
 - `VITE_IMAGE_BASE_URL=` defaults to same-origin `/images`
+- `VITE_SITE_URL=https://sangehassan.com` on prod-com
+- `VITE_SITE_URL=https://sangehassan.ir` on prod-ir
+- `VITE_PRERENDER_API_BASE_URL=` optional; set only when the API is reachable during frontend image build and dynamic detail pages should be prerendered
+- `VITE_SITEMAP_LASTMOD=` optional; leave blank to use the frontend build date for sitemap `lastmod`
 
 Current target origins:
 - prod-com: `https://sangehassan.com,https://www.sangehassan.com,http://sangehassan.com,http://www.sangehassan.com,http://91.239.211.60`
