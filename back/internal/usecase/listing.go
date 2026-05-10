@@ -22,6 +22,10 @@ func (s *ListingService) List(ctx context.Context, filter ports.ListingFilter) (
 	return s.repo.List(ctx, filter)
 }
 
+func (s *ListingService) ListAdmin(ctx context.Context, filter ports.ListingFilter) ([]domain.Listing, error) {
+	return s.repo.List(ctx, filter)
+}
+
 func (s *ListingService) GetByID(ctx context.Context, id int64) (domain.Listing, error) {
 	return s.repo.GetByID(ctx, id)
 }

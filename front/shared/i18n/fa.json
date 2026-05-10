@@ -434,6 +434,23 @@
     "title": "محتوای لندینگ",
     "empty": "بخشی ثبت نشده است."
   },
+  "panelAds": {
+    "title": "آگهی‌ها",
+    "empty": "فعلا آگهی‌ای موجود نیست.",
+    "countLabel": "آگهی",
+    "author": "نویسنده",
+    "authorContact": "اطلاعات تماس نویسنده",
+    "createdAt": "تاریخ ایجاد"
+  },
+  "panelUsers": {
+    "title": "کاربران",
+    "empty": "کاربری یافت نشد.",
+    "countLabel": "کاربر",
+    "email": "ایمیل",
+    "phone": "شماره تماس",
+    "role": "نقش",
+    "registeredAt": "تاریخ ثبت‌نام"
+  },
   "panelProductMeta": {
     "title": "جزئیات محصول",
     "tagsTitle": "تگ‌ها و یوزکیس‌ها",

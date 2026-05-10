@@ -64,6 +64,7 @@ func main() {
 		contentSectionService,
 		authService,
 		userAuthService,
+		userRepo,
 		dashboardService,
 		uploadHandler,
 		listingService,

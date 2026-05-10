@@ -434,6 +434,23 @@
     "title": "Landing content",
     "empty": "No sections available yet."
   },
+  "panelAds": {
+    "title": "Ads",
+    "empty": "No ads available yet.",
+    "countLabel": "ads",
+    "author": "Author",
+    "authorContact": "Author contact",
+    "createdAt": "Created at"
+  },
+  "panelUsers": {
+    "title": "Users",
+    "empty": "No users found.",
+    "countLabel": "users",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "registeredAt": "Registered at"
+  },
   "panelProductMeta": {
     "title": "Product details",
     "tagsTitle": "Tags & use cases",

@@ -9,6 +9,7 @@ import (
 	"sangehassan/back/internal/adapters/http/handlers"
 	"sangehassan/back/internal/adapters/http/middleware"
 	"sangehassan/back/internal/config"
+	"sangehassan/back/internal/ports"
 	"sangehassan/back/internal/usecase"
 )
 
@@ -24,6 +25,7 @@ func NewRouter(
 	contentSectionService *usecase.ContentSectionService,
 	adminAuthService *usecase.AuthService,
 	userAuthService *usecase.UserAuthService,
+	userRepo ports.UserRepository,
 	dashboardService *usecase.DashboardService,
 	uploadHandler *handlers.UploadHandler,
 	listingService *usecase.ListingService,
@@ -63,7 +65,7 @@ func NewRouter(
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
 	authMiddleware := middleware.NewAuthMiddleware(adminAuthService)
 	userMiddleware := middleware.NewUserAuthMiddleware(userAuthService)
-	listingHandler := handlers.NewListingHandler(listingService, dealRequestService)
+	listingHandler := handlers.NewListingHandler(listingService, dealRequestService, userRepo)
 
 	api := router.Group("/api")
 	{
@@ -165,6 +167,8 @@ func NewRouter(
 			admin.GET("/requests", listingHandler.AdminListRequests)
 			admin.GET("/requests/:id", listingHandler.AdminGetRequest)
 			admin.PUT("/requests/:id/status", listingHandler.AdminUpdateRequestStatus)
+			admin.GET("/ads", listingHandler.AdminListListings)
+			admin.GET("/users", listingHandler.AdminListUsers)
 		}
 	}
 

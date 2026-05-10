@@ -21,6 +21,7 @@ const (
 type Listing struct {
 	ID          int64          `json:"id"`
 	CreatedBy   *string        `json:"created_by,omitempty"`
+	Author      *UserInfo      `json:"author,omitempty"`
 	Title       string         `json:"title,omitempty"`
 	StoneType   string         `json:"stone_type,omitempty"`
 	Form        string         `json:"form,omitempty"`

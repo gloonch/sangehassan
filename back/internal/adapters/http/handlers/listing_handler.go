@@ -17,12 +17,14 @@ import (
 type ListingHandler struct {
 	listings *usecase.ListingService
 	deals    *usecase.DealRequestService
+	users    ports.UserRepository
 }
 
-func NewListingHandler(listingService *usecase.ListingService, dealService *usecase.DealRequestService) *ListingHandler {
+func NewListingHandler(listingService *usecase.ListingService, dealService *usecase.DealRequestService, userRepo ports.UserRepository) *ListingHandler {
 	return &ListingHandler{
 		listings: listingService,
 		deals:    dealService,
+		users:    userRepo,
 	}
 }
 
@@ -239,6 +241,67 @@ func (h *ListingHandler) AdminListRequests(c *gin.Context) {
 		return
 	}
 	respondOK(c, items)
+}
+
+func (h *ListingHandler) AdminListListings(c *gin.Context) {
+	filter := buildListingFilter(c)
+	filter.Limit = parseIntDefault(c.Query("limit"), 50)
+	filter.Offset = parseIntDefault(c.Query("offset"), 0)
+	if strings.TrimSpace(c.Query("status")) == "" {
+		filter.Status = nil
+	}
+
+	items, err := h.listings.ListAdmin(c.Request.Context(), filter)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load ads")
+		return
+	}
+
+	for i := range items {
+		if items[i].CreatedBy == nil || strings.TrimSpace(*items[i].CreatedBy) == "" {
+			continue
+		}
+		user, err := h.users.GetByID(c.Request.Context(), *items[i].CreatedBy)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				continue
+			}
+			respondError(c, http.StatusInternalServerError, "failed to load ad author")
+			return
+		}
+		info := user.SafeInfo()
+		items[i].Author = &info
+	}
+
+	respondOK(c, items)
+}
+
+func (h *ListingHandler) AdminListUsers(c *gin.Context) {
+	limit := parseIntDefault(c.Query("limit"), 50)
+	offset := parseIntDefault(c.Query("offset"), 0)
+
+	items, err := h.users.List(c.Request.Context(), limit, offset)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load users")
+		return
+	}
+	total, err := h.users.Count(c.Request.Context())
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load users count")
+		return
+	}
+
+	users := make([]domain.UserInfo, 0, len(items))
+	for _, u := range items {
+		users = append(users, u.SafeInfo())
+	}
+
+	respondOK(c, gin.H{
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+		"items":  users,
+	})
 }
 
 func (h *ListingHandler) AdminGetRequest(c *gin.Context) {

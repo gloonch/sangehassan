@@ -434,6 +434,23 @@
     "title": "محتوى الهبوط",
     "empty": "لا توجد أقسام حالياً."
   },
+  "panelAds": {
+    "title": "الإعلانات",
+    "empty": "لا توجد إعلانات حالياً.",
+    "countLabel": "إعلان",
+    "author": "الكاتب",
+    "authorContact": "بيانات تواصل الكاتب",
+    "createdAt": "تاريخ الإنشاء"
+  },
+  "panelUsers": {
+    "title": "المستخدمون",
+    "empty": "لا يوجد مستخدمون.",
+    "countLabel": "مستخدم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "role": "الدور",
+    "registeredAt": "تاريخ التسجيل"
+  },
   "panelProductMeta": {
     "title": "تفاصيل المنتج",
     "tagsTitle": "الوسوم وحالات الاستخدام",
