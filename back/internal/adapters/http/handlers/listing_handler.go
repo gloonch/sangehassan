@@ -304,6 +304,23 @@ func (h *ListingHandler) AdminListUsers(c *gin.Context) {
 	})
 }
 
+func (h *ListingHandler) AdminDeleteListing(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid listing id")
+		return
+	}
+	if err := h.listings.Delete(c.Request.Context(), id); err != nil {
+		if err == sql.ErrNoRows {
+			respondError(c, http.StatusNotFound, "listing not found")
+			return
+		}
+		respondError(c, http.StatusInternalServerError, "failed to delete ad")
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (h *ListingHandler) AdminGetRequest(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

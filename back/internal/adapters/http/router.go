@@ -168,6 +168,7 @@ func NewRouter(
 			admin.GET("/requests/:id", listingHandler.AdminGetRequest)
 			admin.PUT("/requests/:id/status", listingHandler.AdminUpdateRequestStatus)
 			admin.GET("/ads", listingHandler.AdminListListings)
+			admin.DELETE("/ads/:id", listingHandler.AdminDeleteListing)
 			admin.GET("/users", listingHandler.AdminListUsers)
 		}
 	}

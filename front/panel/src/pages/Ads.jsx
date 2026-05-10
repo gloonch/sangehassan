@@ -15,27 +15,38 @@ export default function Ads() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const loadAds = async () => {
+    try {
+      const res = await fetchJSON("/api/admin/ads?limit=100");
+      setItems(res.data || []);
+      setError("");
+    } catch (err) {
+      setItems([]);
+      setError(t("messages.error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      try {
-        const res = await fetchJSON("/api/admin/ads?limit=100");
-        if (!mounted) return;
-        setItems(res.data || []);
-        setError("");
-      } catch (err) {
-        if (!mounted) return;
-        setItems([]);
-        setError(t("messages.error"));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
+    (async () => {
+      await loadAds();
+      if (!mounted) return;
+    })();
     return () => {
       mounted = false;
     };
   }, [t]);
+
+  const handleDelete = async (id) => {
+    try {
+      await fetchJSON(`/api/admin/ads/${id}`, { method: "DELETE" });
+      loadAds();
+    } catch (err) {
+      setError(t("messages.error"));
+    }
+  };
 
   return (
     <section className="panel-card">
@@ -76,6 +87,15 @@ export default function Ads() {
               <p className="mt-1 text-xs text-primary/60">
                 {t("panelAds.createdAt")}: {formatDateTime(ad.created_at)}
               </p>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(ad.id)}
+                  className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-500"
+                >
+                  {t("actions.delete")}
+                </button>
+              </div>
             </div>
           ))}
         </div>
