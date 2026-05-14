@@ -35,6 +35,9 @@ back/storage/images/**
 deploy/.dev.env
 deploy/.prod.env
 
+# SSL private material
+deploy/nginx/ssl/
+
 # Docker
 **/*.pid
 **/*.pid.lock
