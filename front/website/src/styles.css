@@ -140,6 +140,15 @@ body {
   }
 }
 
+@keyframes call-cta-shimmer {
+  0% {
+    transform: translateX(-140%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   body {
@@ -151,6 +160,10 @@ body {
   }
 
   .about-projects-marquee {
+    animation: none !important;
+  }
+
+  .call-cta-shimmer::after {
     animation: none !important;
   }
 }
@@ -231,5 +244,37 @@ body {
   .mask-fade {
     mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
     -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  }
+
+  .call-cta-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .call-cta-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: 0;
+    width: 46%;
+    pointer-events: none;
+    opacity: 0.55;
+    background: linear-gradient(
+      108deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.55) 48%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: translateX(-140%);
+    animation: call-cta-shimmer 2.8s ease-in-out infinite;
+    mix-blend-mode: screen;
+    z-index: 1;
+  }
+
+  .call-cta-shimmer > * {
+    position: relative;
+    z-index: 2;
   }
 }

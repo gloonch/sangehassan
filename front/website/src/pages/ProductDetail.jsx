@@ -7,6 +7,22 @@ import { usePageSeo } from "../lib/seo";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
+const iconBaseProps = {
+  xmlns: "http://www.w3.org/2000/svg",
+  fill: "none",
+  viewBox: "0 0 24 24",
+  strokeWidth: 1.6,
+  stroke: "currentColor",
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+
+const PhoneIcon = ({ className }) => (
+  <svg {...iconBaseProps} className={className} aria-hidden="true">
+    <path d="M6.5 3h4l2 5l-2.5 2.5a16 16 0 0 0 3.5 3.5L16 11.5l5 2v4a2 2 0 0 1-2 2C10.7 19.5 4.5 13.3 4.5 5a2 2 0 0 1 2-2z" />
+  </svg>
+);
+
 const getLocalized = (item, lang) => {
   if (!item) return "";
   if (lang === "fa") return item.title_fa;
@@ -37,6 +53,21 @@ const toPercent = (value) => {
   }
 
   return null;
+};
+
+const toLatinDigits = (value) =>
+  value
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+
+const normalizePhone = (value) => {
+  if (!value || typeof value !== "string") return "";
+  const cleaned = toLatinDigits(value).replace(/[^\d+]/g, "");
+  if (!cleaned) return "";
+  if (cleaned.startsWith("+")) {
+    return `+${cleaned.slice(1).replace(/\+/g, "")}`;
+  }
+  return cleaned.replace(/\+/g, "");
 };
 
 export default function ProductDetail() {
@@ -142,12 +173,25 @@ export default function ProductDetail() {
 
   const hasMoreInfo = infoSections.some((section) => (termsByTaxonomy[section.key] || []).length > 0);
   const metaLists = [
-    { key: "variants", label: t("productDetail.variants"), items: product?.variants || [] },
-    { key: "mines", label: t("productDetail.mines"), items: product?.mines || [] },
-    { key: "finishes", label: t("productDetail.finishes"), items: product?.finishes || [] }
+    { key: "variants", label: t("productDetail.variants"), items: product?.variants || [], linkable: false },
+    { key: "mines", label: t("productDetail.mines"), items: product?.mines || [], linkable: true },
+    { key: "finishes", label: t("productDetail.finishes"), items: product?.finishes || [], linkable: true }
   ];
   const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
   const hasDetailBlocks = hasMoreInfo || hasMetaLists;
+  const phoneValue = t("footer.phoneValue");
+  const normalizedPhone = normalizePhone(phoneValue);
+  const phoneHref = normalizedPhone ? `tel:${normalizedPhone}` : "";
+  const primaryCategorySlug = categoriesAdjusted[0]?.slug || "";
+
+  const buildFilterLink = (value) => {
+    const params = new URLSearchParams();
+    if (primaryCategorySlug) {
+      params.set("category", primaryCategorySlug);
+    }
+    params.set("q", String(value || "").trim());
+    return `/products?${params.toString()}`;
+  };
 
   const fallbackHotspots = useMemo(() => {
     const options = [];
@@ -297,7 +341,21 @@ export default function ProductDetail() {
                   {categoryLine}
                 </p>
               ) : null}
-              <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
+              <div className="flex flex-wrap items-end gap-3 md:gap-4">
+                <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
+                {phoneHref && (
+                  <a
+                    href={phoneHref}
+                    className={`call-cta-shimmer inline-flex items-center gap-3 rounded-full border border-primary/25 px-3.5 py-2 text-primary/85 transition hover:border-primary/55 hover:text-primary ${isRTL ? "mr-auto" : "ml-auto"}`}
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full">
+                      <PhoneIcon className="h-7 w-7" />
+                    </span>
+                    <span className="text-[11px] font-semibold md:text-xs">{t("productDetail.callForMoreInfo")}</span>
+                    <span className="text-xs font-semibold tabular-nums md:text-sm" dir="ltr">{phoneValue}</span>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -327,11 +385,26 @@ export default function ProductDetail() {
                     return (
                       <div key={entry.key} className="space-y-2">
                         <p className="font-semibold">{entry.label}</p>
-                        <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-primary/80">
+                        <div className="flex flex-wrap gap-2">
                           {entry.items.map((value, index) => (
-                            <span key={`${entry.key}-${index}-${value}`} className="px-2 py-1">
-                              {value}
-                            </span>
+                            entry.linkable ? (
+                              <Link
+                                key={`${entry.key}-${index}-${value}`}
+                                to={buildFilterLink(value)}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80 transition hover:border-primary/45 hover:text-primary"
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                                <span>{value}</span>
+                              </Link>
+                            ) : (
+                              <span
+                                key={`${entry.key}-${index}-${value}`}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80"
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                                <span>{value}</span>
+                              </span>
+                            )
                           ))}
                         </div>
                       </div>
@@ -349,6 +422,7 @@ export default function ProductDetail() {
                 <p className="text-sm text-primary/70">{t("messages.empty")}</p>
               )}
             </section>
+
           </div>
         </div>
       )}

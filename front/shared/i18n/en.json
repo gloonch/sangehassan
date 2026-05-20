@@ -107,6 +107,8 @@
   "products": {
     "title": "All products",
     "subtitle": "Browse the full catalog and filter by category.",
+    "selectCategoryTitle": "Choose a category first to view products.",
+    "selectCategoryHint": "After selecting a category, its product list will appear here.",
     "filterAll": "All products",
     "width40": "40cm width stones",
     "categoryLabel": "Category",
@@ -170,6 +172,7 @@
     "variants": "Variants",
     "mines": "Mines",
     "finishes": "Finishes",
+    "callForMoreInfo": "Call for more information",
     "prev": "Previous",
     "next": "Next"
   },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
@@ -7,6 +7,8 @@ import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl } from "../lib/seo";
 
 const PRODUCTS_PAGE_SIZE = 20;
+const PRODUCTS_RETURN_STATE_KEY = "sh_products_return_state";
+const PRODUCTS_RETURN_STATE_MAX_AGE_MS = 30 * 60 * 1000;
 
 const productsSeoContent = {
   fa: {
@@ -82,13 +84,51 @@ const hasProductTerm = (product, taxonomy, termValue) => {
   return terms.some((term) => term?.taxonomy === taxonomy && getTermIdentifier(term) === termValue);
 };
 
+const normalizeSearchText = (value) =>
+  String(value || "")
+    .normalize("NFKC")
+    .replace(/\u200c/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const parseProductsQuery = (search) => {
+  const params = new URLSearchParams(search || "");
+  const category = normalizeChiniSlug(params.get("category") || "", "");
+  const keyword = String(params.get("q") || "").trim();
+  return { category, keyword };
+};
+
+const readReturnState = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PRODUCTS_RETURN_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const ts = Number(parsed?.ts || 0);
+    if (!ts || Date.now() - ts > PRODUCTS_RETURN_STATE_MAX_AGE_MS) {
+      window.sessionStorage.removeItem(PRODUCTS_RETURN_STATE_KEY);
+      return null;
+    }
+    const activeCategory = typeof parsed?.activeCategory === "string" ? parsed.activeCategory : "";
+    const scrollY = Number.isFinite(parsed?.scrollY) ? Math.max(0, parsed.scrollY) : 0;
+    const nextOffset = Number.isFinite(parsed?.nextOffset) ? Math.max(0, parsed.nextOffset) : PRODUCTS_PAGE_SIZE;
+    return { activeCategory, scrollY, nextOffset };
+  } catch (_) {
+    return null;
+  }
+};
+
 export default function Products() {
   const { t, lang } = useTranslation();
+  const location = useLocation();
   const pageRef = useRef(null);
   const hasEntranceAnimatedRef = useRef(false);
+  const pendingRestoreRef = useRef(null);
+  const scrollRestoreRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchPending, setSearchPending] = useState(false);
@@ -187,6 +227,37 @@ export default function Products() {
     activeCategory === "chini" || activeCategory === "chini-crystal" || activeCategory === "chyny-krystal"
       ? "chinese-crystal"
       : activeCategory;
+  const hasSelectedCategory = normalizedActiveCategory !== "";
+  const queryPreset = useMemo(() => parseProductsQuery(location.search), [location.search]);
+  const hasQueryPreset = Boolean(queryPreset.category || queryPreset.keyword);
+
+  useEffect(() => {
+    if (hasQueryPreset) {
+      pendingRestoreRef.current = null;
+      scrollRestoreRef.current = null;
+      if (queryPreset.category) {
+        setActiveCategory(queryPreset.category);
+      } else if (queryPreset.keyword) {
+        setActiveCategory("all");
+      }
+      if (queryPreset.keyword) {
+        setSearchInput(queryPreset.keyword);
+        setDebouncedSearch(normalizeSearchText(queryPreset.keyword));
+        setSearchPending(false);
+      }
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(PRODUCTS_RETURN_STATE_KEY);
+      }
+      return;
+    }
+
+    const restore = readReturnState();
+    if (!restore) return;
+    pendingRestoreRef.current = restore;
+    if (restore.activeCategory) {
+      setActiveCategory(restore.activeCategory);
+    }
+  }, [hasQueryPreset, queryPreset.category, queryPreset.keyword]);
 
   const fetchProductPage = useCallback(async (offset) => {
     const response = await fetchJSON(`/api/products?limit=${PRODUCTS_PAGE_SIZE}&offset=${offset}`);
@@ -216,10 +287,35 @@ export default function Products() {
     const loadInitial = async () => {
       setLoading(true);
       try {
+        const restoreState = pendingRestoreRef.current;
         const [categoryRes, firstPageProducts] = await Promise.all([fetchJSON("/api/categories"), fetchProductPage(0)]);
         if (!mounted) return;
+
+        let mergedProducts = firstPageProducts;
+        let currentOffset = firstPageProducts.length;
+        let lastPageSize = firstPageProducts.length;
+
+        if (restoreState && restoreState.nextOffset > firstPageProducts.length) {
+          const targetOffset = Math.max(PRODUCTS_PAGE_SIZE, restoreState.nextOffset);
+          const seenIDs = new Set(mergedProducts.map((item) => item.id));
+          while (mounted && currentOffset < targetOffset && lastPageSize === PRODUCTS_PAGE_SIZE) {
+            const page = await fetchProductPage(currentOffset);
+            lastPageSize = page.length;
+            currentOffset += page.length;
+            for (const item of page) {
+              if (seenIDs.has(item.id)) continue;
+              seenIDs.add(item.id);
+              mergedProducts.push(item);
+            }
+            if (page.length === 0) break;
+          }
+        }
+
         setCategories(categoryRes.data || []);
-        applyFetchedPage(firstPageProducts, 0, true);
+        setProducts(mergedProducts);
+        setNextOffset(currentOffset);
+        setHasMoreProducts(lastPageSize === PRODUCTS_PAGE_SIZE);
+        scrollRestoreRef.current = restoreState?.scrollY ?? null;
       } catch (error) {
         if (!mounted) return;
         setProducts([]);
@@ -235,7 +331,24 @@ export default function Products() {
     return () => {
       mounted = false;
     };
-  }, [fetchProductPage, applyFetchedPage]);
+  }, [fetchProductPage]);
+
+  useEffect(() => {
+    if (loading || !hasSelectedCategory) return;
+    if (typeof window === "undefined") return;
+    const targetY = scrollRestoreRef.current;
+    if (targetY === null || targetY === undefined) return;
+
+    const raf = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: targetY, behavior: "auto" });
+      window.setTimeout(() => {
+        window.scrollTo({ top: targetY, behavior: "auto" });
+      }, 120);
+      scrollRestoreRef.current = null;
+      window.sessionStorage.removeItem(PRODUCTS_RETURN_STATE_KEY);
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [loading, hasSelectedCategory, products.length]);
 
   const loadMoreProducts = useCallback(async () => {
     if (loading || loadingMore || !hasMoreProducts) return;
@@ -267,7 +380,7 @@ export default function Products() {
 
   useEffect(() => {
     const id = setTimeout(() => {
-      setDebouncedSearch(searchInput.trim().toLowerCase());
+      setDebouncedSearch(normalizeSearchText(searchInput));
       setSearchPending(false);
     }, 450);
     return () => clearTimeout(id);
@@ -333,38 +446,53 @@ export default function Products() {
   }, [stoneTypeFilter, useCaseFilter, termFilterOptions]);
 
   const filtered = useMemo(() => {
+    if (!hasSelectedCategory) return [];
+
     let base = normalizedProducts;
 
-    if (normalizedActiveCategory !== "all") {
-      base = base.filter((product) => {
-        if (normalizeChiniSlug(product.category?.slug, product.category?.title_fa) === normalizedActiveCategory) return true;
-        if (Array.isArray(product.categories)) {
-          return product.categories.some(
-            (category) => normalizeChiniSlug(category?.slug, category?.title_fa) === normalizedActiveCategory
-          );
-        }
-        return false;
-      });
-    }
+    base = base.filter((product) => {
+      if (normalizeChiniSlug(product.category?.slug, product.category?.title_fa) === normalizedActiveCategory) return true;
+      if (Array.isArray(product.categories)) {
+        return product.categories.some(
+          (category) => normalizeChiniSlug(category?.slug, category?.title_fa) === normalizedActiveCategory
+        );
+      }
+      return false;
+    });
 
     if (debouncedSearch) {
       base = base.filter((product) => {
-        const title = (getLocalized(product, lang) || product.title_en || "").toLowerCase();
-        const slug = product.slug?.toLowerCase() || "";
+        const title = normalizeSearchText(getLocalized(product, lang) || product.title_en || "");
+        const slug = normalizeSearchText(product.slug || "");
         const descriptionHtmlRaw = getLocalizedDescriptionHTML(product);
-        const description = (descriptionHtmlRaw || "").replace(/<[^>]+>/g, " ").toLowerCase();
-        const categoryText = `${product.category?.title_en || ""} ${product.category?.title_fa || ""} ${product.category?.title_ar || ""}`.toLowerCase();
-        const termsText = (Array.isArray(product.terms) ? product.terms : [])
+        const description = normalizeSearchText((descriptionHtmlRaw || "").replace(/<[^>]+>/g, " "));
+        const categoryText = normalizeSearchText(
+          `${product.category?.title_en || ""} ${product.category?.title_fa || ""} ${product.category?.title_ar || ""}`
+        );
+        const termsText = normalizeSearchText(
+          (Array.isArray(product.terms) ? product.terms : [])
           .map((term) => `${term?.label_en || ""} ${term?.label_fa || ""} ${term?.label_ar || ""} ${term?.key || ""}`)
           .join(" ")
-          .toLowerCase();
+        );
+        const metaText = normalizeSearchText(
+          [
+            ...(Array.isArray(product.finishes) ? product.finishes : []),
+            ...(Array.isArray(product.mines) ? product.mines : []),
+            ...(Array.isArray(product.variants) ? product.variants : []),
+            ...(Array.isArray(product.aliases) ? product.aliases : []),
+            product.quarry || "",
+            product.stone_type || "",
+            product.stoneType || ""
+          ].join(" ")
+        );
 
         return (
           title.includes(debouncedSearch) ||
           slug.includes(debouncedSearch) ||
           description.includes(debouncedSearch) ||
           categoryText.includes(debouncedSearch) ||
-          termsText.includes(debouncedSearch)
+          termsText.includes(debouncedSearch) ||
+          metaText.includes(debouncedSearch)
         );
       });
     }
@@ -423,6 +551,7 @@ export default function Products() {
     return sorted;
   }, [
     normalizedActiveCategory,
+    hasSelectedCategory,
     normalizedProducts,
     debouncedSearch,
     lang,
@@ -462,6 +591,23 @@ export default function Products() {
     setMaxPriceInput("");
     setSortMode("default");
   };
+
+  const rememberListState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        PRODUCTS_RETURN_STATE_KEY,
+        JSON.stringify({
+          activeCategory: normalizedActiveCategory,
+          scrollY: window.scrollY,
+          nextOffset,
+          ts: Date.now()
+        })
+      );
+    } catch (_) {
+      // ignore transient storage write failures
+    }
+  }, [normalizedActiveCategory, nextOffset]);
 
   useEffect(() => {
     if (loading) return;
@@ -525,7 +671,7 @@ export default function Products() {
             type="button"
             onClick={() => setActiveCategory("all")}
             data-products-anim="lead"
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === "all"
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${normalizedActiveCategory === "all"
               ? "border-primary bg-primary text-sand"
               : "border-primary/20 text-primary/70 hover:border-primary/50"
               }`}
@@ -576,6 +722,11 @@ export default function Products() {
 
       {loading ? (
         <p className="text-sm text-primary/70">{t("messages.loading")}</p>
+      ) : !hasSelectedCategory ? (
+        <div className="mx-auto flex min-h-[220px] w-1/2 flex-col items-center justify-center rounded-3xl  bg-primary/5 px-6 py-8 text-center">
+          <p className="font-display text-2xl text-primary md:text-3xl">{t("products.subtitle")}</p>
+          <p className="mt-3 text-sm text-primary/70">{t("products.selectCategoryHint")}</p>
+        </div>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-primary/70">{t("products.empty")}</p>
       ) : (
@@ -589,6 +740,7 @@ export default function Products() {
               <Link
                 key={product.id}
                 to={`/products/${product.slug}`}
+                onClick={rememberListState}
                 data-products-anim="card"
                 className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
                 style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
