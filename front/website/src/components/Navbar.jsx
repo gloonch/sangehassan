@@ -33,6 +33,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const isHome = location.pathname === "/";
+  const isAbout = location.pathname === "/about";
+  const navSubline = isHome || isAbout ? t("nav.sinceLine") : t("nav.sinceLineAlt");
 
   useEffect(() => {
     let active = true;
@@ -352,6 +354,14 @@ export default function Navbar() {
             />
           </span>
         </button>
+      </div>
+
+      <div className={`border-t ${isHome ? "border-sand/20" : "border-primary/10"}`}>
+        <div className="section-shell flex h-8 items-center">
+          <p className={`text-[11px] font-semibold ${isHome ? "text-sand/75" : "text-primary/65"}`}>
+            {navSubline}
+          </p>
+        </div>
       </div>
 
       {mobileMenu}
