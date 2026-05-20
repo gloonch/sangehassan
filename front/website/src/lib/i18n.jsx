@@ -5,8 +5,10 @@ import ar from "@shared/i18n/ar.json";
 
 const dictionaries = { en, fa, ar };
 const supportedLangs = Object.keys(dictionaries);
+const configuredDefaultLang = String(import.meta.env.VITE_DEFAULT_LANG || "en").toLowerCase();
+const defaultLang = supportedLangs.includes(configuredDefaultLang) ? configuredDefaultLang : "en";
 const LanguageContext = createContext({
-  lang: "en",
+  lang: defaultLang,
   setLang: () => {},
   t: (key) => key
 });
@@ -16,9 +18,9 @@ const getValue = (obj, path) => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(defaultLang);
   const setSafeLang = useCallback((nextLang) => {
-    setLang(supportedLangs.includes(nextLang) ? nextLang : "en");
+    setLang(supportedLangs.includes(nextLang) ? nextLang : defaultLang);
   }, []);
 
   useEffect(() => {

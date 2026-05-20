@@ -4,8 +4,11 @@ import fa from "@shared/i18n/fa.json";
 import ar from "@shared/i18n/ar.json";
 
 const dictionaries = { en, fa, ar };
+const supportedLangs = Object.keys(dictionaries);
+const configuredDefaultLang = String(import.meta.env.VITE_DEFAULT_LANG || "en").toLowerCase();
+const defaultLang = supportedLangs.includes(configuredDefaultLang) ? configuredDefaultLang : "en";
 const LanguageContext = createContext({
-  lang: "en",
+  lang: defaultLang,
   setLang: () => { },
   t: (key) => key
 });
@@ -17,7 +20,8 @@ const getValue = (obj, path) => {
 export const LanguageProvider = ({ children }) => {
   const [lang, setLang] = useState(() => {
     const stored = window.localStorage.getItem("lang");
-    return stored || "en";
+    if (stored && supportedLangs.includes(stored)) return stored;
+    return defaultLang;
   });
 
   useEffect(() => {
@@ -27,6 +31,9 @@ export const LanguageProvider = ({ children }) => {
   }, [lang]);
 
   const value = useMemo(() => {
+    const setSafeLang = (nextLang) => {
+      setLang(supportedLangs.includes(nextLang) ? nextLang : defaultLang);
+    };
     const t = (key) => {
       const current = getValue(dictionaries[lang], key);
       if (current !== undefined) {
@@ -35,7 +42,7 @@ export const LanguageProvider = ({ children }) => {
       const fallback = getValue(dictionaries.en, key);
       return fallback !== undefined ? fallback : key;
     };
-    return { lang, setLang, t };
+    return { lang, setLang: setSafeLang, t };
   }, [lang]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
