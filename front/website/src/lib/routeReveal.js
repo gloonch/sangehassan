@@ -1,8 +1,8 @@
 export const ROUTE_REVEAL = {
   tileCount: 3,
-  tileStartDelay: 0.2,
-  tileDuration: 1.55,
-  tileDurationReduced: 0.55,
+  tileStartDelay: 0.1,
+  tileDuration: 0.55,
+  tileDurationReduced: 0.30,
   tileEase: "sine.inOut"
 };
 
