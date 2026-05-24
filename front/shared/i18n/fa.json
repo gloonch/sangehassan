@@ -221,6 +221,8 @@
     "phone": "شماره تماس",
     "loginButton": "ورود",
     "signupButton": "ثبت‌نام",
+    "confirmPassword": "تکرار رمز عبور",
+    "passwordsDoNotMatch": "رمز عبور و تکرار آن یکسان نیستند.",
     "logout": "خروج",
     "switchToSignupPrompt": "حساب ندارید؟",
     "switchToSignupAction": "ثبت‌نام کنید",

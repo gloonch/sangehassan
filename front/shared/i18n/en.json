@@ -221,6 +221,8 @@
     "phone": "Phone",
     "loginButton": "Sign in",
     "signupButton": "Create account",
+    "confirmPassword": "Confirm password",
+    "passwordsDoNotMatch": "Password and confirmation do not match.",
     "logout": "Log out",
     "switchToSignupPrompt": "Do not have an account yet?",
     "switchToSignupAction": "Register here",

@@ -221,6 +221,8 @@
     "phone": "رقم الهاتف",
     "loginButton": "تسجيل الدخول",
     "signupButton": "إنشاء حساب",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "passwordsDoNotMatch": "كلمة المرور وتأكيدها غير متطابقين.",
     "logout": "تسجيل الخروج",
     "switchToSignupPrompt": "لا تملك حساباً بعد؟",
     "switchToSignupAction": "سجل من هنا",

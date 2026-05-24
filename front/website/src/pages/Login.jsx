@@ -118,6 +118,7 @@ export default function Login() {
   const [loginPassword, setLoginPassword] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -191,6 +192,10 @@ export default function Login() {
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
+    if (signupPassword !== signupPasswordConfirm) {
+      setError(t("auth.passwordsDoNotMatch"));
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -213,7 +218,8 @@ export default function Login() {
   };
 
   const isSignup = mode === SIGNUP_MODE;
-  const highlights = isSignup ? t("auth.signupHighlights") : t("auth.loginHighlights");
+  const isRTL = lang === "fa" || lang === "ar";
+  const highlights = t("auth.loginHighlights");
   const highlightItems = Array.isArray(highlights) ? highlights.slice(0, 3) : [];
 
   useEffect(() => {
@@ -322,7 +328,7 @@ export default function Login() {
 
                 <div className="relative">
                   <h1 className="font-display text-3xl text-primary">
-                    {isSignup ? t("auth.signupTitle") : t("auth.loginTitle")}
+                    {t("auth.loginTitle")}
                   </h1>
                   <div className="mx-auto mt-[5%] grid max-w-4xl grid-cols-3">
                     {highlightItems.map((item, index) => (
@@ -349,7 +355,8 @@ export default function Login() {
                   {t("auth.phone")}
                   <input
                     type="tel"
-                    className="mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm"
+                    dir={isRTL ? "rtl" : "ltr"}
+                    className={`mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm ${isRTL ? "text-right placeholder:text-right" : "text-left placeholder:text-left"}`}
                     placeholder={t("auth.phone")}
                     value={isSignup ? signupPhone : loginPhone}
                     onChange={(e) => (isSignup ? setSignupPhone(e.target.value) : setLoginPhone(e.target.value))}
@@ -368,6 +375,20 @@ export default function Login() {
                     required
                   />
                 </label>
+
+                {isSignup && (
+                  <label className="block text-xs font-semibold text-primary/70">
+                    {t("auth.confirmPassword")}
+                    <input
+                      type="password"
+                      className="mt-2 w-full rounded-full border border-primary/20 bg-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm"
+                      placeholder={t("auth.confirmPassword")}
+                      value={signupPasswordConfirm}
+                      onChange={(e) => setSignupPasswordConfirm(e.target.value)}
+                      required
+                    />
+                  </label>
+                )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
