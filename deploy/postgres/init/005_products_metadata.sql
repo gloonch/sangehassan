@@ -5,7 +5,8 @@ ALTER TABLE products
 ADD COLUMN IF NOT EXISTS aliases TEXT[] NOT NULL DEFAULT '{}'::text[],
 ADD COLUMN IF NOT EXISTS variants TEXT[] NOT NULL DEFAULT '{}'::text[],
 ADD COLUMN IF NOT EXISTS mines TEXT[] NOT NULL DEFAULT '{}'::text[],
-ADD COLUMN IF NOT EXISTS finishes TEXT[] NOT NULL DEFAULT '{}'::text[];
+ADD COLUMN IF NOT EXISTS finishes TEXT[] NOT NULL DEFAULT '{}'::text[],
+ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 -- Prevent duplicate base products within the same category (case-insensitive on Persian name)
 -- Exclude legacy category_id = 5 slab dataset to avoid blocking existing rows.

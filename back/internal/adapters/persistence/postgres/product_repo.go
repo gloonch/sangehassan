@@ -28,7 +28,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -73,6 +73,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 		var price sql.NullFloat64
 		var priceHTML sql.NullString
 		var imageURL sql.NullString
+		var videoURL sql.NullString
 		var mainCategoryID sql.NullInt64
 		var imageCount int64
 		var categoryID sql.NullInt64
@@ -102,6 +103,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			&price,
 			&priceHTML,
 			&imageURL,
+			&videoURL,
 			&mainCategoryID,
 			&product.IsPopular,
 			&imageCount,
@@ -135,6 +137,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 		}
 		product.PriceHTML = priceHTML.String
 		product.ImageURL = imageURL.String
+		product.VideoURL = videoURL.String
 		product.ImageCount = int(imageCount)
 		if product.ImageCount == 0 && product.ImageURL != "" {
 			product.ImageCount = 1
@@ -175,7 +178,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -207,6 +210,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 		var price sql.NullFloat64
 		var priceHTML sql.NullString
 		var imageURL sql.NullString
+		var videoURL sql.NullString
 		var mainCategoryID sql.NullInt64
 		var imageCount int64
 		var categoryID sql.NullInt64
@@ -236,6 +240,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&price,
 			&priceHTML,
 			&imageURL,
+			&videoURL,
 			&mainCategoryID,
 			&product.IsPopular,
 			&imageCount,
@@ -269,6 +274,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 		}
 		product.PriceHTML = priceHTML.String
 		product.ImageURL = imageURL.String
+		product.VideoURL = videoURL.String
 		product.ImageCount = int(imageCount)
 		if product.ImageCount == 0 && product.ImageURL != "" {
 			product.ImageCount = 1
@@ -309,7 +315,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -334,6 +340,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 	var price sql.NullFloat64
 	var priceHTML sql.NullString
 	var imageURL sql.NullString
+	var videoURL sql.NullString
 	var mainCategoryID sql.NullInt64
 	var imageCount int64
 	var categoryID sql.NullInt64
@@ -364,6 +371,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&price,
 		&priceHTML,
 		&imageURL,
+		&videoURL,
 		&mainCategoryID,
 		&product.IsPopular,
 		&imageCount,
@@ -398,6 +406,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 	}
 	product.PriceHTML = priceHTML.String
 	product.ImageURL = imageURL.String
+	product.VideoURL = videoURL.String
 	product.ImageCount = int(imageCount)
 	if product.ImageCount == 0 && product.ImageURL != "" {
 		product.ImageCount = 1
@@ -433,7 +442,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -458,6 +467,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	var price sql.NullFloat64
 	var priceHTML sql.NullString
 	var imageURL sql.NullString
+	var videoURL sql.NullString
 	var mainCategoryID sql.NullInt64
 	var imageCount int64
 	var categoryID sql.NullInt64
@@ -488,6 +498,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&price,
 		&priceHTML,
 		&imageURL,
+		&videoURL,
 		&mainCategoryID,
 		&product.IsPopular,
 		&imageCount,
@@ -522,6 +533,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 	}
 	product.PriceHTML = priceHTML.String
 	product.ImageURL = imageURL.String
+	product.VideoURL = videoURL.String
 	product.ImageCount = int(imageCount)
 	if product.ImageCount == 0 && product.ImageURL != "" {
 		product.ImageCount = 1
@@ -559,9 +571,9 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  description_html, short_description_html,
 		  description_html_en, description_html_fa, description_html_ar,
 		  short_description_html_en, short_description_html_fa, short_description_html_ar,
-		  price, price_html, image_url, main_category_id, is_popular
+		  price, price_html, image_url, video_url, main_category_id, is_popular
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
 		ON CONFLICT (slug) DO UPDATE SET
 		  title_en = EXCLUDED.title_en,
 		  title_fa = EXCLUDED.title_fa,
@@ -581,6 +593,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  price = EXCLUDED.price,
 		  price_html = EXCLUDED.price_html,
 		  image_url = EXCLUDED.image_url,
+		  video_url = EXCLUDED.video_url,
 		  main_category_id = EXCLUDED.main_category_id,
 		  is_popular = EXCLUDED.is_popular,
 		  updated_at = NOW()
@@ -605,6 +618,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		nullableFloat(product.Price),
 		nullableString(product.PriceHTML),
 		nullableString(product.ImageURL),
+		nullableString(product.VideoURL),
 		nullableInt64(product.MainCategoryID),
 		product.IsPopular,
 	)
@@ -639,10 +653,11 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		    price = $17,
 		    price_html = $18,
 		    image_url = $19,
-		    main_category_id = $20,
-		    is_popular = $21,
+		    video_url = $20,
+		    main_category_id = $21,
+		    is_popular = $22,
 		    updated_at = NOW()
-		WHERE id = $22
+		WHERE id = $23
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
@@ -664,6 +679,7 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		nullableFloat(product.Price),
 		nullableString(product.PriceHTML),
 		nullableString(product.ImageURL),
+		nullableString(product.VideoURL),
 		nullableInt64(product.MainCategoryID),
 		product.IsPopular,
 		product.ID,

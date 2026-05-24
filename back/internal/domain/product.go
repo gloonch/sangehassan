@@ -24,6 +24,7 @@ type Product struct {
 	Price                  float64             `json:"price"`
 	PriceHTML              string              `json:"price_html"`
 	ImageURL               string              `json:"image_url"`
+	VideoURL               string              `json:"video_url,omitempty"`
 	Images                 []string            `json:"images,omitempty"`
 	ImageCount             int                 `json:"image_count,omitempty"`
 	MainCategoryID         *int64              `json:"category_id"`

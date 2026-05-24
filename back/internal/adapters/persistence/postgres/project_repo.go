@@ -44,6 +44,7 @@ func (r *ProjectRepository) List(ctx context.Context) ([]domain.Project, error) 
 		       COALESCE(p.description_fa, ''),
 		       COALESCE(p.description_ar, ''),
 		       COALESCE(p.cover_image_url, ''),
+		       COALESCE(p.video_url, ''),
 		       p.sort_order,
 		       (SELECT COUNT(*) FROM project_images pi WHERE pi.project_id = p.id) AS gallery_count,
 		       p.created_at,
@@ -66,6 +67,7 @@ func (r *ProjectRepository) List(ctx context.Context) ([]domain.Project, error) 
 			&project.DescriptionFA,
 			&project.DescriptionAR,
 			&project.CoverImageURL,
+			&project.VideoURL,
 			&project.SortOrder,
 			&galleryCount,
 			&project.CreatedAt,
@@ -93,6 +95,7 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id int64) (domain.Proje
 		       COALESCE(description_fa, ''),
 		       COALESCE(description_ar, ''),
 		       COALESCE(cover_image_url, ''),
+		       COALESCE(video_url, ''),
 		       sort_order,
 		       created_at,
 		       COALESCE(updated_at, created_at)
@@ -107,6 +110,7 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id int64) (domain.Proje
 		&project.DescriptionFA,
 		&project.DescriptionAR,
 		&project.CoverImageURL,
+		&project.VideoURL,
 		&project.SortOrder,
 		&project.CreatedAt,
 		&project.UpdatedAt,
@@ -129,8 +133,8 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id int64) (domain.Proje
 
 func (r *ProjectRepository) Create(ctx context.Context, project domain.Project) (domain.Project, error) {
 	row := r.db.QueryRowContext(ctx, `
-		INSERT INTO projects (description, description_en, description_fa, description_ar, cover_image_url, sort_order)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO projects (description, description_en, description_fa, description_ar, cover_image_url, video_url, sort_order)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
 	`,
 		nullableString(project.DescriptionEN),
@@ -138,6 +142,7 @@ func (r *ProjectRepository) Create(ctx context.Context, project domain.Project) 
 		nullableString(project.DescriptionFA),
 		nullableString(project.DescriptionAR),
 		project.CoverImageURL,
+		nullableString(project.VideoURL),
 		project.SortOrder,
 	)
 
@@ -155,9 +160,10 @@ func (r *ProjectRepository) Update(ctx context.Context, project domain.Project) 
 		    description_fa = $3,
 		    description_ar = $4,
 		    cover_image_url = $5,
-		    sort_order = $6,
+		    video_url = $6,
+		    sort_order = $7,
 		    updated_at = NOW()
-		WHERE id = $7
+		WHERE id = $8
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		nullableString(project.DescriptionEN),
@@ -165,6 +171,7 @@ func (r *ProjectRepository) Update(ctx context.Context, project domain.Project) 
 		nullableString(project.DescriptionFA),
 		nullableString(project.DescriptionAR),
 		project.CoverImageURL,
+		nullableString(project.VideoURL),
 		project.SortOrder,
 		project.ID,
 	)

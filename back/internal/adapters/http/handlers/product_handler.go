@@ -40,6 +40,7 @@ type productPayload struct {
 	PriceHTML              string   `json:"price_html"`
 	ImageURL               string   `json:"image_url"`
 	ImageURLs              []string `json:"image_urls"`
+	VideoURL               string   `json:"video_url"`
 	CategoryID             int64    `json:"category_id"`
 	IsPopular              bool     `json:"is_popular"`
 	TermIDs                []int64  `json:"term_ids"`
@@ -121,6 +122,10 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "images must be uploaded")
 		return
 	}
+	if !isAllowedMediaRef(payload.VideoURL) {
+		respondError(c, http.StatusBadRequest, "video must be uploaded")
+		return
+	}
 
 	descriptionEN := strings.TrimSpace(payload.DescriptionHTMLEn)
 	if descriptionEN == "" {
@@ -154,6 +159,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		PriceHTML:              payload.PriceHTML,
 		ImageURL:               normalizeImageRef(payload.ImageURL),
 		Images:                 normalizeImageRefs(payload.ImageURLs),
+		VideoURL:               normalizeMediaRef(payload.VideoURL),
 		MainCategoryID:         mainCategoryID,
 		IsPopular:              payload.IsPopular,
 		TermIDs:                payload.TermIDs,
@@ -180,6 +186,10 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	}
 	if !isAllowedImageRef(payload.ImageURL) || !allAllowedImageRefs(payload.ImageURLs) {
 		respondError(c, http.StatusBadRequest, "images must be uploaded")
+		return
+	}
+	if !isAllowedMediaRef(payload.VideoURL) {
+		respondError(c, http.StatusBadRequest, "video must be uploaded")
 		return
 	}
 
@@ -216,6 +226,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		PriceHTML:              payload.PriceHTML,
 		ImageURL:               normalizeImageRef(payload.ImageURL),
 		Images:                 normalizeImageRefs(payload.ImageURLs),
+		VideoURL:               normalizeMediaRef(payload.VideoURL),
 		MainCategoryID:         mainCategoryID,
 		IsPopular:              payload.IsPopular,
 		TermIDs:                payload.TermIDs,

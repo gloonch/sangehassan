@@ -16,6 +16,7 @@ const emptyForm = {
   price: "",
   image_url: "",
   image_urls: [],
+  video_url: "",
   category_id: "",
   is_popular: false,
   aliases: [],
@@ -37,6 +38,7 @@ export default function Products() {
   const [formOpen, setFormOpen] = useState(true);
   const [descriptionLang, setDescriptionLang] = useState("en");
   const [newListInputs, setNewListInputs] = useState({ variants: "", mines: "", finishes: "", aliases: "" });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const listFields = useMemo(() => ([
     { key: "variants", label: t("panelProductMeta.variants") },
@@ -118,6 +120,30 @@ export default function Products() {
     }
   };
 
+  const handleVideoUpload = async (file) => {
+    if (!file) return;
+    setError("");
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/api/admin/upload/product`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      const videoUrl = data?.data?.video_url || data?.data?.file_url || "";
+      if (!videoUrl) throw new Error("Upload failed");
+      setForm((prev) => ({ ...prev, video_url: videoUrl }));
+    } catch (_) {
+      setError(t("messages.error"));
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   const handleRemoveImage = (index) => {
     setForm((prev) => {
       const nextImages = (prev.image_urls || []).filter((_, idx) => idx !== index);
@@ -160,7 +186,8 @@ export default function Products() {
       category_id: form.category_id ? Number(form.category_id) : 0,
       is_popular: Boolean(form.is_popular),
       image_url: images[0] || form.image_url || "",
-      image_urls: images
+      image_urls: images,
+      video_url: form.video_url || ""
     };
 
     try {
@@ -206,6 +233,7 @@ export default function Products() {
         price: item.price || "",
         image_url: item.image_url || "",
         image_urls: images,
+        video_url: item.video_url || "",
         category_id: item.category_id ? String(item.category_id) : "",
         is_popular: Boolean(item.is_popular),
         aliases: item.aliases || [],
@@ -450,6 +478,34 @@ export default function Products() {
                   )}
                 </div>
               </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                {t("form.video")}
+                <div className="mt-2 space-y-3">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-m4v"
+                    className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+                    disabled={uploadingVideo}
+                    onChange={(event) => handleVideoUpload(event.target.files?.[0])}
+                  />
+                  {form.video_url ? (
+                    <div className="space-y-3">
+                      <video className="h-64 w-full rounded-2xl border border-primary/15 bg-primary/5 object-cover" controls preload="metadata">
+                        <source src={resolveImageUrl(form.video_url)} />
+                      </video>
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, video_url: "" }))}
+                        className="rounded-full border border-primary/20 px-4 py-1 text-xs font-semibold text-primary/70"
+                      >
+                        {t("actions.delete")}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-primary/50">{t("messages.empty")}</p>
+                  )}
+                </div>
+              </label>
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
                 {t("form.category")}
                 <select
@@ -566,6 +622,11 @@ export default function Products() {
                 <span className="rounded-full border border-primary/15 px-3 py-1 text-xs font-semibold text-primary/70">
                   {getImageCount(product)} {t("panelProducts.imageCount")}
                 </span>
+                {product.video_url && (
+                  <span className="rounded-full border border-primary/15 px-3 py-1 text-xs font-semibold text-primary/70">
+                    {t("form.video")}
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

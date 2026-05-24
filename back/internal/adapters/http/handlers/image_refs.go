@@ -60,3 +60,12 @@ func allAllowedImageRefs(values []string) bool {
 	}
 	return true
 }
+
+// Media refs currently use the same internal /images path policy as image refs.
+func isAllowedMediaRef(value string) bool {
+	return isAllowedImageRef(value)
+}
+
+func normalizeMediaRef(value string) string {
+	return normalizeImageRef(value)
+}

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS projects (
   description_fa TEXT,
   description_ar TEXT,
   cover_image_url TEXT NOT NULL,
+  video_url TEXT,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ
@@ -13,7 +14,8 @@ CREATE TABLE IF NOT EXISTS projects (
 ALTER TABLE projects
 ADD COLUMN IF NOT EXISTS description_en TEXT,
 ADD COLUMN IF NOT EXISTS description_fa TEXT,
-ADD COLUMN IF NOT EXISTS description_ar TEXT;
+ADD COLUMN IF NOT EXISTS description_ar TEXT,
+ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 UPDATE projects
 SET description_en = COALESCE(description_en, description)

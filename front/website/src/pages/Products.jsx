@@ -763,9 +763,13 @@ export default function Products() {
       </div>
 
       {!hasSelectedCategory ? (
-        <div className="mx-auto flex min-h-[220px] w-1/2 flex-col items-center justify-center rounded-3xl  bg-primary/5 px-6 py-8 text-center">
-          <p className="font-display text-2xl text-primary md:text-3xl">{t("products.subtitle")}</p>
+        <div className="mx-auto flex min-h-[260px] w-full max-w-3xl flex-col items-center justify-center rounded-3xl bg-primary/5 px-6 py-8 text-center md:w-1/2">
+          <p className="font-display text-2xl text-primary md:text-3xl">{t("products.selectCategoryTitle")}</p>
           <p className="mt-3 text-sm text-primary/70">{t("products.selectCategoryHint")}</p>
+          <div className="mt-6 w-full max-w-2xl rounded-2xl border border-primary/15 bg-white/50 px-5 py-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/65">{t("products.supplyNoteTitle")}</p>
+            <p className="mt-2 text-sm leading-7 text-primary/80">{t("products.supplyNoteBody")}</p>
+          </div>
         </div>
       ) : loading ? (
         <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center">

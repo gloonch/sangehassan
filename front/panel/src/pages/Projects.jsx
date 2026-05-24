@@ -10,6 +10,7 @@ const emptyForm = {
   description_fa: "",
   description_ar: "",
   cover_image_url: "",
+  video_url: "",
   gallery_images: [],
   sort_order: 0
 };
@@ -24,6 +25,7 @@ export default function Projects() {
   const [formOpen, setFormOpen] = useState(true);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const loadProjects = async () => {
     try {
@@ -42,7 +44,7 @@ export default function Projects() {
     loadProjects();
   }, []);
 
-  const uploadImage = async (file) => {
+  const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -55,7 +57,7 @@ export default function Projects() {
       throw new Error("Upload failed");
     }
     const data = await res.json();
-    return data?.data?.image_url || "";
+    return data?.data || {};
   };
 
   const handleCoverUpload = async (file) => {
@@ -63,7 +65,9 @@ export default function Projects() {
     setUploadingCover(true);
     setError("");
     try {
-      const imageUrl = await uploadImage(file);
+      const uploaded = await uploadFile(file);
+      const imageUrl = uploaded?.image_url || "";
+      if (!imageUrl) throw new Error("Upload failed");
       setForm((prev) => ({ ...prev, cover_image_url: imageUrl }));
     } catch (_) {
       setError(t("messages.error"));
@@ -86,10 +90,10 @@ export default function Projects() {
     setUploadingGallery(true);
     setError("");
     try {
-      const uploaded = await Promise.all(selected.map((file) => uploadImage(file)));
+      const uploaded = await Promise.all(selected.map((file) => uploadFile(file)));
       setForm((prev) => ({
         ...prev,
-        gallery_images: [...prev.gallery_images, ...uploaded.filter(Boolean)]
+        gallery_images: [...prev.gallery_images, ...uploaded.map((item) => item?.image_url || "").filter(Boolean)]
       }));
       if (files.length > remaining) {
         setError(t("panelProjects.maxGallery"));
@@ -108,6 +112,24 @@ export default function Projects() {
     }));
   };
 
+  const handleVideoUpload = async (file) => {
+    if (!file) return;
+    setUploadingVideo(true);
+    setError("");
+    try {
+      const uploaded = await uploadFile(file);
+      const videoUrl = uploaded?.video_url || uploaded?.file_url || "";
+      if (!videoUrl) {
+        throw new Error("Upload failed");
+      }
+      setForm((prev) => ({ ...prev, video_url: videoUrl }));
+    } catch (_) {
+      setError(t("messages.error"));
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.cover_image_url) {
@@ -120,6 +142,7 @@ export default function Projects() {
       description_fa: form.description_fa,
       description_ar: form.description_ar,
       cover_image_url: form.cover_image_url,
+      video_url: form.video_url,
       gallery_images: form.gallery_images.slice(0, MAX_GALLERY_IMAGES),
       sort_order: Number(form.sort_order) || 0
     };
@@ -158,6 +181,7 @@ export default function Projects() {
         description_fa: item.description_fa || "",
         description_ar: item.description_ar || "",
         cover_image_url: item.cover_image_url || "",
+        video_url: item.video_url || "",
         gallery_images: item.gallery_images || [],
         sort_order: item.sort_order || 0
       });
@@ -223,7 +247,7 @@ export default function Projects() {
               </label>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
                 {t("form.coverImageUrl")}
                 <input
@@ -240,6 +264,31 @@ export default function Projects() {
                       alt="Cover"
                       className="h-full w-full object-cover"
                     />
+                  </div>
+                ) : null}
+              </label>
+
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                {t("form.video")}
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/x-m4v"
+                  className="mt-2 w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+                  disabled={uploadingVideo}
+                  onChange={(event) => handleVideoUpload(event.target.files?.[0])}
+                />
+                {form.video_url ? (
+                  <div className="mt-3 space-y-2">
+                    <video className="h-24 w-24 rounded-xl border border-primary/15 bg-primary/5 object-cover" controls preload="metadata">
+                      <source src={resolveImageUrl(form.video_url)} />
+                    </video>
+                    <button
+                      type="button"
+                      className="rounded-full border border-primary/20 px-3 py-1 text-[10px] font-semibold text-primary/70"
+                      onClick={() => setForm((prev) => ({ ...prev, video_url: "" }))}
+                    >
+                      {t("actions.delete")}
+                    </button>
                   </div>
                 ) : null}
               </label>
@@ -352,6 +401,12 @@ export default function Projects() {
                   <span>{t("form.orderIndex")}: {project.sort_order || 0}</span>
                   <span>•</span>
                   <span>{project.gallery_count || 0} {t("panelProjects.galleryCount")}</span>
+                  {project.video_url ? (
+                    <>
+                      <span>•</span>
+                      <span>{t("form.video")}</span>
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">

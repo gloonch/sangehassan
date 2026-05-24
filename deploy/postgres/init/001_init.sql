@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS products (
   price_html TEXT,
   main_category_id INT REFERENCES categories(id) ON DELETE SET NULL,
   image_url TEXT,
+  video_url TEXT,
   is_popular BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ

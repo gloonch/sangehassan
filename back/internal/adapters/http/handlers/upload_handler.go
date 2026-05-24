@@ -23,34 +23,34 @@ func NewUploadHandler(baseDir string) *UploadHandler {
 }
 
 func (h *UploadHandler) UploadTemplate(c *gin.Context) {
-	h.uploadFile(c, "templates")
+	h.uploadFile(c, "templates", false)
 }
 
 func (h *UploadHandler) UploadProduct(c *gin.Context) {
-	h.uploadFile(c, "products")
+	h.uploadFile(c, "products", true)
 }
 
 func (h *UploadHandler) UploadBlock(c *gin.Context) {
-	h.uploadFile(c, "blocks")
+	h.uploadFile(c, "blocks", false)
 }
 
 func (h *UploadHandler) UploadContent(c *gin.Context) {
-	h.uploadFile(c, "content")
+	h.uploadFile(c, "content", false)
 }
 
 func (h *UploadHandler) UploadBlog(c *gin.Context) {
-	h.uploadFile(c, "blogs")
+	h.uploadFile(c, "blogs", false)
 }
 
 func (h *UploadHandler) UploadProject(c *gin.Context) {
-	h.uploadFile(c, "projects")
+	h.uploadFile(c, "projects", true)
 }
 
 func (h *UploadHandler) UploadListing(c *gin.Context) {
-	h.uploadFile(c, "listings")
+	h.uploadFile(c, "listings", false)
 }
 
-func (h *UploadHandler) uploadFile(c *gin.Context, subdir string) {
+func (h *UploadHandler) uploadFile(c *gin.Context, subdir string, allowVideo bool) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, "file is required")
@@ -58,7 +58,8 @@ func (h *UploadHandler) uploadFile(c *gin.Context, subdir string) {
 	}
 
 	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
-	if !isAllowedExt(ext) {
+	isVideo := isAllowedVideoExt(ext)
+	if !isAllowedImageExt(ext) && !(allowVideo && isVideo) {
 		respondError(c, http.StatusBadRequest, "unsupported file type")
 		return
 	}
@@ -91,12 +92,27 @@ func (h *UploadHandler) uploadFile(c *gin.Context, subdir string) {
 	}
 
 	publicPath := fmt.Sprintf("/images/%s/%s", subdir, filename)
-	respondOK(c, gin.H{"image_url": publicPath})
+	payload := gin.H{"file_url": publicPath}
+	if isVideo {
+		payload["video_url"] = publicPath
+	} else {
+		payload["image_url"] = publicPath
+	}
+	respondOK(c, payload)
 }
 
-func isAllowedExt(ext string) bool {
+func isAllowedImageExt(ext string) bool {
 	switch ext {
 	case ".png", ".jpg", ".jpeg", ".webp":
+		return true
+	default:
+		return false
+	}
+}
+
+func isAllowedVideoExt(ext string) bool {
+	switch ext {
+	case ".mp4", ".webm", ".mov", ".m4v":
 		return true
 	default:
 		return false

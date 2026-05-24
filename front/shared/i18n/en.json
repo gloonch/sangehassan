@@ -111,6 +111,8 @@
     "subtitle": "Browse the full catalog and filter by category.",
     "selectCategoryTitle": "Choose a category first to view products.",
     "selectCategoryHint": "After selecting a category, its product list will appear here.",
+    "supplyNoteTitle": "Project Supply",
+    "supplyNoteBody": "Alongside our stone catalog, glass, microcement, cement, and selected complementary materials can also be sourced on request.",
     "filterAll": "All products",
     "width40": "40cm width stones",
     "categoryLabel": "Category",
@@ -499,6 +501,7 @@
     "price": "Price",
     "imageUrl": "Image URL",
     "images": "Images",
+    "video": "Video",
     "category": "Category",
     "excerpt": "Excerpt",
     "content": "Content",
@@ -533,7 +536,8 @@
     "login": "Log in",
     "signup": "Sign up",
     "loginRegister": "Login | Register",
-    "menu": "Menu"
+    "menu": "Menu",
+    "play": "Play"
   },
   "messages": {
     "loading": "Loading...",

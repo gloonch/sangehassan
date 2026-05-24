@@ -51,6 +51,14 @@ const getLocalizedProjectTitle = (project, lang, t) => {
   return `${t("projects.itemTitle")} ${project.id}`;
 };
 
+const getVideoMimeType = (videoPath) => {
+  const normalized = String(videoPath || "").toLowerCase();
+  if (normalized.endsWith(".webm")) return "video/webm";
+  if (normalized.endsWith(".mov")) return "video/quicktime";
+  if (normalized.endsWith(".m4v")) return "video/x-m4v";
+  return "video/mp4";
+};
+
 export default function ProjectDetail() {
   const { id } = useParams();
   const { t, lang } = useTranslation();
@@ -59,6 +67,7 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -100,6 +109,10 @@ export default function ProjectDetail() {
   }, [id]);
 
   useEffect(() => {
+    setVideoEnabled(false);
+  }, [id, activeIndex, project?.video_url]);
+
+  useEffect(() => {
     if (!lightboxOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -109,6 +122,8 @@ export default function ProjectDetail() {
   }, [lightboxOpen]);
 
   const activeImage = images[activeIndex] || images[0] || "";
+  const videoPath = project?.video_url ? resolveImageUrl(project.video_url) : "";
+  const hasVideo = Boolean(videoPath);
   const localizedTitle = getLocalizedProjectTitle(project, lang, t);
   const localizedDescription = getLocalizedProjectDescription(project, lang);
 
@@ -281,17 +296,58 @@ export default function ProjectDetail() {
             </div>
 
             <div className="relative overflow-hidden bg-primary/10">
-              {activeImage ? (
+              {videoEnabled && hasVideo ? (
+                <video
+                  className="h-[42vh] min-h-[320px] w-full object-cover md:h-[52vh]"
+                  controls
+                  playsInline
+                  autoPlay
+                  preload="none"
+                  poster={activeImage ? resolveImageUrl(activeImage) : undefined}
+                >
+                  <source src={videoPath} type={getVideoMimeType(project?.video_url)} />
+                </video>
+              ) : activeImage ? (
+                <div className="group relative h-[42vh] min-h-[320px] w-full md:h-[52vh]">
+                  <button
+                    type="button"
+                    className="h-full w-full"
+                    onClick={() => setLightboxOpen(true)}
+                  >
+                    <img
+                      src={resolveImageUrl(activeImage)}
+                      alt={localizedTitle}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                    />
+                  </button>
+                  {hasVideo ? (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setVideoEnabled(true);
+                        }}
+                        className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/45 bg-black/45 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black/55"
+                        aria-label={t("actions.play")}
+                      >
+                        <span aria-hidden="true">▶</span>
+                        <span>{t("actions.play")}</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : hasVideo ? (
                 <button
                   type="button"
-                  className="group relative h-[42vh] min-h-[320px] w-full md:h-[52vh]"
-                  onClick={() => setLightboxOpen(true)}
+                  onClick={() => setVideoEnabled(true)}
+                  className="flex h-[42vh] min-h-[320px] w-full items-center justify-center bg-primary/15 md:h-[52vh]"
+                  aria-label={t("actions.play")}
                 >
-                  <img
-                    src={resolveImageUrl(activeImage)}
-                    alt={localizedTitle}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                  />
+                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-white/75 px-4 py-2 text-xs font-semibold text-primary">
+                    <span aria-hidden="true">▶</span>
+                    <span>{t("actions.play")}</span>
+                  </span>
                 </button>
               ) : (
                 <div className="flex h-[42vh] min-h-[320px] w-full items-center justify-center text-sm text-primary/60">

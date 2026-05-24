@@ -26,6 +26,7 @@ type projectPayload struct {
 	DescriptionFA string   `json:"description_fa"`
 	DescriptionAR string   `json:"description_ar"`
 	CoverImageURL string   `json:"cover_image_url"`
+	VideoURL      string   `json:"video_url"`
 	GalleryImages []string `json:"gallery_images"`
 	SortOrder     int      `json:"sort_order"`
 }
@@ -85,6 +86,10 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "gallery images must be uploaded")
 		return
 	}
+	if !isAllowedMediaRef(payload.VideoURL) {
+		respondError(c, http.StatusBadRequest, "video must be uploaded")
+		return
+	}
 
 	descriptionEN := payload.DescriptionEN
 	if descriptionEN == "" {
@@ -97,6 +102,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		DescriptionFA: payload.DescriptionFA,
 		DescriptionAR: payload.DescriptionAR,
 		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
+		VideoURL:      normalizeMediaRef(payload.VideoURL),
 		GalleryImages: normalizeImageRefs(payload.GalleryImages),
 		SortOrder:     payload.SortOrder,
 	})
@@ -131,6 +137,10 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "gallery images must be uploaded")
 		return
 	}
+	if !isAllowedMediaRef(payload.VideoURL) {
+		respondError(c, http.StatusBadRequest, "video must be uploaded")
+		return
+	}
 
 	descriptionEN := payload.DescriptionEN
 	if descriptionEN == "" {
@@ -144,6 +154,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		DescriptionFA: payload.DescriptionFA,
 		DescriptionAR: payload.DescriptionAR,
 		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
+		VideoURL:      normalizeMediaRef(payload.VideoURL),
 		GalleryImages: normalizeImageRefs(payload.GalleryImages),
 		SortOrder:     payload.SortOrder,
 	})

@@ -9,6 +9,7 @@ type Project struct {
 	DescriptionFA string    `json:"description_fa"`
 	DescriptionAR string    `json:"description_ar"`
 	CoverImageURL string    `json:"cover_image_url"`
+	VideoURL      string    `json:"video_url,omitempty"`
 	GalleryImages []string  `json:"gallery_images,omitempty"`
 	GalleryCount  int       `json:"gallery_count,omitempty"`
 	SortOrder     int       `json:"sort_order"`
