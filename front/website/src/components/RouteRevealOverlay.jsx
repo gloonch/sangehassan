@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { gsap } from "gsap";
-import { ROUTE_REVEAL, getTileDuration } from "../lib/routeReveal";
+import { ROUTE_REVEAL, getTileDuration, getTileStartDelay } from "../lib/routeReveal";
 
 const prefersReducedMotion = () => {
   if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -26,10 +26,11 @@ export default function RouteRevealOverlay() {
       }
       const reduceMotion = prefersReducedMotion();
       const tileDuration = getTileDuration(reduceMotion);
+      const tileStartDelay = reduceMotion ? 0.06 : getTileStartDelay();
 
       gsap.set(panels, { yPercent: 0, force3D: true });
       timelineRef.current = gsap.timeline({ onComplete: () => setVisible(false) });
-      timelineRef.current.to({}, { duration: reduceMotion ? 0.06 : ROUTE_REVEAL.tileStartDelay });
+      timelineRef.current.to({}, { duration: tileStartDelay });
       panels.forEach((panel) => {
         timelineRef.current.to(panel, {
           yPercent: -110,

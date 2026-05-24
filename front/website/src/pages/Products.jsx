@@ -9,6 +9,7 @@ import { getCanonicalUrl } from "../lib/seo";
 const PRODUCTS_PAGE_SIZE = 20;
 const PRODUCTS_RETURN_STATE_KEY = "sh_products_return_state";
 const PRODUCTS_RETURN_STATE_MAX_AGE_MS = 30 * 60 * 1000;
+const EMPTY_STATE_DELAY_MS = 2000;
 
 const productsSeoContent = {
   fa: {
@@ -124,6 +125,7 @@ export default function Products() {
   const location = useLocation();
   const pageRef = useRef(null);
   const hasEntranceAnimatedRef = useRef(false);
+  const hasLoadedInitialProductsRef = useRef(false);
   const pendingRestoreRef = useRef(null);
   const scrollRestoreRef = useRef(null);
   const [products, setProducts] = useState([]);
@@ -142,7 +144,8 @@ export default function Products() {
   const [nextOffset, setNextOffset] = useState(0);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [emptyStateVisible, setEmptyStateVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -284,11 +287,34 @@ export default function Products() {
   useEffect(() => {
     let mounted = true;
 
-    const loadInitial = async () => {
+    const loadCategories = async () => {
+      try {
+        const categoryRes = await fetchJSON("/api/categories");
+        if (!mounted) return;
+        setCategories(categoryRes.data || []);
+      } catch (_) {
+        if (!mounted) return;
+        setCategories([]);
+      }
+    };
+
+    loadCategories();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!hasSelectedCategory || hasLoadedInitialProductsRef.current) return () => {
+      mounted = false;
+    };
+
+    const loadInitialProducts = async () => {
       setLoading(true);
       try {
         const restoreState = pendingRestoreRef.current;
-        const [categoryRes, firstPageProducts] = await Promise.all([fetchJSON("/api/categories"), fetchProductPage(0)]);
+        const firstPageProducts = await fetchProductPage(0);
         if (!mounted) return;
 
         let mergedProducts = firstPageProducts;
@@ -311,15 +337,15 @@ export default function Products() {
           }
         }
 
-        setCategories(categoryRes.data || []);
         setProducts(mergedProducts);
         setNextOffset(currentOffset);
         setHasMoreProducts(lastPageSize === PRODUCTS_PAGE_SIZE);
         scrollRestoreRef.current = restoreState?.scrollY ?? null;
-      } catch (error) {
+        pendingRestoreRef.current = null;
+        hasLoadedInitialProductsRef.current = true;
+      } catch (_) {
         if (!mounted) return;
         setProducts([]);
-        setCategories([]);
         setNextOffset(0);
         setHasMoreProducts(false);
       } finally {
@@ -327,11 +353,11 @@ export default function Products() {
       }
     };
 
-    loadInitial();
+    loadInitialProducts();
     return () => {
       mounted = false;
     };
-  }, [fetchProductPage]);
+  }, [hasSelectedCategory, normalizedActiveCategory, fetchProductPage]);
 
   useEffect(() => {
     if (loading || !hasSelectedCategory) return;
@@ -351,7 +377,7 @@ export default function Products() {
   }, [loading, hasSelectedCategory, products.length]);
 
   const loadMoreProducts = useCallback(async () => {
-    if (loading || loadingMore || !hasMoreProducts) return;
+    if (!hasSelectedCategory || loading || loadingMore || !hasMoreProducts) return;
     setLoadingMore(true);
     try {
       const incomingProducts = await fetchProductPage(nextOffset);
@@ -361,11 +387,11 @@ export default function Products() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loading, loadingMore, hasMoreProducts, fetchProductPage, nextOffset, applyFetchedPage]);
+  }, [hasSelectedCategory, loading, loadingMore, hasMoreProducts, fetchProductPage, nextOffset, applyFetchedPage]);
 
   useEffect(() => {
     const target = loadMoreTriggerRef.current;
-    if (!target || !hasMoreProducts) return undefined;
+    if (!target || !hasSelectedCategory || !hasMoreProducts) return undefined;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
@@ -376,7 +402,7 @@ export default function Products() {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [loadMoreProducts, hasMoreProducts]);
+  }, [loadMoreProducts, hasSelectedCategory, hasMoreProducts]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -450,15 +476,17 @@ export default function Products() {
 
     let base = normalizedProducts;
 
-    base = base.filter((product) => {
-      if (normalizeChiniSlug(product.category?.slug, product.category?.title_fa) === normalizedActiveCategory) return true;
-      if (Array.isArray(product.categories)) {
-        return product.categories.some(
-          (category) => normalizeChiniSlug(category?.slug, category?.title_fa) === normalizedActiveCategory
-        );
-      }
-      return false;
-    });
+    if (normalizedActiveCategory !== "all") {
+      base = base.filter((product) => {
+        if (normalizeChiniSlug(product.category?.slug, product.category?.title_fa) === normalizedActiveCategory) return true;
+        if (Array.isArray(product.categories)) {
+          return product.categories.some(
+            (category) => normalizeChiniSlug(category?.slug, category?.title_fa) === normalizedActiveCategory
+          );
+        }
+        return false;
+      });
+    }
 
     if (debouncedSearch) {
       base = base.filter((product) => {
@@ -563,6 +591,19 @@ export default function Products() {
     sortMode
   ]);
 
+  useEffect(() => {
+    if (!hasSelectedCategory || loading || filtered.length > 0) {
+      setEmptyStateVisible(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setEmptyStateVisible(true);
+    }, EMPTY_STATE_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [hasSelectedCategory, loading, filtered.length]);
+
   const mainCategories = useMemo(() => {
     const topLevel = normalizedCategories.filter((category) => !category.parent_id);
     if (topLevel.length > 0) return topLevel;
@@ -574,6 +615,7 @@ export default function Products() {
     setSearchInput(value);
     setSearchPending(true);
   };
+  const showSearchLoading = searchPending || (hasSelectedCategory && (loading || loadingMore));
 
   const hasAdvancedFilters =
     stoneTypeFilter !== "all" ||
@@ -710,7 +752,7 @@ export default function Products() {
             placeholder={t("products.searchPlaceholder")}
             className="w-full rounded-full border border-primary/20 bg-white/70 px-4 py-2.5 pr-9 text-sm font-semibold text-primary outline-none transition focus:border-primary/60"
           />
-          {searchPending && (
+          {showSearchLoading && (
             <span
               aria-label={t("messages.loading")}
               className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin rounded-full border border-primary/40 border-t-transparent"
@@ -720,20 +762,34 @@ export default function Products() {
 
       </div>
 
-      {loading ? (
-        <p className="text-sm text-primary/70">{t("messages.loading")}</p>
-      ) : !hasSelectedCategory ? (
+      {!hasSelectedCategory ? (
         <div className="mx-auto flex min-h-[220px] w-1/2 flex-col items-center justify-center rounded-3xl  bg-primary/5 px-6 py-8 text-center">
           <p className="font-display text-2xl text-primary md:text-3xl">{t("products.subtitle")}</p>
           <p className="mt-3 text-sm text-primary/70">{t("products.selectCategoryHint")}</p>
         </div>
+      ) : loading ? (
+        <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center">
+          <span
+            aria-label={t("messages.loading")}
+            className="h-4 w-4 animate-spin rounded-full border border-primary/40 border-t-transparent"
+          />
+        </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-primary/70">{t("products.empty")}</p>
+        emptyStateVisible ? (
+          <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center text-center">
+            <p className="text-sm text-primary/70">{t("products.empty")}</p>
+          </div>
+        ) : (
+          <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center">
+            <span
+              aria-label={t("messages.loading")}
+              className="h-4 w-4 animate-spin rounded-full border border-primary/40 border-t-transparent"
+            />
+          </div>
+        )
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product) => {
-            const categoryLabel =
-              product.category || (Array.isArray(product.categories) && product.categories.length > 0 ? product.categories[0] : null);
             const isRTL = lang === "fa" || lang === "ar";
             const gradientDir = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
             return (
@@ -781,11 +837,8 @@ export default function Products() {
         </div>
       )}
 
-      {!loading && (
+      {!loading && hasSelectedCategory && (
         <div className="mt-8">
-          {loadingMore && (
-            <p className="text-center text-sm text-primary/70">{t("messages.loading")}</p>
-          )}
           {hasMoreProducts && <div ref={loadMoreTriggerRef} className="h-8 w-full" />}
         </div>
       )}

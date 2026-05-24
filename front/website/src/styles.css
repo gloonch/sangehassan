@@ -250,15 +250,17 @@ body {
     position: relative;
     overflow: hidden;
     isolation: isolate;
+    border-radius: 9999px;
   }
 
   .call-cta-shimmer::after {
     content: "";
     position: absolute;
-    top: -20%;
-    bottom: -20%;
+    top: 0;
+    bottom: 0;
     left: 0;
     width: 46%;
+    border-radius: inherit;
     pointer-events: none;
     opacity: 0.55;
     background: linear-gradient(

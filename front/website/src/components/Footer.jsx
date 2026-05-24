@@ -95,13 +95,6 @@ export default function Footer() {
       hrefKey: "instagram"
     },
     {
-      key: "linkedin-secondary",
-      label: t("footer.linkedinLabel"),
-      value: t("footer.linkedinValue"),
-      Icon: LinkedInIcon,
-      hrefKey: "linkedin"
-    },
-    {
       key: "telegram",
       label: t("footer.telegramLabel"),
       value: t("footer.telegramValue"),

@@ -182,6 +182,8 @@ export default function ProductDetail() {
   const phoneValue = t("footer.phoneValue");
   const normalizedPhone = normalizePhone(phoneValue);
   const phoneHref = normalizedPhone ? `tel:${normalizedPhone}` : "";
+  const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();
+  const showDomesticMessengerLinks = import.meta.env.DEV || siteUrl.includes("sangehassan.ir");
   const primaryCategorySlug = categoriesAdjusted[0]?.slug || "";
 
   const buildFilterLink = (value) => {
@@ -344,16 +346,42 @@ export default function ProductDetail() {
               <div className="flex flex-wrap items-end gap-3 md:gap-4">
                 <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
                 {phoneHref && (
-                  <a
-                    href={phoneHref}
-                    className={`call-cta-shimmer inline-flex items-center gap-3 rounded-full border border-primary/25 px-3.5 py-2 text-primary/85 transition hover:border-primary/55 hover:text-primary ${isRTL ? "mr-auto" : "ml-auto"}`}
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full">
-                      <PhoneIcon className="h-7 w-7" />
-                    </span>
-                    <span className="text-[11px] font-semibold md:text-xs">{t("productDetail.callForMoreInfo")}</span>
-                    <span className="text-xs font-semibold tabular-nums md:text-sm" dir="ltr">{phoneValue}</span>
-                  </a>
+                  <div className={`flex flex-col items-center gap-1.5 ${isRTL ? "mr-auto" : "ml-auto"}`}>
+                    <a
+                      href={phoneHref}
+                      className="call-cta-shimmer inline-flex items-center gap-3 rounded-full border border-primary/25 px-3.5 py-2 text-primary/85 transition hover:border-primary/55 hover:text-primary"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full">
+                        <PhoneIcon className="h-7 w-7" />
+                      </span>
+                      <span className="text-[11px] font-semibold md:text-xs">{t("productDetail.callForMoreInfo")}</span>
+                      <span className="text-xs font-semibold tabular-nums md:text-sm" dir="ltr">{phoneValue}</span>
+                    </a>
+
+                    {showDomesticMessengerLinks && (
+                      <div className="text-center">
+                        <p className="text-[10px] text-primary/65">{t("productDetail.domesticMessengerHint")}</p>
+                        <div className="mt-1 flex flex-wrap justify-center gap-1.5">
+                          <a
+                            href="https://bale.ir/sangehassan"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary/70 transition hover:border-primary/45 hover:text-primary"
+                          >
+                            bale
+                          </a>
+                          <a
+                            href="https://rubika.ir/sangehassan"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary/70 transition hover:border-primary/45 hover:text-primary"
+                          >
+                            rubika
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
