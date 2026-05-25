@@ -75,8 +75,10 @@ services:
       - panel
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/prod-ir.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl/prod-ir:/etc/nginx/ssl/prod-ir:ro
       - images_data_prod:/var/www/images:ro
 
 volumes:
