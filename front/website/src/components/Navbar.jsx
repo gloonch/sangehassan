@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
+import { getLiveDealsConfig, renderDealMessage } from "../lib/liveDeals";
 import { getTileCompletionTime } from "../lib/routeReveal";
 import logoImage from "@shared/assets/logo.png";
 import logoWhiteImage from "@shared/assets/logo_white.png";
@@ -26,15 +27,20 @@ const getUserDisplayName = (user) => {
 };
 
 export default function Navbar() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const location = useLocation();
   const headerRef = useRef(null);
   const mobileMenuPanelRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [dealIndex, setDealIndex] = useState(0);
+  const [dealVisible, setDealVisible] = useState(true);
   const isHome = location.pathname === "/";
   const isAbout = location.pathname === "/about";
   const navSubline = isHome || isAbout ? t("nav.sinceLine") : t("nav.sinceLineAlt");
+  const liveDealsConfig = getLiveDealsConfig(lang);
+  const liveDeals = liveDealsConfig.deals;
+  const activeDeal = liveDeals.length > 0 ? liveDeals[dealIndex % liveDeals.length] : null;
 
   useEffect(() => {
     let active = true;
@@ -96,6 +102,27 @@ export default function Navbar() {
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!liveDeals.length) return undefined;
+
+    let fadeTimer;
+    setDealIndex((current) => current % liveDeals.length);
+    setDealVisible(true);
+
+    const interval = window.setInterval(() => {
+      setDealVisible(false);
+      fadeTimer = window.setTimeout(() => {
+        setDealIndex((current) => (current + 1) % liveDeals.length);
+        setDealVisible(true);
+      }, 280);
+    }, 2000);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(fadeTimer);
+    };
+  }, [lang, liveDeals.length]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -357,10 +384,21 @@ export default function Navbar() {
       </div>
 
       <div className={`border-t ${isHome ? "border-sand/20" : "border-primary/10"}`}>
-        <div className="section-shell flex h-8 items-center">
-          <p className={`text-[11px] font-semibold ${isHome ? "text-sand/75" : "text-primary/65"}`}>
+        <div className="section-shell relative flex h-8 items-center">
+          <p className={`min-w-[7.5rem] text-[11px] font-semibold ${isHome ? "text-sand/75" : "text-primary/65"}`}>
             {navSubline}
           </p>
+          {activeDeal ? (
+            <Link
+              to="/ads"
+              className={`absolute left-1/2 top-1/2 hidden w-[min(48vw,34rem)] items-center justify-center overflow-hidden text-center text-[11px] font-semibold transition-all duration-300 ease-out lg:flex ${dealVisible ? "opacity-100" : "opacity-0"
+                } ${isHome ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
+              style={{ transform: `translate(-50%, ${dealVisible ? "-50%" : "calc(-50% + 0.25rem)"})` }}
+              aria-label={t("ads.title")}
+            >
+              <span className="block truncate">{renderDealMessage(activeDeal, liveDealsConfig)}</span>
+            </Link>
+          ) : null}
         </div>
       </div>
 
