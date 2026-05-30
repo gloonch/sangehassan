@@ -4,6 +4,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
+import { usePrerenderData } from "../lib/prerenderData";
 
 const getLocalized = (item, lang) => {
   if (!item) return "";
@@ -15,21 +16,29 @@ const getLocalized = (item, lang) => {
 export default function BlockDetail() {
   const { slug } = useParams();
   const { t, lang } = useTranslation();
-  const [block, setBlock] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const prerenderedBlock = usePrerenderData("block");
+  const initialBlock = prerenderedBlock?.slug === slug ? prerenderedBlock : null;
+  const [block, setBlock] = useState(initialBlock);
+  const [loading, setLoading] = useState(!initialBlock);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
+      const hasInitialBlock = initialBlock?.slug === slug;
+      if (!hasInitialBlock) {
+        setLoading(true);
+      }
       try {
         const res = await fetchJSON(`/api/blocks/${slug}`);
         if (!mounted) return;
         setBlock(res.data || null);
       } catch (error) {
         if (!mounted) return;
-        setBlock(null);
+        if (!hasInitialBlock) {
+          setBlock(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -38,7 +47,7 @@ export default function BlockDetail() {
     return () => {
       mounted = false;
     };
-  }, [slug]);
+  }, [initialBlock, slug]);
 
   const images = useMemo(() => {
     if (!block) return [];
@@ -83,11 +92,26 @@ export default function BlockDetail() {
     <section className="section-shell py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
+          <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary/55">
+            <Link to="/" className="transition hover:text-primary">
+              SangeHassan
+            </Link>
+            <span>/</span>
+            <Link to="/blocks" className="transition hover:text-primary">
+              {t("nav.blocks")}
+            </Link>
+            {localizedTitle && (
+              <>
+                <span>/</span>
+                <span className="text-primary/75">{localizedTitle}</span>
+              </>
+            )}
+          </nav>
           <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("blocks.title")}</p>
           <h1 className="mt-3 font-display text-3xl md:text-4xl">{localizedTitle}</h1>
         </div>
         <Link
-          to="/blocks/catalog"
+          to="/blocks"
           className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50"
         >
           {t("blocks.catalogTitle")}
@@ -193,7 +217,7 @@ export default function BlockDetail() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                to="/blocks/catalog"
+                to="/blocks"
                 className="rounded-full border border-primary/20 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary/80"
               >
                 {t("blocks.catalogTitle")}

@@ -1,21 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { PRICE_UNIT_VALUES, formatPriceUnit, formatPriceValue } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
+import { usePrerenderData } from "../lib/prerenderData";
 
 const inputClass =
   "w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none";
+
+const adFormState = (ad) => ({
+  title: ad?.title || "",
+  stone_type: ad?.stone_type || "",
+  form: ad?.form || "",
+  tonnage: ad?.tonnage || "",
+  province: ad?.province || "",
+  city: ad?.city || "",
+  price_amount: ad?.price_amount || "",
+  price_unit: ad?.price_unit || "per_ton",
+  description: ad?.description || "",
+  extra_props: JSON.stringify(ad?.extra_props || {}, null, 2),
+  images: (ad?.images || []).map((i) => i.image_url).join(", ")
+});
 
 export default function AdDetail() {
   const { id } = useParams();
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
+  const prerenderedAd = usePrerenderData("ad");
+  const initialAd = String(prerenderedAd?.id || "") === String(id) ? prerenderedAd : null;
 
-  const [ad, setAd] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [ad, setAd] = useState(initialAd);
+  const [loading, setLoading] = useState(!initialAd);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const [requestType, setRequestType] = useState("INSPECTION");
@@ -23,7 +40,7 @@ export default function AdDetail() {
   const [reqStatus, setReqStatus] = useState("");
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [submittedRequestType, setSubmittedRequestType] = useState("INSPECTION");
-  const [formState, setFormState] = useState({});
+  const [formState, setFormState] = useState(() => initialAd ? adFormState(initialAd) : {});
   const [saveMsg, setSaveMsg] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -84,36 +101,28 @@ export default function AdDetail() {
       }
     };
     const loadAd = async () => {
+      const hasInitialAd = String(initialAd?.id || "") === String(id);
       try {
         const res = await fetchJSON(`/api/ads/${id}`);
         const data = res?.data || res;
         if (!active) return;
         setAd(data);
-        setFormState({
-          title: data.title || "",
-          stone_type: data.stone_type || "",
-          form: data.form || "",
-          tonnage: data.tonnage || "",
-          province: data.province || "",
-          city: data.city || "",
-          price_amount: data.price_amount || "",
-          price_unit: data.price_unit || "per_ton",
-          description: data.description || "",
-          extra_props: JSON.stringify(data.extra_props || {}, null, 2),
-          images: (data.images || []).map((i) => i.image_url).join(", ")
-        });
+        setFormState(adFormState(data));
       } catch (err) {
-        if (active) setError(err?.message || t("messages.error"));
+        if (active && !hasInitialAd) setError(err?.message || t("messages.error"));
       } finally {
         if (active) setLoading(false);
       }
     };
     loadUser();
+    if (!initialAd) {
+      setLoading(true);
+    }
     loadAd();
     return () => {
       active = false;
     };
-  }, [id, t]);
+  }, [id, initialAd, t]);
 
   const handleRequest = async () => {
     setReqStatus("");
@@ -199,6 +208,17 @@ export default function AdDetail() {
 
   return (
     <section className="section-shell py-16">
+      <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary/55">
+        <Link to="/" className="transition hover:text-primary">
+          SangeHassan
+        </Link>
+        <span>/</span>
+        <Link to="/ads" className="transition hover:text-primary">
+          {t("nav.ads")}
+        </Link>
+        <span>/</span>
+        <span className="text-primary/75">{ad.title || ad.stone_type || t("ads.title")}</span>
+      </nav>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-3xl border border-primary/10 bg-white/80 p-6 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-primary/60">

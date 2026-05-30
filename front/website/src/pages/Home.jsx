@@ -224,7 +224,7 @@ export default function Home() {
         cta_label_en: t("hero.ctaPrimary"),
         cta_label_fa: t("hero.ctaPrimary"),
         cta_label_ar: t("hero.ctaPrimary"),
-        cta_href: "/products/overview",
+        cta_href: "/products",
         images: []
       }
     }),
@@ -297,7 +297,9 @@ export default function Home() {
           const description = pickField(section, "description", lang);
           const ctaLabel = pickField(section, "cta_label", lang);
           const fallbackCTA = isBlocks ? t("blocks.cta") : t("hero.ctaPrimary");
-          const ctaHref = section.cta_href || (isBlocks ? "/blocks" : "/products/overview");
+          const rawCtaHref = section.cta_href || (isBlocks ? "/blocks" : "/products");
+          const ctaHref =
+            rawCtaHref === "/products/overview" ? "/products" : rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref;
           const lines = splitLines(description);
 
           return (

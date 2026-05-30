@@ -17,6 +17,8 @@ const sitemapLastmod = /^\d{4}-\d{2}-\d{2}$/.test(configuredSitemapLastmod)
 const organizationId = `${siteUrl}/#organization`;
 const websiteId = `${siteUrl}/#website`;
 const defaultRobots = "index,follow,max-image-preview:large";
+const sharedAssetUrl = (sourcePath) => `/@fs${path.resolve(rootDir, sourcePath).replace(/\\/g, "/")}`;
+const defaultShareImage = sharedAssetUrl("../shared/assets/landing_page/landingpage_blocks_overlay.webp");
 
 const staticRoutes = [
   {
@@ -25,6 +27,7 @@ const staticRoutes = [
     description:
       "Integrated natural stone supply and production network, from quarry blocks to finished stone products for professional projects, B2B, and export.",
     schemaType: "WebPage",
+    image: defaultShareImage,
     changefreq: "weekly",
     priority: 1
   },
@@ -35,6 +38,7 @@ const staticRoutes = [
       "Browse SangeHassan natural stone products, including slabs, tiles, and finished stones for building projects, B2B supply, and export.",
     schemaType: "CollectionPage",
     breadcrumbName: "Products",
+    image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.9
   },
@@ -45,6 +49,7 @@ const staticRoutes = [
       "Browse SangeHassan natural stone blocks for project supply, slab production, and wholesale B2B sourcing.",
     schemaType: "CollectionPage",
     breadcrumbName: "Stone Blocks",
+    image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.85
   },
@@ -55,6 +60,7 @@ const staticRoutes = [
       "Explore SangeHassan's completed stone projects across facade and interior applications with real-world execution results.",
     schemaType: "CollectionPage",
     breadcrumbName: "Projects",
+    image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.8
   },
@@ -65,6 +71,7 @@ const staticRoutes = [
       "Read SangeHassan articles and guides about choosing, sourcing, and using natural stone in building projects.",
     schemaType: "Blog",
     breadcrumbName: "Articles",
+    image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.75
   },
@@ -75,6 +82,7 @@ const staticRoutes = [
       "SangeHassan is an integrated natural stone supply and production network, from quarry blocks to finished products with B2B reliability and export focus.",
     schemaType: "AboutPage",
     breadcrumbName: "About Us",
+    image: defaultShareImage,
     changefreq: "monthly",
     priority: 0.7
   },
@@ -84,6 +92,7 @@ const staticRoutes = [
     description: "Private members-only space for posting and browsing stone sale offers.",
     schemaType: "CollectionPage",
     breadcrumbName: "Trade Board",
+    image: defaultShareImage,
     changefreq: "daily",
     priority: 0.65
   }
@@ -109,6 +118,13 @@ function escapeXml(value = "") {
 
 function safeJsonLd(payload) {
   return JSON.stringify(payload).replace(/</g, "\\u003c");
+}
+
+function safeScriptJson(payload) {
+  return JSON.stringify(payload)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 function stripHTML(value = "") {
@@ -280,11 +296,16 @@ function buildHead(route) {
 }
 
 function injectRouteHtml(template, route, appHtml) {
+  const prerenderDataScript = route.prerenderData
+    ? `  <script>window.__SH_PRERENDER_DATA__=${safeScriptJson(route.prerenderData)};</script>\n`
+    : "";
+
   return template
     .replace(/<html[^>]*>/i, `<html lang="en" dir="ltr">`)
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace("</head>", `  ${buildHead(route)}\n</head>`)
-    .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`);
+    .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)
+    .replace(/(\s*<script type="module")/, `\n${prerenderDataScript}$1`);
 }
 
 async function loadAssetReplacements() {
@@ -408,6 +429,28 @@ async function fetchApi(pathname) {
   return payload?.data ?? payload;
 }
 
+async function detailRoutes(items, routeFactory, detailPath, dataKey, label) {
+  if (!Array.isArray(items)) return [];
+
+  const routes = await Promise.all(
+    items.map(async (item) => {
+      let data = item;
+      try {
+        data = (await fetchApi(detailPath(item))) || item;
+      } catch (error) {
+        console.warn(`prerender: ${label} detail skipped for ${detailPath(item)}: ${error.message}`);
+      }
+
+      const route = routeFactory(data);
+      if (!route) return null;
+      route.prerenderData = { [dataKey]: data };
+      return route;
+    })
+  );
+
+  return routes.filter(Boolean);
+}
+
 function firstImage(item) {
   if (Array.isArray(item?.images) && item.images.length) {
     const first = item.images[0];
@@ -415,6 +458,10 @@ function firstImage(item) {
     return first?.image_url || "";
   }
   return item?.image_url || item?.cover_image_url || "";
+}
+
+function shareImage(item) {
+  return firstImage(item) || defaultShareImage;
 }
 
 function productRoute(product) {
@@ -437,7 +484,7 @@ function productRoute(product) {
     path: `/products/${slug}`,
     title: `${title} | SangeHassan`,
     description,
-    image: firstImage(product),
+    image: shareImage(product),
     type: "product",
     schemaType: "ItemPage",
     breadcrumbs: [
@@ -476,7 +523,7 @@ function blockRoute(block) {
     path: `/blocks/${slug}`,
     title: `${title} | Stone Blocks | SangeHassan`,
     description,
-    image: firstImage(block),
+    image: shareImage(block),
     type: "product",
     schemaType: "ItemPage",
     breadcrumbs: [
@@ -514,7 +561,7 @@ function projectRoute(project) {
     path: `/projects/${id}`,
     title: `${title} | Projects | SangeHassan`,
     description,
-    image: project.cover_image_url || "",
+    image: project.cover_image_url || defaultShareImage,
     type: "article",
     schemaType: "Article",
     breadcrumbs: [
@@ -538,7 +585,7 @@ function adRoute(ad) {
     path: `/ads/${id}`,
     title: `${title} | Trade Board | SangeHassan`,
     description,
-    image: firstImage(ad),
+    image: shareImage(ad),
     type: "article",
     schemaType: "ItemPage",
     breadcrumbs: [
@@ -588,12 +635,14 @@ async function loadDynamicRoutes() {
       })
     ]);
 
-    return [
-      ...(Array.isArray(products) ? products.map(productRoute) : []),
-      ...(Array.isArray(blocks) ? blocks.map(blockRoute) : []),
-      ...(Array.isArray(projects) ? projects.map(projectRoute) : []),
-      ...(Array.isArray(ads) ? ads.map(adRoute) : [])
-    ].filter(Boolean);
+    const [productRoutes, blockRoutes, projectRoutes, adRoutes] = await Promise.all([
+      detailRoutes(products, productRoute, (product) => `/api/products/${product.slug}`, "product", "product"),
+      detailRoutes(blocks, blockRoute, (block) => `/api/blocks/${block.slug}`, "block", "block"),
+      detailRoutes(projects, projectRoute, (project) => `/api/projects/${project.id}`, "project", "project"),
+      detailRoutes(ads, adRoute, (ad) => `/api/ads/${ad.id}`, "ad", "ad")
+    ]);
+
+    return [...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes];
   } catch (error) {
     console.warn(`prerender: dynamic detail pages skipped: ${error.message}`);
     return [];
@@ -616,8 +665,8 @@ async function main() {
     const routes = [...staticRoutes, ...dynamicRoutes];
 
     for (const route of routes) {
-      const appHtml = replaceAssetUrls(render(route.path), assetReplacements);
-      const html = injectRouteHtml(template, route, appHtml);
+      const appHtml = render(route.path, route.prerenderData || null);
+      const html = replaceAssetUrls(injectRouteHtml(template, route, appHtml), assetReplacements);
       await writeRoute(route.path, html);
     }
 

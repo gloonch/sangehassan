@@ -63,6 +63,9 @@ func (h *BlockHandler) List(c *gin.Context) {
 		}
 		blocks = filtered
 	}
+	if blocks == nil {
+		blocks = []domain.Block{}
+	}
 	respondOK(c, blocks)
 }
 

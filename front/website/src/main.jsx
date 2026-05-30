@@ -3,14 +3,19 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { LanguageProvider } from "./lib/i18n";
+import { getBrowserPrerenderData, PrerenderDataProvider } from "./lib/prerenderData";
 import "./styles.css";
+
+const prerenderData = getBrowserPrerenderData();
 
 const app = (
   <React.StrictMode>
     <LanguageProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <PrerenderDataProvider data={prerenderData}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </PrerenderDataProvider>
     </LanguageProvider>
   </React.StrictMode>
 );

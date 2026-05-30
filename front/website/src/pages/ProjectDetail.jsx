@@ -4,6 +4,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
+import { usePrerenderData } from "../lib/prerenderData";
 
 const projectDetailSeoContent = {
   fa: {
@@ -63,8 +64,10 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const { t, lang } = useTranslation();
   const isRTL = lang === "fa" || lang === "ar";
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const prerenderedProject = usePrerenderData("project");
+  const initialProject = String(prerenderedProject?.id || "") === String(id) ? prerenderedProject : null;
+  const [project, setProject] = useState(initialProject);
+  const [loading, setLoading] = useState(!initialProject);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
@@ -73,14 +76,19 @@ export default function ProjectDetail() {
     let mounted = true;
 
     const load = async () => {
-      setLoading(true);
+      const hasInitialProject = String(initialProject?.id || "") === String(id);
+      if (!hasInitialProject) {
+        setLoading(true);
+      }
       try {
         const response = await fetchJSON(`/api/projects/${id}`);
         if (!mounted) return;
         setProject(response.data || null);
       } catch (_) {
         if (!mounted) return;
-        setProject(null);
+        if (!hasInitialProject) {
+          setProject(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -90,7 +98,7 @@ export default function ProjectDetail() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, initialProject]);
 
   const images = useMemo(() => {
     if (!project) return [];
@@ -286,10 +294,25 @@ export default function ProjectDetail() {
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">
-            <div className={`flex items-center ${isRTL ? "justify-end" : "justify-start"}`}>
+            <div className={`flex flex-wrap items-center gap-3 ${isRTL ? "justify-end" : "justify-start"}`}>
+              <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary/55">
+                <Link to="/" className="transition hover:text-primary">
+                  SangeHassan
+                </Link>
+                <span>/</span>
+                <Link to="/projects" className="transition hover:text-primary">
+                  {t("nav.projects")}
+                </Link>
+                {localizedTitle && (
+                  <>
+                    <span>/</span>
+                    <span className="text-primary/75">{localizedTitle}</span>
+                  </>
+                )}
+              </nav>
               <Link
                 to="/projects"
-                className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50"
+                className={`${isRTL ? "mr-auto" : "ml-auto"} rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50`}
               >
                 {t("projects.backToProjects")}
               </Link>

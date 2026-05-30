@@ -3,14 +3,17 @@ import { renderToString } from "react-dom/server";
 import { StaticRouter } from "react-router-dom/server";
 import App from "./App";
 import { LanguageProvider } from "./lib/i18n";
+import { PrerenderDataProvider } from "./lib/prerenderData";
 
-export function render(url) {
+export function render(url, prerenderData = null) {
   return renderToString(
     <React.StrictMode>
       <LanguageProvider>
-        <StaticRouter location={url}>
-          <App />
-        </StaticRouter>
+        <PrerenderDataProvider data={prerenderData}>
+          <StaticRouter location={url}>
+            <App />
+          </StaticRouter>
+        </PrerenderDataProvider>
       </LanguageProvider>
     </React.StrictMode>
   );

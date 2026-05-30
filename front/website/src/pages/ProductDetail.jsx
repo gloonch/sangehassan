@@ -4,6 +4,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
+import { usePrerenderData } from "../lib/prerenderData";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -74,8 +75,10 @@ export default function ProductDetail() {
   const { slug } = useParams();
   const { t, lang } = useTranslation();
   const isRTL = lang === "fa" || lang === "ar";
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const prerenderedProduct = usePrerenderData("product");
+  const initialProduct = prerenderedProduct?.slug === slug ? prerenderedProduct : null;
+  const [product, setProduct] = useState(initialProduct);
+  const [loading, setLoading] = useState(!initialProduct);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
@@ -83,13 +86,19 @@ export default function ProductDetail() {
   useEffect(() => {
     let mounted = true;
     const load = async () => {
+      const hasInitialProduct = initialProduct?.slug === slug;
+      if (!hasInitialProduct) {
+        setLoading(true);
+      }
       try {
         const res = await fetchJSON(`/api/products/${slug}`);
         if (!mounted) return;
         setProduct(res.data || null);
       } catch (error) {
         if (!mounted) return;
-        setProduct(null);
+        if (!hasInitialProduct) {
+          setProduct(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -98,7 +107,7 @@ export default function ProductDetail() {
     return () => {
       mounted = false;
     };
-  }, [slug]);
+  }, [initialProduct, slug]);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -183,7 +192,7 @@ export default function ProductDetail() {
   const normalizedPhone = normalizePhone(phoneValue);
   const phoneHref = normalizedPhone ? `tel:${normalizedPhone}` : "";
   const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();
-  const showDomesticMessengerLinks = import.meta.env.DEV || siteUrl.includes("sangehassan.ir");
+  const showDomesticMessengerLinks = siteUrl.includes("sangehassan.ir");
   const primaryCategorySlug = categoriesAdjusted[0]?.slug || "";
 
   const buildFilterLink = (value) => {
@@ -278,10 +287,25 @@ export default function ProductDetail() {
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">
-            <div className={`flex items-center ${isRTL ? "justify-end" : "justify-start"}`}>
+            <div className={`flex flex-wrap items-center gap-3 ${isRTL ? "justify-end" : "justify-start"}`}>
+              <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary/55">
+                <Link to="/" className="transition hover:text-primary">
+                  SangeHassan
+                </Link>
+                <span>/</span>
+                <Link to="/products" className="transition hover:text-primary">
+                  {t("nav.products")}
+                </Link>
+                {localizedTitle && (
+                  <>
+                    <span>/</span>
+                    <span className="text-primary/75">{localizedTitle}</span>
+                  </>
+                )}
+              </nav>
               <Link
                 to="/products"
-                className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50"
+                className={`${isRTL ? "mr-auto" : "ml-auto"} rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50`}
               >
                 {t("productDetail.backToProducts")}
               </Link>

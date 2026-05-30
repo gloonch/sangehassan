@@ -24,13 +24,13 @@ Frontend build keys:
 - `VITE_API_BASE_URL=` defaults to same-origin `/api`
 - `VITE_IMAGE_BASE_URL=` defaults to same-origin `/images`
 - `VITE_SITE_URL=https://sangehassan.com` on prod-com
-- `VITE_SITE_URL=https://sangehassan.ir` on prod-ir
-- `VITE_PRERENDER_API_BASE_URL=` optional; set only when the API is reachable during frontend image build and dynamic detail pages should be prerendered
+- `VITE_SITE_URL=https://sangehassan.com` on prod-ir too; the `.ir` nginx host redirects to `.com`
+- `VITE_PRERENDER_API_BASE_URL=https://sangehassan.com` so dynamic detail pages are prerendered into HTML and sitemap when the public API is reachable during frontend image build
 - `VITE_SITEMAP_LASTMOD=` optional; leave blank to use the frontend build date for sitemap `lastmod`
 
 Current target origins:
 - prod-com: `https://sangehassan.com,https://www.sangehassan.com,http://sangehassan.com,http://www.sangehassan.com,http://91.239.211.60`
-- prod-ir: `https://sangehassan.ir,https://www.sangehassan.ir,http://sangehassan.ir,http://www.sangehassan.ir,http://185.53.141.157`
+- prod-ir: `.ir` only redirects; keep backend browser origins aligned with the canonical `.com` origin if this stack is still built
 
 Run commands:
 - prod-com: `docker compose --env-file .prod-com.env -f docker-compose-prod-com.yml up -d --build`
