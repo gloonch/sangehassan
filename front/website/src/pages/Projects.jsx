@@ -203,7 +203,7 @@ export default function Projects() {
     document.title = seo.title;
     upsertCanonical(pageUrl);
     upsertMeta('meta[name="description"]', { name: "description" }, seo.description);
-    upsertMeta('meta[name="robots"]', { name: "robots" }, "index,follow,max-image-preview:large");
+    upsertMeta('meta[name="robots"]', { name: "robots" }, "index,follow");
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, "website");
     upsertMeta('meta[property="og:title"]', { property: "og:title" }, seo.title);
     upsertMeta('meta[property="og:description"]', { property: "og:description" }, seo.description);

@@ -76,7 +76,7 @@ export default function AdDetail() {
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
     image: imageUrls[0] ? resolveImageUrl(imageUrls[0]) : "",
     type: "article",
-    robots: ad ? "index,follow,max-image-preview:large" : "noindex,follow"
+    robots: !loading && !ad ? "noindex,follow" : "index,follow"
   });
 
   useEffect(() => {

@@ -4,6 +4,9 @@ import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 
 const MAX_GALLERY_IMAGES = 5;
+const MAX_VIDEO_UPLOAD_BYTES = 90 * 1024 * 1024;
+
+const formatFileSize = (bytes) => `${Math.round(bytes / 1024 / 1024)} MB`;
 
 const emptyForm = {
   description_en: "",
@@ -13,6 +16,14 @@ const emptyForm = {
   video_url: "",
   gallery_images: [],
   sort_order: 0
+};
+
+const uploadErrorMessage = (error, t) => {
+  const rawMessage = error?.message || "";
+  if (/failed to fetch|network|load failed|connection/i.test(rawMessage)) {
+    return t("panelProjects.uploadConnectionLost");
+  }
+  return rawMessage || t("messages.error");
 };
 
 export default function Projects() {
@@ -48,13 +59,19 @@ export default function Projects() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/api/admin/upload/project`, {
-      method: "POST",
-      body: formData,
-      credentials: "include"
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE}/api/admin/upload/project`, {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+    } catch (error) {
+      throw new Error(uploadErrorMessage(error, t));
+    }
     if (!res.ok) {
-      throw new Error("Upload failed");
+      const message = res.status === 413 ? t("panelProjects.uploadTooLarge") : t("panelProjects.uploadFailed");
+      throw new Error(message);
     }
     const data = await res.json();
     return data?.data || {};
@@ -114,6 +131,10 @@ export default function Projects() {
 
   const handleVideoUpload = async (file) => {
     if (!file) return;
+    if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+      setError(t("panelProjects.videoTooLarge").replace("{size}", formatFileSize(MAX_VIDEO_UPLOAD_BYTES)));
+      return;
+    }
     setUploadingVideo(true);
     setError("");
     try {
@@ -123,8 +144,8 @@ export default function Projects() {
         throw new Error("Upload failed");
       }
       setForm((prev) => ({ ...prev, video_url: videoUrl }));
-    } catch (_) {
-      setError(t("messages.error"));
+    } catch (error) {
+      setError(uploadErrorMessage(error, t));
     } finally {
       setUploadingVideo(false);
     }

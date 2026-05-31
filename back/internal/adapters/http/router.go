@@ -108,16 +108,16 @@ func NewRouter(
 			v1.GET("/me/listings", userMiddleware.RequireUser, listingHandler.MyListings)
 		}
 
-		api.POST("/admin/upload/template", uploadHandler.UploadTemplate)
-		api.POST("/admin/upload/product", uploadHandler.UploadProduct)
-		api.POST("/admin/upload/block", uploadHandler.UploadBlock)
-		api.POST("/admin/upload/content", uploadHandler.UploadContent)
-		api.POST("/admin/upload/blog", uploadHandler.UploadBlog)
-		api.POST("/admin/upload/project", uploadHandler.UploadProject)
-
 		admin := api.Group("/admin")
 		admin.Use(authMiddleware.RequireAdmin)
 		{
+			admin.POST("/upload/template", uploadHandler.UploadTemplate)
+			admin.POST("/upload/product", uploadHandler.UploadProduct)
+			admin.POST("/upload/block", uploadHandler.UploadBlock)
+			admin.POST("/upload/content", uploadHandler.UploadContent)
+			admin.POST("/upload/blog", uploadHandler.UploadBlog)
+			admin.POST("/upload/project", uploadHandler.UploadProject)
+
 			admin.GET("/session", adminAuthHandler.Session)
 			admin.GET("/dashboard", dashboardHandler.Stats)
 

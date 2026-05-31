@@ -16,9 +16,10 @@ const sitemapLastmod = /^\d{4}-\d{2}-\d{2}$/.test(configuredSitemapLastmod)
   : new Date().toISOString().slice(0, 10);
 const organizationId = `${siteUrl}/#organization`;
 const websiteId = `${siteUrl}/#website`;
-const defaultRobots = "index,follow,max-image-preview:large";
+const defaultRobots = "index,follow";
 const sharedAssetUrl = (sourcePath) => `/@fs${path.resolve(rootDir, sourcePath).replace(/\\/g, "/")}`;
 const defaultShareImage = sharedAssetUrl("../shared/assets/landing_page/landingpage_blocks_overlay.webp");
+const fetchTimeoutMs = Number(process.env.VITE_PRERENDER_FETCH_TIMEOUT_MS || 10000);
 
 const staticRoutes = [
   {
@@ -420,7 +421,11 @@ async function writeSearchFiles(routes) {
 async function fetchApi(pathname) {
   if (!prerenderApiBase) return null;
 
-  const response = await fetch(`${prerenderApiBase}${pathname}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), fetchTimeoutMs);
+  const response = await fetch(`${prerenderApiBase}${pathname}`, { signal: controller.signal }).finally(() => {
+    clearTimeout(timeout);
+  });
   if (!response.ok) {
     throw new Error(`${pathname} returned ${response.status}`);
   }

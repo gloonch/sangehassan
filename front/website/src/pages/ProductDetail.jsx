@@ -146,7 +146,7 @@ export default function ProductDetail() {
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
     image: activeImage ? resolveImageUrl(activeImage) : "",
     type: "product",
-    robots: product ? "index,follow,max-image-preview:large" : "noindex,follow"
+    robots: !loading && !product ? "noindex,follow" : "index,follow"
   });
 
   const terms = product?.terms || [];
@@ -189,8 +189,9 @@ export default function ProductDetail() {
   const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
   const hasDetailBlocks = hasMoreInfo || hasMetaLists;
   const phoneValue = t("footer.phoneValue");
-  const normalizedPhone = normalizePhone(phoneValue);
-  const phoneHref = normalizedPhone ? `tel:${normalizedPhone}` : "";
+  const phoneItems = [phoneValue, "09121193935", "09121193835"]
+    .map((value) => ({ value, normalized: normalizePhone(value) }))
+    .filter((item) => item.normalized);
   const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();
   const showDomesticMessengerLinks = siteUrl.includes("sangehassan.ir");
   const primaryCategorySlug = categoriesAdjusted[0]?.slug || "";
@@ -367,20 +368,24 @@ export default function ProductDetail() {
                   {categoryLine}
                 </p>
               ) : null}
-              <div className="flex flex-wrap items-end gap-3 md:gap-4">
+              <div className="flex flex-wrap items-start gap-3 md:gap-4">
                 <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
-                {phoneHref && (
-                  <div className={`flex flex-col items-center gap-1.5 ${isRTL ? "mr-auto" : "ml-auto"}`}>
-                    <a
-                      href={phoneHref}
-                      className="call-cta-shimmer inline-flex items-center gap-3 rounded-full border border-primary/25 px-3.5 py-2 text-primary/85 transition hover:border-primary/55 hover:text-primary"
-                    >
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full">
-                        <PhoneIcon className="h-7 w-7" />
-                      </span>
-                      <span className="text-[11px] font-semibold md:text-xs">{t("productDetail.callForMoreInfo")}</span>
-                      <span className="text-xs font-semibold tabular-nums md:text-sm" dir="ltr">{phoneValue}</span>
-                    </a>
+                {phoneItems.length > 0 && (
+                  <div className={`flex w-full max-w-[18rem] flex-col items-stretch gap-1.5 ${isRTL ? "mr-auto" : "ml-auto"}`}>
+                    {phoneItems.map((item) => (
+                      <a
+                        key={item.normalized}
+                        href={`tel:${item.normalized}`}
+                        className="call-cta-shimmer grid h-12 grid-cols-[2.5rem_1fr] items-center gap-3 rounded-full border border-primary/25 px-3.5 text-primary/85 transition hover:border-primary/55 hover:text-primary"
+                      >
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full">
+                          <PhoneIcon className="h-7 w-7" />
+                        </span>
+                        <span className="min-w-0 truncate text-center text-xs font-semibold tabular-nums md:text-sm" dir="ltr">
+                          {item.value}
+                        </span>
+                      </a>
+                    ))}
 
                     {showDomesticMessengerLinks && (
                       <div className="text-center">

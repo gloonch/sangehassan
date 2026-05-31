@@ -78,7 +78,7 @@ export default function BlockDetail() {
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
     image: activeImage ? resolveImageUrl(activeImage) : "",
     type: "product",
-    robots: block ? "index,follow,max-image-preview:large" : "noindex,follow"
+    robots: !loading && !block ? "noindex,follow" : "index,follow"
   });
 
   const statusLabel = (status) => {

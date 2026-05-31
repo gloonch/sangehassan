@@ -237,7 +237,11 @@ export default function ProjectDetail() {
     document.title = seoTitle;
     upsertCanonical(pageUrl);
     upsertMeta('meta[name="description"]', { name: "description" }, seoDescription);
-    upsertMeta('meta[name="robots"]', { name: "robots" }, project ? "index,follow,max-image-preview:large" : "noindex,follow");
+    upsertMeta(
+      'meta[name="robots"]',
+      { name: "robots" },
+      !loading && !project ? "noindex,follow" : "index,follow"
+    );
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, "article");
     upsertMeta('meta[property="og:title"]', { property: "og:title" }, seoTitle);
     upsertMeta('meta[property="og:description"]', { property: "og:description" }, seoDescription);
@@ -273,7 +277,7 @@ export default function ProjectDetail() {
       document.title = previousTitle;
       cleanups.reverse().forEach((fn) => fn());
     };
-  }, [lang, id, project, activeImage, localizedTitle, localizedDescription]);
+  }, [lang, id, project, loading, activeImage, localizedTitle, localizedDescription]);
 
   const goPrev = () => {
     if (images.length <= 1) return;

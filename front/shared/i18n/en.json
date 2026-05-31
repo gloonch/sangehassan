@@ -438,7 +438,11 @@
     "empty": "No projects available yet.",
     "coverRequired": "Cover image is required.",
     "maxGallery": "Maximum 5 gallery images are allowed.",
-    "galleryCount": "gallery images"
+    "galleryCount": "gallery images",
+    "uploadFailed": "Upload failed. Please try again.",
+    "uploadTooLarge": "The selected file is too large.",
+    "uploadConnectionLost": "The upload connection was lost before it reached the server. Please use a video under 90 MB or compress it and try again.",
+    "videoTooLarge": "Video must be {size} or smaller."
   },
   "panelContent": {
     "title": "Landing content",
