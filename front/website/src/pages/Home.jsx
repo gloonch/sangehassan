@@ -5,7 +5,115 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
-import finishesOverlayVideo from "@shared/assets/landing_page/landingpage_finishes_overlay.optimized.mp4";
+import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
+import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
+import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
+import blockImage04 from "@shared/assets/landing_page/blocks/block-slide-04.webp";
+import blockImage05 from "@shared/assets/landing_page/blocks/block-slide-05.webp";
+import blockImage06 from "@shared/assets/landing_page/blocks/block-slide-06.webp";
+import blockImage07 from "@shared/assets/landing_page/blocks/block-slide-07.webp";
+import blockImage08 from "@shared/assets/landing_page/blocks/block-slide-08.webp";
+import finishesImage01 from "@shared/assets/landing_page/products/finish-slide-01.webp";
+import finishesImage02 from "@shared/assets/landing_page/products/finish-slide-02.webp";
+import finishesImage03 from "@shared/assets/landing_page/products/finish-slide-03.webp";
+import finishesImage04 from "@shared/assets/landing_page/products/finish-slide-04.webp";
+import productImage01 from "@shared/assets/landing_page/products/product-slide-01.webp";
+import productImage02 from "@shared/assets/landing_page/products/product-slide-02.webp";
+import productImage03 from "@shared/assets/landing_page/products/product-slide-03.webp";
+
+const productSlides = [
+  { src: finishesImage01, width: 736, height: 981 },
+  { src: finishesImage02, width: 736, height: 1508 },
+  { src: finishesImage03, width: 736, height: 1308 },
+  { src: finishesImage04, width: 735, height: 825 },
+  { src: productImage01, width: 900, height: 862 },
+  { src: productImage02, width: 900, height: 864 },
+  { src: productImage03, width: 900, height: 850 }
+];
+const blockSlides = [
+  { src: blockImage01, width: 900, height: 895 },
+  { src: blockImage02, width: 900, height: 894 },
+  { src: blockImage03, width: 725, height: 906 },
+  { src: blockImage04, width: 900, height: 1123 },
+  { src: blockImage05, width: 900, height: 1123 },
+  { src: blockImage06, width: 900, height: 1104 },
+  { src: blockImage07, width: 900, height: 1106 },
+  { src: blockImage08, width: 900, height: 1104 }
+];
+const fallbackSlide = { src: blocksOverlayImage, width: 1068, height: 845 };
+
+const shuffleSlides = (slides) => {
+  const shuffled = [...slides];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+};
+
+const initialSlideDecks = () => ({
+  products: productSlides.length ? productSlides : [fallbackSlide],
+  blocks: blockSlides.length ? blockSlides : [fallbackSlide]
+});
+
+const getLocalStorageValue = (key) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setLocalStorageValue = (key, value) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* Storage can be unavailable in private or restricted browser modes. */
+  }
+};
+
+const shuffleForNewVisit = (slides, storageKey) => {
+  const shuffled = shuffleSlides(slides);
+  if (typeof window === "undefined" || shuffled.length < 2) return shuffled;
+
+  const previousFirstSlide = getLocalStorageValue(storageKey);
+  if (previousFirstSlide && shuffled[0]?.src === previousFirstSlide) {
+    const swapIndex = 1 + Math.floor(Math.random() * (shuffled.length - 1));
+    [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
+  }
+
+  setLocalStorageValue(storageKey, shuffled[0]?.src || "");
+  return shuffled;
+};
+
+const createSlideDecks = () => ({
+  products: shuffleForNewVisit(productSlides.length ? productSlides : [fallbackSlide], "sh-home-products-first-slide"),
+  blocks: shuffleForNewVisit(blockSlides.length ? blockSlides : [fallbackSlide], "sh-home-blocks-first-slide")
+});
+
+const slideTransitionMs = 1800;
+
+const getNextSlideIndex = (activeSlide, slides) => {
+  if (!slides.length || slides.length < 2) return null;
+  return (activeSlide + 1) % slides.length;
+};
+
+const isSlideDebugEnabled = () => {
+  if (typeof window === "undefined") return false;
+  return window.location.search.includes("debugSlides=1") || getLocalStorageValue("sh-debug-slides") === "1";
+};
+
+const getSlideAssetName = (src = "") => src.split("/").pop() || src;
+
+const logSlideDebug = (event, payload = {}) => {
+  if (!isSlideDebugEnabled()) return;
+  console.info("[home-slides]", event, {
+    at: Math.round(performance.now()),
+    ...payload
+  });
+};
 
 const homeSeoContent = {
   fa: {
@@ -43,6 +151,10 @@ const splitLines = (text) =>
 export default function Home() {
   const { t, lang } = useTranslation();
   const [sections, setSections] = useState([]);
+  const [slideDecks, setSlideDecks] = useState(initialSlideDecks);
+  const [activeSlides, setActiveSlides] = useState({ products: 0, blocks: 0 });
+  const [previousSlides, setPreviousSlides] = useState({ products: null, blocks: null });
+  const previousClearTimerRef = useRef(null);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -183,6 +295,59 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const decks = createSlideDecks();
+    logSlideDebug("deck-init", {
+      products: decks.products.map((slide) => getSlideAssetName(slide.src)),
+      blocks: decks.blocks.map((slide) => getSlideAssetName(slide.src))
+    });
+    setSlideDecks(decks);
+    setActiveSlides({ products: 0, blocks: 0 });
+    setPreviousSlides({ products: null, blocks: null });
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveSlides((current) => {
+        const next = {
+          products: (current.products + 1) % slideDecks.products.length,
+          blocks: (current.blocks + 1) % slideDecks.blocks.length
+        };
+
+        logSlideDebug("tick", {
+          previous: current,
+          next,
+          products: {
+            previousAsset: getSlideAssetName(slideDecks.products[current.products]?.src),
+            nextAsset: getSlideAssetName(slideDecks.products[next.products]?.src)
+          },
+          blocks: {
+            previousAsset: getSlideAssetName(slideDecks.blocks[current.blocks]?.src),
+            nextAsset: getSlideAssetName(slideDecks.blocks[next.blocks]?.src)
+          }
+        });
+
+        setPreviousSlides(current);
+
+        if (previousClearTimerRef.current) {
+          window.clearTimeout(previousClearTimerRef.current);
+        }
+        previousClearTimerRef.current = window.setTimeout(() => {
+          setPreviousSlides({ products: null, blocks: null });
+        }, slideTransitionMs + 120);
+
+        return next;
+      });
+    }, 2000);
+
+    return () => {
+      window.clearInterval(timer);
+      if (previousClearTimerRef.current) {
+        window.clearTimeout(previousClearTimerRef.current);
+      }
+    };
+  }, [slideDecks]);
+
   const sectionsByKey = useMemo(() => {
     const map = {};
     sections.forEach((section) => {
@@ -301,6 +466,14 @@ export default function Home() {
           const ctaHref =
             rawCtaHref === "/products/overview" ? "/products" : rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref;
           const lines = splitLines(description);
+          const slides = isBlocks ? slideDecks.blocks : slideDecks.products;
+          const activeSlide = isBlocks ? activeSlides.blocks : activeSlides.products;
+          const previousSlide = isBlocks ? previousSlides.blocks : previousSlides.products;
+          const nextSlide = getNextSlideIndex(activeSlide, slides);
+          const visibleSlideIndexes = [previousSlide, activeSlide, nextSlide].filter(
+            (slideIndex, slideIndexPosition, slideIndexes) =>
+              slideIndex !== null && slideIndexes.indexOf(slideIndex) === slideIndexPosition
+          );
 
           return (
             <Link
@@ -309,33 +482,83 @@ export default function Home() {
               className="group relative block h-1/2 w-full overflow-hidden lg:h-full lg:w-1/2"
               aria-label={title}
             >
-              {isBlocks ? (
-                <img
-                  src={blocksOverlayImage}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-center"
-                />
-              ) : (
-                <video
-                  className="absolute inset-0 h-full w-full object-cover object-center"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                >
-                  <source src={finishesOverlayVideo} type="video/mp4" />
-                </video>
-              )}
+              <div className="absolute inset-0 z-0">
+                {visibleSlideIndexes.map((slideIndex) => {
+                  const image = slides[slideIndex];
+                  const isActiveSlide = slideIndex === activeSlide;
+                  const isPreviousSlide = slideIndex === previousSlide;
+                  const role = isActiveSlide ? "active" : isPreviousSlide ? "previous" : "preload";
+                  const panel = isBlocks ? "blocks" : "products";
 
-              <div className="absolute inset-0 bg-primary/25" />
+                  return (
+                    <img
+                      key={image.src}
+                      src={image.src}
+                      alt=""
+                      width={image.width}
+                      height={image.height}
+                      className={`landing-slide-layer absolute inset-0 h-full w-full object-cover object-center ${isActiveSlide
+                        ? "landing-slide-active"
+                        : isPreviousSlide
+                          ? "landing-slide-previous"
+                          : "landing-slide-preload"
+                        }`}
+                      data-slide-panel={panel}
+                      data-slide-role={role}
+                      data-slide-index={slideIndex}
+                      loading={isPreviousSlide ? "lazy" : "eager"}
+                      decoding="async"
+                      fetchpriority={isActiveSlide ? "high" : "low"}
+                      onLoad={(event) => {
+                        const styles = window.getComputedStyle(event.currentTarget);
+                        logSlideDebug("image-load", {
+                          panel,
+                          role,
+                          slideIndex,
+                          asset: getSlideAssetName(image.src),
+                          opacity: styles.opacity,
+                          transitionDuration: styles.transitionDuration
+                        });
+                      }}
+                      onTransitionStart={(event) => {
+                        if (event.propertyName !== "opacity") return;
+                        const styles = window.getComputedStyle(event.currentTarget);
+                        logSlideDebug("transition-start", {
+                          panel,
+                          role,
+                          slideIndex,
+                          asset: getSlideAssetName(image.src),
+                          opacity: styles.opacity,
+                          filter: styles.filter,
+                          transitionDuration: styles.transitionDuration
+                        });
+                      }}
+                      onTransitionEnd={(event) => {
+                        if (event.propertyName !== "opacity") return;
+                        const styles = window.getComputedStyle(event.currentTarget);
+                        logSlideDebug("transition-end", {
+                          panel,
+                          role,
+                          slideIndex,
+                          asset: getSlideAssetName(image.src),
+                          opacity: styles.opacity,
+                          filter: styles.filter,
+                          transitionDuration: styles.transitionDuration
+                        });
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="absolute inset-0 z-[1] bg-primary/25" />
               <div
-                className={`absolute inset-0 ${isBlocks
+                className={`absolute inset-0 z-[2] ${isBlocks
                   ? "bg-gradient-to-br from-primary/35 via-primary/15 to-primary/48"
                   : "bg-gradient-to-br from-primary/40 via-primary/20 to-primary/52"
                   }`}
               />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(165,141,102,0.16),transparent_48%)]" />
+              <div className="absolute inset-0 z-[3] bg-[radial-gradient(circle_at_25%_20%,rgba(165,141,102,0.16),transparent_48%)]" />
 
               <div className="relative z-10 flex h-full items-center justify-center px-6 py-10 text-sand sm:px-10 lg:px-12">
                 <div className="mx-auto w-full max-w-[38rem] text-center">
@@ -374,7 +597,6 @@ export default function Home() {
           );
         })}
         <span className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-20 -translate-y-1/2 bg-gradient-to-b from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:hidden" />
-        <span className="pointer-events-none absolute inset-y-0 left-1/2 z-20 hidden w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:block" />
       </section>
     </div>
   );

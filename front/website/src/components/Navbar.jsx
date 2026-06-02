@@ -26,6 +26,30 @@ const getUserDisplayName = (user) => {
   return "";
 };
 
+const getSessionStorageValue = (key) => {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSessionStorageValue = (key, value) => {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    /* Session storage may be blocked in private or restricted browser modes. */
+  }
+};
+
+const removeSessionStorageValue = (key) => {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+};
+
 export default function Navbar() {
   const { t, lang } = useTranslation();
   const location = useLocation();
@@ -46,7 +70,7 @@ export default function Navbar() {
     let active = true;
     const restore = () => {
       try {
-        const stored = sessionStorage.getItem("sh_me");
+        const stored = getSessionStorageValue("sh_me");
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed?.id) {
@@ -64,11 +88,11 @@ export default function Navbar() {
         const me = res?.data || res;
         if (!active) return;
         setUser(me);
-        sessionStorage.setItem("sh_me", JSON.stringify(me));
+        setSessionStorageValue("sh_me", JSON.stringify(me));
       } catch (_) {
         if (!active) return;
         setUser(null);
-        sessionStorage.removeItem("sh_me");
+        removeSessionStorageValue("sh_me");
       }
     };
 
@@ -87,7 +111,7 @@ export default function Navbar() {
         return;
       }
       try {
-        const stored = sessionStorage.getItem("sh_me");
+        const stored = getSessionStorageValue("sh_me");
         if (stored) {
           setUser(JSON.parse(stored));
         }
@@ -391,9 +415,8 @@ export default function Navbar() {
           {activeDeal ? (
             <Link
               to="/ads"
-              className={`absolute left-1/2 top-1/2 hidden w-[min(48vw,34rem)] items-center justify-center overflow-hidden text-center text-[11px] font-semibold transition-all duration-300 ease-out lg:flex ${dealVisible ? "opacity-100" : "opacity-0"
+              className={`ml-3 flex min-w-0 flex-1 items-center justify-end overflow-hidden text-right text-[10px] font-semibold transition-opacity duration-300 ease-out sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:ml-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${dealVisible ? "opacity-100" : "opacity-0"
                 } ${isHome ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
-              style={{ transform: `translate(-50%, ${dealVisible ? "-50%" : "calc(-50% + 0.25rem)"})` }}
               aria-label={t("ads.title")}
             >
               <span className="block truncate">{renderDealMessage(activeDeal, liveDealsConfig)}</span>
