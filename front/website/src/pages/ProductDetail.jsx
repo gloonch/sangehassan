@@ -38,6 +38,34 @@ const getLocalizedTerm = (term, lang) => {
   return term.label_en || "";
 };
 
+const getLocalizedProjectDescription = (project, lang) => {
+  if (!project) return "";
+  if (lang === "fa") return project.description_fa || project.description_en || project.description_ar || project.description || "";
+  if (lang === "ar") return project.description_ar || project.description_en || project.description_fa || project.description || "";
+  return project.description_en || project.description_fa || project.description_ar || project.description || "";
+};
+
+const getLocalizedProjectTitle = (project, lang, t) => {
+  if (!project) return "";
+
+  const explicitTitle =
+    lang === "fa"
+      ? project.title_fa || project.title_en || project.title_ar
+      : lang === "ar"
+        ? project.title_ar || project.title_en || project.title_fa
+        : project.title_en || project.title_fa || project.title_ar;
+
+  if (explicitTitle) return explicitTitle;
+
+  const description = getLocalizedProjectDescription(project, lang).trim();
+  if (description) {
+    const firstLine = description.split(/\r?\n/)[0].trim();
+    if (firstLine) return firstLine.length > 56 ? `${firstLine.slice(0, 56)}...` : firstLine;
+  }
+
+  return `${t("projects.itemTitle")} ${project.id}`;
+};
+
 const toPercent = (value) => {
   if (typeof value === "number" && Number.isFinite(value)) {
     if (value >= 0 && value <= 1) return value * 100;
@@ -133,6 +161,8 @@ export default function ProductDetail() {
     product?.description_html ||
     product?.description ||
     "";
+  const relatedProducts = Array.isArray(product?.related_products) ? product.related_products : [];
+  const relatedProjects = Array.isArray(product?.related_projects) ? product.related_projects : [];
   const seoTitle = localizedTitle ? `${localizedTitle} | SangeHassan` : "Product Detail | SangeHassan";
   const seoDescription =
     stripHTML(localizedDescriptionHTML).slice(0, 160) ||
@@ -479,6 +509,88 @@ export default function ProductDetail() {
                 <p className="text-sm text-primary/70">{t("messages.empty")}</p>
               )}
             </section>
+
+            {relatedProducts.length > 0 && (
+              <section className="space-y-4 border-t border-primary/20 pt-6">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
+                    {t("productDetail.relatedProductsTitle")}
+                  </p>
+                  <p className="text-sm text-primary/60">{t("productDetail.relatedProductsSubtitle")}</p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {relatedProducts.map((relatedProduct) => {
+                    const title = getLocalized(relatedProduct, lang) || relatedProduct.title_en || "";
+                    const categoryTitle = relatedProduct.category ? getLocalized(relatedProduct.category, lang) : "";
+                    return (
+                      <Link
+                        key={relatedProduct.id}
+                        to={`/products/${relatedProduct.slug}`}
+                        className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
+                      >
+                        <div className="aspect-[4/3] bg-primary/10">
+                          {relatedProduct.image_url ? (
+                            <img
+                              src={resolveImageUrl(relatedProduct.image_url)}
+                              alt={title}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                              loading="lazy"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="space-y-1 px-3 py-3">
+                          <p className="line-clamp-2 text-sm font-semibold text-primary">{title}</p>
+                          {categoryTitle ? (
+                            <p className="truncate text-xs text-primary/50">{categoryTitle}</p>
+                          ) : null}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {relatedProjects.length > 0 && (
+              <section className="space-y-4 border-t border-primary/20 pt-6">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
+                    {t("productDetail.relatedProjectsTitle")}
+                  </p>
+                  <p className="text-sm text-primary/60">{t("productDetail.relatedProjectsSubtitle")}</p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {relatedProjects.map((project) => {
+                    const title = getLocalizedProjectTitle(project, lang, t);
+                    const description = getLocalizedProjectDescription(project, lang);
+                    return (
+                      <Link
+                        key={project.id}
+                        to={`/projects/${project.id}`}
+                        className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
+                      >
+                        <div className="aspect-[4/3] bg-primary/10">
+                          {project.cover_image_url ? (
+                            <img
+                              src={resolveImageUrl(project.cover_image_url)}
+                              alt={title}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                              loading="lazy"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="space-y-1 px-3 py-3">
+                          <p className="line-clamp-2 text-sm font-semibold text-primary">{title}</p>
+                          {description ? (
+                            <p className="line-clamp-2 text-xs text-primary/55">{description}</p>
+                          ) : null}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
           </div>
         </div>

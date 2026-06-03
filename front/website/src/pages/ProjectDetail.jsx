@@ -52,6 +52,20 @@ const getLocalizedProjectTitle = (project, lang, t) => {
   return `${t("projects.itemTitle")} ${project.id}`;
 };
 
+const getLocalizedProductTitle = (product, lang) => {
+  if (!product) return "";
+  if (lang === "fa") return product.title_fa || product.title_en || product.title_ar || "";
+  if (lang === "ar") return product.title_ar || product.title_en || product.title_fa || "";
+  return product.title_en || product.title_fa || product.title_ar || "";
+};
+
+const getLocalizedCategoryTitle = (category, lang) => {
+  if (!category) return "";
+  if (lang === "fa") return category.title_fa || category.title_en || category.title_ar || "";
+  if (lang === "ar") return category.title_ar || category.title_en || category.title_fa || "";
+  return category.title_en || category.title_fa || category.title_ar || "";
+};
+
 const getVideoMimeType = (videoPath) => {
   const normalized = String(videoPath || "").toLowerCase();
   if (normalized.endsWith(".webm")) return "video/webm";
@@ -134,6 +148,7 @@ export default function ProjectDetail() {
   const hasVideo = Boolean(videoPath);
   const localizedTitle = getLocalizedProjectTitle(project, lang, t);
   const localizedDescription = getLocalizedProjectDescription(project, lang);
+  const usedProducts = Array.isArray(project?.used_products) ? project.used_products : [];
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -418,6 +433,47 @@ export default function ProjectDetail() {
               <p className="text-sm text-primary/70">{t("projects.noDescription")}</p>
             )}
           </section>
+
+          {usedProducts.length > 0 && (
+            <section className="space-y-4 border-t border-primary/20 pt-6">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
+                  {t("projects.usedProductsTitle")}
+                </p>
+                <p className="text-sm text-primary/60">{t("projects.usedProductsSubtitle")}</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                {usedProducts.map((product) => {
+                  const title = getLocalizedProductTitle(product, lang);
+                  const categoryTitle = getLocalizedCategoryTitle(product.category, lang);
+                  return (
+                    <Link
+                      key={product.id}
+                      to={`/products/${product.slug}`}
+                      className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
+                    >
+                      <div className="aspect-[4/3] bg-primary/10">
+                        {product.image_url ? (
+                          <img
+                            src={resolveImageUrl(product.image_url)}
+                            alt={title}
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="space-y-1 px-3 py-3">
+                        <p className="line-clamp-2 text-sm font-semibold text-primary">{title}</p>
+                        {categoryTitle ? (
+                          <p className="truncate text-xs text-primary/50">{categoryTitle}</p>
+                        ) : null}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       )}
 

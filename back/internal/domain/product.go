@@ -36,4 +36,6 @@ type Product struct {
 	Categories             []Category          `json:"categories,omitempty"`
 	Attributes             map[string][]string `json:"attributes,omitempty"`
 	Terms                  []ProductTerm       `json:"terms,omitempty"`
+	RelatedProducts        []Product           `json:"related_products,omitempty"`
+	RelatedProjects        []Project           `json:"related_projects,omitempty"`
 }

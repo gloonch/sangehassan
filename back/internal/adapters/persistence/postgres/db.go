@@ -40,6 +40,14 @@ func ensureMediaColumns(db *sql.DB) error {
 	statements := []string{
 		`ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS video_url TEXT`,
 		`ALTER TABLE IF EXISTS projects ADD COLUMN IF NOT EXISTS video_url TEXT`,
+		`CREATE TABLE IF NOT EXISTS project_products (
+			project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+			product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (project_id, product_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_project_products_project ON project_products(project_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_project_products_product ON project_products(product_id)`,
 	}
 
 	for _, statement := range statements {

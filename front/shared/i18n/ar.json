@@ -120,6 +120,10 @@
     "finishes": "التشطيبات",
     "callForMoreInfo": "اتصل لمزيد من المعلومات",
     "domesticMessengerHint": "المراسلة عبر بله وروبيكا متاحة أيضاً",
+    "relatedProductsTitle": "منتجات ذات صلة",
+    "relatedProductsSubtitle": "أحجار أخرى من الفئة نفسها.",
+    "relatedProjectsTitle": "مشاريع تستخدم هذا الحجر",
+    "relatedProjectsSubtitle": "مشاريع مرتبطة بهذا المنتج.",
     "prev": "السابق",
     "next": "التالي"
   },
@@ -137,6 +141,8 @@
     "itemTitle": "مشروع",
     "backToProjects": "العودة إلى المشاريع",
     "descriptionTitle": "الوصف",
+    "usedProductsTitle": "الأحجار المستخدمة في هذا المشروع",
+    "usedProductsSubtitle": "منتجات الحجر المرتبطة بهذا المشروع.",
     "notFound": "المشروع غير موجود.",
     "prev": "السابق",
     "next": "التالي"
@@ -442,7 +448,14 @@
     "uploadFailed": "فشل التحميل. حاول مرة أخرى.",
     "uploadTooLarge": "الملف المحدد كبير جداً.",
     "uploadConnectionLost": "انقطع اتصال التحميل قبل الوصول إلى الخادم. يرجى استخدام فيديو أقل من 90 MB أو ضغط الملف والمحاولة مرة أخرى.",
-    "videoTooLarge": "يجب أن يكون حجم الفيديو {size} أو أقل."
+    "videoTooLarge": "يجب أن يكون حجم الفيديو {size} أو أقل.",
+    "usedProducts": "المنتجات المستخدمة",
+    "usedProductsHint": "اختر منتجاً حجرياً واحداً أو أكثر مستخدماً في هذا المشروع.",
+    "productSearchPlaceholder": "ابحث عن المنتجات بالاسم أو الرابط أو الفئة",
+    "selectProduct": "اختر منتجاً",
+    "noProductOptions": "لا توجد منتجات مطابقة",
+    "addProduct": "إضافة منتج",
+    "noProductsSelected": "لم يتم اختيار أي منتج بعد."
   },
   "panelContent": {
     "title": "محتوى الهبوط",

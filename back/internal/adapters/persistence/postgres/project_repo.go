@@ -128,6 +128,9 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id int64) (domain.Proje
 	if err := r.loadGalleryImages(ctx, &project); err != nil {
 		return domain.Project{}, err
 	}
+	if err := r.loadUsedProducts(ctx, &project); err != nil {
+		return domain.Project{}, err
+	}
 	return project, nil
 }
 
@@ -209,6 +212,31 @@ func (r *ProjectRepository) ReplaceGalleryImages(ctx context.Context, projectID 
 	return nil
 }
 
+func (r *ProjectRepository) ReplaceProducts(ctx context.Context, projectID int64, productIDs []int64) error {
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM project_products WHERE project_id = $1`, projectID); err != nil {
+		return err
+	}
+
+	seen := make(map[int64]struct{}, len(productIDs))
+	for _, productID := range productIDs {
+		if productID <= 0 {
+			continue
+		}
+		if _, exists := seen[productID]; exists {
+			continue
+		}
+		seen[productID] = struct{}{}
+		if _, err := r.db.ExecContext(ctx, `
+			INSERT INTO project_products (project_id, product_id)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`, projectID, productID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *ProjectRepository) loadGalleryImages(ctx context.Context, project *domain.Project) error {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT image_url
@@ -235,5 +263,89 @@ func (r *ProjectRepository) loadGalleryImages(ctx context.Context, project *doma
 
 	project.GalleryImages = images
 	project.GalleryCount = len(images)
+	return nil
+}
+
+func (r *ProjectRepository) loadUsedProducts(ctx context.Context, project *domain.Project) error {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id,
+		       p.title_en,
+		       p.title_fa,
+		       p.title_ar,
+		       p.slug,
+		       COALESCE(p.image_url, ''),
+		       p.main_category_id,
+		       c.id,
+		       c.title_en,
+		       c.title_fa,
+		       c.title_ar,
+		       c.slug,
+		       c.parent_id
+		FROM project_products pp
+		JOIN products p ON p.id = pp.product_id
+		LEFT JOIN categories c ON c.id = p.main_category_id
+		WHERE pp.project_id = $1
+		ORDER BY pp.created_at ASC, p.id ASC
+	`, project.ID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	products := make([]domain.Product, 0)
+	productIDs := make([]int64, 0)
+	for rows.Next() {
+		var product domain.Product
+		var mainCategoryID sql.NullInt64
+		var categoryID sql.NullInt64
+		var categoryTitleEN sql.NullString
+		var categoryTitleFA sql.NullString
+		var categoryTitleAR sql.NullString
+		var categorySlug sql.NullString
+		var categoryParentID sql.NullInt64
+
+		if err := rows.Scan(
+			&product.ID,
+			&product.TitleEN,
+			&product.TitleFA,
+			&product.TitleAR,
+			&product.Slug,
+			&product.ImageURL,
+			&mainCategoryID,
+			&categoryID,
+			&categoryTitleEN,
+			&categoryTitleFA,
+			&categoryTitleAR,
+			&categorySlug,
+			&categoryParentID,
+		); err != nil {
+			return err
+		}
+
+		if mainCategoryID.Valid {
+			product.MainCategoryID = &mainCategoryID.Int64
+		}
+		if categoryID.Valid {
+			category := domain.Category{
+				ID:      categoryID.Int64,
+				TitleEN: categoryTitleEN.String,
+				TitleFA: categoryTitleFA.String,
+				TitleAR: categoryTitleAR.String,
+				Slug:    categorySlug.String,
+			}
+			if categoryParentID.Valid {
+				category.ParentID = &categoryParentID.Int64
+			}
+			product.Category = &category
+		}
+		productIDs = append(productIDs, product.ID)
+		products = append(products, product)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	project.ProductIDs = productIDs
+	project.UsedProducts = products
 	return nil
 }

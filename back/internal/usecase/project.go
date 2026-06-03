@@ -30,6 +30,7 @@ func (s *ProjectService) GetByID(ctx context.Context, id int64) (domain.Project,
 func (s *ProjectService) Create(ctx context.Context, project domain.Project) (domain.Project, error) {
 	project = normalizeProjectDescriptions(project)
 	gallery := normalizeProjectGallery(project.CoverImageURL, project.GalleryImages)
+	productIDs := normalizeProjectProductIDs(project.ProductIDs)
 	created, err := s.repo.Create(ctx, project)
 	if err != nil {
 		return domain.Project{}, err
@@ -37,14 +38,19 @@ func (s *ProjectService) Create(ctx context.Context, project domain.Project) (do
 	if err := s.repo.ReplaceGalleryImages(ctx, created.ID, gallery); err != nil {
 		return domain.Project{}, err
 	}
+	if err := s.repo.ReplaceProducts(ctx, created.ID, productIDs); err != nil {
+		return domain.Project{}, err
+	}
 	created.GalleryImages = gallery
 	created.GalleryCount = len(gallery)
+	created.ProductIDs = productIDs
 	return created, nil
 }
 
 func (s *ProjectService) Update(ctx context.Context, project domain.Project) (domain.Project, error) {
 	project = normalizeProjectDescriptions(project)
 	gallery := normalizeProjectGallery(project.CoverImageURL, project.GalleryImages)
+	productIDs := normalizeProjectProductIDs(project.ProductIDs)
 	updated, err := s.repo.Update(ctx, project)
 	if err != nil {
 		return domain.Project{}, err
@@ -52,8 +58,12 @@ func (s *ProjectService) Update(ctx context.Context, project domain.Project) (do
 	if err := s.repo.ReplaceGalleryImages(ctx, updated.ID, gallery); err != nil {
 		return domain.Project{}, err
 	}
+	if err := s.repo.ReplaceProducts(ctx, updated.ID, productIDs); err != nil {
+		return domain.Project{}, err
+	}
 	updated.GalleryImages = gallery
 	updated.GalleryCount = len(gallery)
+	updated.ProductIDs = productIDs
 	return updated, nil
 }
 
@@ -95,4 +105,23 @@ func normalizeProjectDescriptions(project domain.Project) domain.Project {
 	}
 	project.Description = project.DescriptionEN
 	return project
+}
+
+func normalizeProjectProductIDs(productIDs []int64) []int64 {
+	if len(productIDs) == 0 {
+		return nil
+	}
+	seen := make(map[int64]struct{}, len(productIDs))
+	normalized := make([]int64, 0, len(productIDs))
+	for _, productID := range productIDs {
+		if productID <= 0 {
+			continue
+		}
+		if _, exists := seen[productID]; exists {
+			continue
+		}
+		seen[productID] = struct{}{}
+		normalized = append(normalized, productID)
+	}
+	return normalized
 }

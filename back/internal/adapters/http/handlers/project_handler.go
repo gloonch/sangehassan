@@ -28,6 +28,7 @@ type projectPayload struct {
 	CoverImageURL string   `json:"cover_image_url"`
 	VideoURL      string   `json:"video_url"`
 	GalleryImages []string `json:"gallery_images"`
+	ProductIDs    []int64  `json:"product_ids"`
 	SortOrder     int      `json:"sort_order"`
 }
 
@@ -104,6 +105,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
 		VideoURL:      normalizeMediaRef(payload.VideoURL),
 		GalleryImages: normalizeImageRefs(payload.GalleryImages),
+		ProductIDs:    payload.ProductIDs,
 		SortOrder:     payload.SortOrder,
 	})
 	if err != nil {
@@ -156,6 +158,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		CoverImageURL: normalizeImageRef(payload.CoverImageURL),
 		VideoURL:      normalizeMediaRef(payload.VideoURL),
 		GalleryImages: normalizeImageRefs(payload.GalleryImages),
+		ProductIDs:    payload.ProductIDs,
 		SortOrder:     payload.SortOrder,
 	})
 	if err != nil {

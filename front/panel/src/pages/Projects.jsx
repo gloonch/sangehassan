@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
@@ -15,6 +15,7 @@ const emptyForm = {
   cover_image_url: "",
   video_url: "",
   gallery_images: [],
+  product_ids: [],
   sort_order: 0
 };
 
@@ -29,22 +30,29 @@ const uploadErrorMessage = (error, t) => {
 export default function Projects() {
   const { t, lang } = useTranslation();
   const [projects, setProjects] = useState([]);
+  const [products, setProducts] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formOpen, setFormOpen] = useState(true);
+  const [productSearch, setProductSearch] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const loadProjects = async () => {
     try {
-      const response = await fetchJSON("/api/admin/projects");
-      setProjects(response.data || []);
+      const [projectResponse, productResponse] = await Promise.all([
+        fetchJSON("/api/admin/projects"),
+        fetchJSON("/api/admin/products")
+      ]);
+      setProjects(projectResponse.data || []);
+      setProducts(productResponse.data || []);
       setError("");
     } catch (_) {
       setProjects([]);
+      setProducts([]);
       setError(t("messages.error"));
     } finally {
       setLoading(false);
@@ -54,6 +62,76 @@ export default function Projects() {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  const getProductTitle = (product) => {
+    if (!product) return "";
+    if (lang === "fa") return product.title_fa || product.title_en || product.title_ar || "";
+    if (lang === "ar") return product.title_ar || product.title_en || product.title_fa || "";
+    return product.title_en || product.title_fa || product.title_ar || "";
+  };
+
+  const getProductCategoryTitle = (product) => {
+    const category = product?.category;
+    if (!category) return "";
+    if (lang === "fa") return category.title_fa || category.title_en || category.title_ar || "";
+    if (lang === "ar") return category.title_ar || category.title_en || category.title_fa || "";
+    return category.title_en || category.title_fa || category.title_ar || "";
+  };
+
+  const selectedProductIds = useMemo(
+    () => (Array.isArray(form.product_ids) ? form.product_ids.map(Number).filter(Boolean) : []),
+    [form.product_ids]
+  );
+
+  const selectedProducts = useMemo(() => {
+    const selected = new Set(selectedProductIds);
+    return products.filter((product) => selected.has(Number(product.id)));
+  }, [products, selectedProductIds]);
+
+  const filteredProductOptions = useMemo(() => {
+    const selected = new Set(selectedProductIds);
+    const query = productSearch.trim().toLowerCase();
+
+    return products
+      .filter((product) => {
+        if (selected.has(Number(product.id))) return false;
+        if (!query) return true;
+        const haystack = [
+          product.title_en,
+          product.title_fa,
+          product.title_ar,
+          product.slug,
+          product.category?.title_en,
+          product.category?.title_fa,
+          product.category?.title_ar
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 40);
+  }, [productSearch, products, selectedProductIds]);
+
+  const addProductToProject = (productId) => {
+    const normalizedId = Number(productId);
+    if (!normalizedId) return;
+    setForm((prev) => {
+      const current = Array.isArray(prev.product_ids) ? prev.product_ids.map(Number).filter(Boolean) : [];
+      if (current.includes(normalizedId)) return prev;
+      return { ...prev, product_ids: [...current, normalizedId] };
+    });
+  };
+
+  const removeProductFromProject = (productId) => {
+    const normalizedId = Number(productId);
+    setForm((prev) => ({
+      ...prev,
+      product_ids: (Array.isArray(prev.product_ids) ? prev.product_ids : [])
+        .map(Number)
+        .filter((id) => id && id !== normalizedId)
+    }));
+  };
 
   const uploadFile = async (file) => {
     const formData = new FormData();
@@ -165,6 +243,7 @@ export default function Projects() {
       cover_image_url: form.cover_image_url,
       video_url: form.video_url,
       gallery_images: form.gallery_images.slice(0, MAX_GALLERY_IMAGES),
+      product_ids: selectedProductIds,
       sort_order: Number(form.sort_order) || 0
     };
 
@@ -197,6 +276,11 @@ export default function Projects() {
     try {
       const response = await fetchJSON(`/api/admin/projects/${project.id}`);
       const item = response.data || project;
+      const productIds = Array.isArray(item.product_ids)
+        ? item.product_ids
+        : Array.isArray(item.used_products)
+          ? item.used_products.map((product) => product.id)
+          : [];
       setForm({
         description_en: item.description_en || item.description || "",
         description_fa: item.description_fa || "",
@@ -204,6 +288,7 @@ export default function Projects() {
         cover_image_url: item.cover_image_url || "",
         video_url: item.video_url || "",
         gallery_images: item.gallery_images || [],
+        product_ids: productIds.map(Number).filter(Boolean),
         sort_order: item.sort_order || 0
       });
     } catch (_) {
@@ -323,6 +408,93 @@ export default function Projects() {
                   onChange={(event) => setForm((prev) => ({ ...prev, sort_order: event.target.value }))}
                 />
               </label>
+            </div>
+
+            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    {t("panelProjects.usedProducts")}
+                  </p>
+                  <p className="mt-1 text-xs text-primary/50">{t("panelProjects.usedProductsHint")}</p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary/60">
+                  {selectedProductIds.length}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+                <input
+                  type="search"
+                  className="w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  placeholder={t("panelProjects.productSearchPlaceholder")}
+                  value={productSearch}
+                  onChange={(event) => setProductSearch(event.target.value)}
+                />
+                <select
+                  className="w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                  value=""
+                  onChange={(event) => addProductToProject(event.target.value)}
+                >
+                  <option value="">
+                    {filteredProductOptions.length
+                      ? t("panelProjects.selectProduct")
+                      : t("panelProjects.noProductOptions")}
+                  </option>
+                  {filteredProductOptions.map((product) => {
+                    const categoryTitle = getProductCategoryTitle(product);
+                    return (
+                      <option key={product.id} value={product.id}>
+                        {getProductTitle(product)}
+                        {categoryTitle ? ` - ${categoryTitle}` : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
+                  onClick={() => addProductToProject(filteredProductOptions[0]?.id)}
+                  disabled={!filteredProductOptions.length}
+                >
+                  {t("panelProjects.addProduct")}
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {selectedProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white px-3 py-2"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-primary/10 bg-primary/5">
+                        {product.image_url ? (
+                          <img
+                            src={resolveImageUrl(product.image_url)}
+                            alt={getProductTitle(product)}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-primary">{getProductTitle(product)}</p>
+                        <p className="truncate text-xs text-primary/45">{getProductCategoryTitle(product) || product.slug}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeProductFromProject(product.id)}
+                      className="rounded-full border border-primary/15 px-2 py-1 text-[10px] font-semibold text-primary/55"
+                    >
+                      {t("actions.delete")}
+                    </button>
+                  </div>
+                ))}
+                {selectedProducts.length === 0 && (
+                  <p className="text-xs text-primary/50">{t("panelProjects.noProductsSelected")}</p>
+                )}
+              </div>
             </div>
 
             <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">

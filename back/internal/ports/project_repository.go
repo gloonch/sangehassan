@@ -14,4 +14,5 @@ type ProjectRepository interface {
 	Update(ctx context.Context, project domain.Project) (domain.Project, error)
 	Delete(ctx context.Context, id int64) error
 	ReplaceGalleryImages(ctx context.Context, projectID int64, images []string) error
+	ReplaceProducts(ctx context.Context, projectID int64, productIDs []int64) error
 }

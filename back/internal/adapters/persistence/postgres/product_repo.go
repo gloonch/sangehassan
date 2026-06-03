@@ -16,6 +16,11 @@ type ProductRepository struct {
 	db *sql.DB
 }
 
+const (
+	relatedProductsLimit = 6
+	relatedProjectsLimit = 6
+)
+
 func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
@@ -792,7 +797,176 @@ func (r *ProductRepository) loadProductRelations(ctx context.Context, product *d
 			product.TermIDs = append(product.TermIDs, term.ID)
 		}
 	}
+	relatedProducts, err := r.loadRelatedProducts(ctx, product)
+	if err != nil {
+		return err
+	}
+	product.RelatedProducts = relatedProducts
+
+	relatedProjects, err := r.loadRelatedProjects(ctx, product.ID)
+	if err != nil {
+		return err
+	}
+	product.RelatedProjects = relatedProjects
 	return nil
+}
+
+func (r *ProductRepository) loadRelatedProducts(ctx context.Context, product *domain.Product) ([]domain.Product, error) {
+	whereClause := "p.is_popular = TRUE"
+	args := []any{product.ID, relatedProductsLimit}
+	if product.MainCategoryID != nil {
+		whereClause = "p.main_category_id = $3"
+		args = append(args, *product.MainCategoryID)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT p.id,
+		       p.title_en,
+		       p.title_fa,
+		       p.title_ar,
+		       p.slug,
+		       COALESCE(p.image_url, ''),
+		       p.main_category_id,
+		       p.is_popular,
+		       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+		       c.id,
+		       c.title_en,
+		       c.title_fa,
+		       c.title_ar,
+		       c.slug,
+		       c.parent_id
+		FROM products p
+		LEFT JOIN categories c ON c.id = p.main_category_id
+		WHERE p.id <> $1 AND %s
+		ORDER BY
+		  CASE WHEN COALESCE(p.image_url, '') <> '' THEN 0 ELSE 1 END,
+		  p.is_popular DESC,
+		  CASE WHEN COALESCE(p.short_description_html_en, p.short_description_html, p.description_html_en, p.description_html, '') <> '' THEN 0 ELSE 1 END,
+		  p.id DESC
+		LIMIT $2
+	`, whereClause)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	products := make([]domain.Product, 0)
+	for rows.Next() {
+		product, err := scanProductCard(rows)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+	return products, rows.Err()
+}
+
+func (r *ProductRepository) loadRelatedProjects(ctx context.Context, productID int64) ([]domain.Project, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id,
+		       COALESCE(p.description_en, p.description, ''),
+		       COALESCE(p.description_fa, ''),
+		       COALESCE(p.description_ar, ''),
+		       COALESCE(p.cover_image_url, ''),
+		       COALESCE(p.video_url, ''),
+		       p.sort_order,
+		       p.created_at,
+		       COALESCE(p.updated_at, p.created_at)
+		FROM project_products pp
+		JOIN projects p ON p.id = pp.project_id
+		WHERE pp.product_id = $1
+		ORDER BY p.sort_order ASC, p.id DESC
+		LIMIT $2
+	`, productID, relatedProjectsLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	projects := make([]domain.Project, 0)
+	for rows.Next() {
+		var project domain.Project
+		if err := rows.Scan(
+			&project.ID,
+			&project.DescriptionEN,
+			&project.DescriptionFA,
+			&project.DescriptionAR,
+			&project.CoverImageURL,
+			&project.VideoURL,
+			&project.SortOrder,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		project.Description = project.DescriptionEN
+		if project.Description == "" {
+			project.Description = project.DescriptionFA
+		}
+		if project.Description == "" {
+			project.Description = project.DescriptionAR
+		}
+		projects = append(projects, project)
+	}
+	return projects, rows.Err()
+}
+
+type productCardScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanProductCard(scanner productCardScanner) (domain.Product, error) {
+	var product domain.Product
+	var mainCategoryID sql.NullInt64
+	var categoryID sql.NullInt64
+	var categoryTitleEN sql.NullString
+	var categoryTitleFA sql.NullString
+	var categoryTitleAR sql.NullString
+	var categorySlug sql.NullString
+	var categoryParentID sql.NullInt64
+
+	if err := scanner.Scan(
+		&product.ID,
+		&product.TitleEN,
+		&product.TitleFA,
+		&product.TitleAR,
+		&product.Slug,
+		&product.ImageURL,
+		&mainCategoryID,
+		&product.IsPopular,
+		&product.ImageCount,
+		&categoryID,
+		&categoryTitleEN,
+		&categoryTitleFA,
+		&categoryTitleAR,
+		&categorySlug,
+		&categoryParentID,
+	); err != nil {
+		return domain.Product{}, err
+	}
+
+	if product.ImageCount == 0 && product.ImageURL != "" {
+		product.ImageCount = 1
+	}
+	if mainCategoryID.Valid {
+		product.MainCategoryID = &mainCategoryID.Int64
+	}
+	if categoryID.Valid {
+		category := domain.Category{
+			ID:      categoryID.Int64,
+			TitleEN: categoryTitleEN.String,
+			TitleFA: categoryTitleFA.String,
+			TitleAR: categoryTitleAR.String,
+			Slug:    categorySlug.String,
+		}
+		if categoryParentID.Valid {
+			category.ParentID = &categoryParentID.Int64
+		}
+		product.Category = &category
+	}
+	return product, nil
 }
 
 func (r *ProductRepository) loadImages(ctx context.Context, productID int64) ([]string, error) {

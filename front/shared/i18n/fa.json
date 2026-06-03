@@ -120,6 +120,10 @@
     "finishes": "فینیش‌ها",
     "callForMoreInfo": "تماس برای اطلاعات بیشتر",
     "domesticMessengerHint": "ارسال پیام در بله و روبیکا نیز امکان‌پذیر است",
+    "relatedProductsTitle": "محصولات مرتبط",
+    "relatedProductsSubtitle": "سنگ‌های دیگر از همین دسته‌بندی.",
+    "relatedProjectsTitle": "پروژه‌های مرتبط با این سنگ",
+    "relatedProjectsSubtitle": "پروژه‌هایی که به این محصول وصل شده‌اند.",
     "prev": "قبلی",
     "next": "بعدی"
   },
@@ -137,6 +141,8 @@
     "itemTitle": "پروژه",
     "backToProjects": "بازگشت به پروژه‌ها",
     "descriptionTitle": "توضیحات",
+    "usedProductsTitle": "سنگ‌های استفاده‌شده در این پروژه",
+    "usedProductsSubtitle": "محصولات سنگی که به این پروژه وصل شده‌اند.",
     "notFound": "پروژه پیدا نشد.",
     "prev": "قبلی",
     "next": "بعدی"
@@ -442,7 +448,14 @@
     "uploadFailed": "آپلود ناموفق بود. دوباره تلاش کنید.",
     "uploadTooLarge": "فایل انتخاب‌شده بیش از حد بزرگ است.",
     "uploadConnectionLost": "اتصال آپلود قبل از رسیدن به سرور قطع شد. لطفاً ویدیوی کمتر از ۹۰ مگابایت انتخاب کنید یا فایل را فشرده‌تر کنید.",
-    "videoTooLarge": "حجم ویدیو باید حداکثر {size} باشد."
+    "videoTooLarge": "حجم ویدیو باید حداکثر {size} باشد.",
+    "usedProducts": "محصولات استفاده‌شده",
+    "usedProductsHint": "یک یا چند سنگ محصولی که در این پروژه استفاده شده‌اند را انتخاب کن.",
+    "productSearchPlaceholder": "جستجوی محصول بر اساس نام، اسلاگ یا دسته‌بندی",
+    "selectProduct": "انتخاب محصول",
+    "noProductOptions": "محصولی پیدا نشد",
+    "addProduct": "افزودن محصول",
+    "noProductsSelected": "هنوز محصولی انتخاب نشده است."
   },
   "panelContent": {
     "title": "محتوای لندینگ",

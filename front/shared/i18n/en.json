@@ -178,6 +178,10 @@
     "finishes": "Finishes",
     "callForMoreInfo": "Call for more information",
     "domesticMessengerHint": "Messaging via Bale and Rubika is also available",
+    "relatedProductsTitle": "Related products",
+    "relatedProductsSubtitle": "Other stones from the same category.",
+    "relatedProjectsTitle": "Projects using this stone",
+    "relatedProjectsSubtitle": "Real projects connected to this product.",
     "prev": "Previous",
     "next": "Next"
   },
@@ -195,6 +199,8 @@
     "itemTitle": "Project",
     "backToProjects": "Back to projects",
     "descriptionTitle": "Description",
+    "usedProductsTitle": "Stones used in this project",
+    "usedProductsSubtitle": "Natural stone products connected to this project.",
     "notFound": "Project not found.",
     "prev": "Previous",
     "next": "Next"
@@ -442,7 +448,14 @@
     "uploadFailed": "Upload failed. Please try again.",
     "uploadTooLarge": "The selected file is too large.",
     "uploadConnectionLost": "The upload connection was lost before it reached the server. Please use a video under 90 MB or compress it and try again.",
-    "videoTooLarge": "Video must be {size} or smaller."
+    "videoTooLarge": "Video must be {size} or smaller.",
+    "usedProducts": "Used products",
+    "usedProductsHint": "Select one or more product stones used in this project.",
+    "productSearchPlaceholder": "Search products by title, slug, or category",
+    "selectProduct": "Select a product",
+    "noProductOptions": "No matching products",
+    "addProduct": "Add product",
+    "noProductsSelected": "No products selected yet."
   },
   "panelContent": {
     "title": "Landing content",
