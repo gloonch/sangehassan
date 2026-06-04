@@ -393,11 +393,20 @@ export default function ProductDetail() {
             )}
 
             <div className="space-y-2">
-              {categoryLine ? (
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/65">
-                  {categoryLine}
-                </p>
-              ) : null}
+              {(categoryLine || product?.is_popular) && (
+                <div className={`flex flex-wrap items-center gap-2 ${isRTL ? "justify-end" : "justify-start"}`}>
+                  {categoryLine ? (
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/65">
+                      {categoryLine}
+                    </p>
+                  ) : null}
+                  {product?.is_popular && (
+                    <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+                      {t("productDetail.popularBadge")}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="flex flex-wrap items-start gap-3 md:gap-4">
                 <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
                 {phoneItems.length > 0 && (

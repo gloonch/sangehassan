@@ -478,8 +478,8 @@ export default function Products() {
         );
         const termsText = normalizeSearchText(
           (Array.isArray(product.terms) ? product.terms : [])
-          .map((term) => `${term?.label_en || ""} ${term?.label_fa || ""} ${term?.label_ar || ""} ${term?.key || ""}`)
-          .join(" ")
+            .map((term) => `${term?.label_en || ""} ${term?.label_fa || ""} ${term?.label_ar || ""} ${term?.key || ""}`)
+            .join(" ")
         );
         const metaText = normalizeSearchText(
           [
@@ -531,7 +531,9 @@ export default function Products() {
     }
 
     const sorted = [...base];
-    if (sortMode === "price_asc") {
+    if (sortMode === "default") {
+      sorted.sort((a, b) => Number(Boolean(b.is_popular)) - Number(Boolean(a.is_popular)));
+    } else if (sortMode === "price_asc") {
       sorted.sort((a, b) => {
         const priceA = getNumericPrice(a);
         const priceB = getNumericPrice(b);
@@ -892,6 +894,11 @@ export default function Products() {
                   style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
                 >
                   <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
+                    {product.is_popular && (
+                      <span className="absolute left-3 top-3 z-10 rounded-full border border-white/90 bg-white/20 px-3 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
+                        {t("products.popularBadge")}
+                      </span>
+                    )}
                     {product.image_url ? (
                       <img
                         src={resolveImageUrl(product.image_url)}

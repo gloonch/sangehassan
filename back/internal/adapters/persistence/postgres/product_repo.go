@@ -39,7 +39,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
-		ORDER BY p.id
+		ORDER BY p.is_popular DESC, p.id
 	`
 	args := make([]any, 0, 2)
 	if limit > 0 {

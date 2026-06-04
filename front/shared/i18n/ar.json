@@ -75,6 +75,7 @@
     "sortPriceLowToHigh": "السعر: من الأقل إلى الأعلى",
     "sortPriceHighToLow": "السعر: من الأعلى إلى الأقل",
     "filtersReset": "إعادة تعيين الفلاتر",
+    "popularBadge": "اختيار شائع",
     "empty": "لا توجد منتجات حالياً."
   },
   "blocks": {
@@ -120,6 +121,7 @@
     "finishes": "التشطيبات",
     "callForMoreInfo": "اتصل لمزيد من المعلومات",
     "domesticMessengerHint": "المراسلة عبر بله وروبيكا متاحة أيضاً",
+    "popularBadge": "اختيار شائع",
     "relatedProductsTitle": "منتجات ذات صلة",
     "relatedProductsSubtitle": "أحجار أخرى من الفئة نفسها.",
     "relatedProjectsTitle": "مشاريع تستخدم هذا الحجر",

@@ -75,6 +75,7 @@
     "sortPriceLowToHigh": "قیمت: کم به زیاد",
     "sortPriceHighToLow": "قیمت: زیاد به کم",
     "filtersReset": "پاک کردن فیلترها",
+    "popularBadge": "پرمخاطب",
     "empty": "فعلا محصولی موجود نیست."
   },
   "blocks": {
@@ -120,6 +121,7 @@
     "finishes": "فینیش‌ها",
     "callForMoreInfo": "تماس برای اطلاعات بیشتر",
     "domesticMessengerHint": "ارسال پیام در بله و روبیکا نیز امکان‌پذیر است",
+    "popularBadge": "پرمخاطب",
     "relatedProductsTitle": "محصولات مرتبط",
     "relatedProductsSubtitle": "سنگ‌های دیگر از همین دسته‌بندی.",
     "relatedProjectsTitle": "پروژه‌های مرتبط با این سنگ",

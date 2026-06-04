@@ -133,6 +133,7 @@
     "sortPriceLowToHigh": "Price: low to high",
     "sortPriceHighToLow": "Price: high to low",
     "filtersReset": "Reset filters",
+    "popularBadge": "Popular choice",
     "empty": "No products available yet."
   },
   "blocks": {
@@ -178,6 +179,7 @@
     "finishes": "Finishes",
     "callForMoreInfo": "Call for more information",
     "domesticMessengerHint": "Messaging via Bale and Rubika is also available",
+    "popularBadge": "Popular choice",
     "relatedProductsTitle": "Related products",
     "relatedProductsSubtitle": "Other stones from the same category.",
     "relatedProjectsTitle": "Projects using this stone",
