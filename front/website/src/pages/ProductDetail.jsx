@@ -219,7 +219,7 @@ export default function ProductDetail() {
   const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
   const hasDetailBlocks = hasMoreInfo || hasMetaLists;
   const phoneValue = t("footer.phoneValue");
-  const phoneItems = [phoneValue, "09121193935", "09121193835"]
+  const phoneItems = [phoneValue, "09121193835", "09121193935"]
     .map((value) => ({ value, normalized: normalizePhone(value) }))
     .filter((item) => item.normalized);
   const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();

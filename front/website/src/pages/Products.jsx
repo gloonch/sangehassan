@@ -7,6 +7,8 @@ import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl } from "../lib/seo";
 
 const PRODUCTS_PAGE_SIZE = 20;
+const PRODUCT_GRID_SKELETON_COUNT = 6;
+const CATEGORY_SKELETON_COUNT = 6;
 const PRODUCTS_RETURN_STATE_KEY = "sh_products_return_state";
 const PRODUCTS_RETURN_STATE_MAX_AGE_MS = 30 * 60 * 1000;
 const EMPTY_STATE_DELAY_MS = 2000;
@@ -79,6 +81,24 @@ const normalizeChiniSlug = (slug, titleFa) => {
   return slug;
 };
 
+const normalizeProductForList = (product) => ({
+  ...product,
+  category: normalizeCategory(product.category),
+  categories: Array.isArray(product.categories) ? product.categories.map(normalizeCategory) : product.categories
+});
+
+const mergeProductsByID = (previousProducts, incomingProducts) => {
+  if (!incomingProducts.length) return previousProducts;
+  const seenIDs = new Set(previousProducts.map((product) => product.id));
+  const merged = [...previousProducts];
+  for (const product of incomingProducts) {
+    if (seenIDs.has(product.id)) continue;
+    seenIDs.add(product.id);
+    merged.push(product);
+  }
+  return merged;
+};
+
 const hasProductTerm = (product, taxonomy, termValue) => {
   if (!product || !taxonomy || !termValue) return false;
   const terms = Array.isArray(product.terms) ? product.terms : [];
@@ -120,6 +140,27 @@ const readReturnState = () => {
   }
 };
 
+const CategorySkeletons = () => (
+  <>
+    {Array.from({ length: CATEGORY_SKELETON_COUNT }).map((_, index) => (
+      <span
+        key={`category-skeleton-${index}`}
+        className="h-9 w-24 animate-pulse rounded-full border border-primary/10 bg-primary/5"
+      />
+    ))}
+  </>
+);
+
+const ProductGridSkeleton = () => (
+  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+    {Array.from({ length: PRODUCT_GRID_SKELETON_COUNT }).map((_, index) => (
+      <div key={`product-skeleton-${index}`} className="overflow-hidden bg-white/45">
+        <div className="aspect-square w-full animate-pulse bg-primary/10" />
+      </div>
+    ))}
+  </div>
+);
+
 export default function Products() {
   const { t, lang } = useTranslation();
   const location = useLocation();
@@ -128,8 +169,10 @@ export default function Products() {
   const hasLoadedInitialProductsRef = useRef(false);
   const pendingRestoreRef = useRef(null);
   const scrollRestoreRef = useRef(null);
+  const viewLoadRequestRef = useRef(0);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -207,12 +250,7 @@ export default function Products() {
   }, [lang]);
 
   const normalizedProducts = useMemo(
-    () =>
-      products.map((product) => ({
-        ...product,
-        category: normalizeCategory(product.category),
-        categories: Array.isArray(product.categories) ? product.categories.map(normalizeCategory) : product.categories
-      })),
+    () => products.map(normalizeProductForList),
     [products]
   );
 
@@ -271,14 +309,7 @@ export default function Products() {
     setProducts((previousProducts) => {
       if (replace) return incomingProducts;
       if (incomingProducts.length === 0) return previousProducts;
-      const seenIDs = new Set(previousProducts.map((product) => product.id));
-      const merged = [...previousProducts];
-      for (const product of incomingProducts) {
-        if (seenIDs.has(product.id)) continue;
-        seenIDs.add(product.id);
-        merged.push(product);
-      }
-      return merged;
+      return mergeProductsByID(previousProducts, incomingProducts);
     });
     setNextOffset(offset + incomingProducts.length);
     setHasMoreProducts(incomingProducts.length === PRODUCTS_PAGE_SIZE);
@@ -288,6 +319,7 @@ export default function Products() {
     let mounted = true;
 
     const loadCategories = async () => {
+      setCategoriesLoading(true);
       try {
         const categoryRes = await fetchJSON("/api/categories");
         if (!mounted) return;
@@ -295,6 +327,8 @@ export default function Products() {
       } catch (_) {
         if (!mounted) return;
         setCategories([]);
+      } finally {
+        if (mounted) setCategoriesLoading(false);
       }
     };
 
@@ -303,61 +337,6 @@ export default function Products() {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    if (!hasSelectedCategory || hasLoadedInitialProductsRef.current) return () => {
-      mounted = false;
-    };
-
-    const loadInitialProducts = async () => {
-      setLoading(true);
-      try {
-        const restoreState = pendingRestoreRef.current;
-        const firstPageProducts = await fetchProductPage(0);
-        if (!mounted) return;
-
-        let mergedProducts = firstPageProducts;
-        let currentOffset = firstPageProducts.length;
-        let lastPageSize = firstPageProducts.length;
-
-        if (restoreState && restoreState.nextOffset > firstPageProducts.length) {
-          const targetOffset = Math.max(PRODUCTS_PAGE_SIZE, restoreState.nextOffset);
-          const seenIDs = new Set(mergedProducts.map((item) => item.id));
-          while (mounted && currentOffset < targetOffset && lastPageSize === PRODUCTS_PAGE_SIZE) {
-            const page = await fetchProductPage(currentOffset);
-            lastPageSize = page.length;
-            currentOffset += page.length;
-            for (const item of page) {
-              if (seenIDs.has(item.id)) continue;
-              seenIDs.add(item.id);
-              mergedProducts.push(item);
-            }
-            if (page.length === 0) break;
-          }
-        }
-
-        setProducts(mergedProducts);
-        setNextOffset(currentOffset);
-        setHasMoreProducts(lastPageSize === PRODUCTS_PAGE_SIZE);
-        scrollRestoreRef.current = restoreState?.scrollY ?? null;
-        pendingRestoreRef.current = null;
-        hasLoadedInitialProductsRef.current = true;
-      } catch (_) {
-        if (!mounted) return;
-        setProducts([]);
-        setNextOffset(0);
-        setHasMoreProducts(false);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadInitialProducts();
-    return () => {
-      mounted = false;
-    };
-  }, [hasSelectedCategory, normalizedActiveCategory, fetchProductPage]);
 
   useEffect(() => {
     if (loading || !hasSelectedCategory) return;
@@ -471,10 +450,10 @@ export default function Products() {
     }
   }, [stoneTypeFilter, useCaseFilter, termFilterOptions]);
 
-  const filtered = useMemo(() => {
+  const filterProductsForView = useCallback((items) => {
     if (!hasSelectedCategory) return [];
 
-    let base = normalizedProducts;
+    let base = items;
 
     if (normalizedActiveCategory !== "all") {
       base = base.filter((product) => {
@@ -580,7 +559,6 @@ export default function Products() {
   }, [
     normalizedActiveCategory,
     hasSelectedCategory,
-    normalizedProducts,
     debouncedSearch,
     lang,
     stoneTypeFilter,
@@ -591,8 +569,103 @@ export default function Products() {
     sortMode
   ]);
 
+  const filtered = useMemo(() => filterProductsForView(normalizedProducts), [filterProductsForView, normalizedProducts]);
+
   useEffect(() => {
-    if (!hasSelectedCategory || loading || filtered.length > 0) {
+    if (!hasSelectedCategory || searchPending) return undefined;
+
+    const requestID = viewLoadRequestRef.current + 1;
+    viewLoadRequestRef.current = requestID;
+    let cancelled = false;
+
+    const restoreState = pendingRestoreRef.current;
+    const restoreTargetOffset = restoreState ? Math.max(PRODUCTS_PAGE_SIZE, restoreState.nextOffset) : 0;
+    const needsInitialPage = !hasLoadedInitialProductsRef.current;
+    const needsVisibleResult = filtered.length === 0 && hasMoreProducts;
+    const needsRestorePages = Boolean(restoreState && nextOffset < restoreTargetOffset && hasMoreProducts);
+
+    if (!needsInitialPage && !needsVisibleResult && !needsRestorePages) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const settleCurrentView = async () => {
+      setLoading(true);
+      setEmptyStateVisible(false);
+
+      let localProducts = products;
+      let localOffset = hasLoadedInitialProductsRef.current ? nextOffset : 0;
+      let localHasMore = hasLoadedInitialProductsRef.current ? hasMoreProducts : true;
+
+      if (!hasLoadedInitialProductsRef.current) {
+        localProducts = [];
+      }
+
+      try {
+        while (!cancelled && viewLoadRequestRef.current === requestID) {
+          const normalizedLocalProducts = localProducts.map(normalizeProductForList);
+          const visibleCount = filterProductsForView(normalizedLocalProducts).length;
+          const shouldFetchFirstPage = !hasLoadedInitialProductsRef.current && localOffset < PRODUCTS_PAGE_SIZE;
+          const shouldFetchRestorePages = Boolean(restoreState && localOffset < restoreTargetOffset && localHasMore);
+          const shouldFetchUntilFirstMatch = visibleCount === 0 && localHasMore;
+
+          if (!shouldFetchFirstPage && !shouldFetchRestorePages && !shouldFetchUntilFirstMatch) {
+            break;
+          }
+
+          const page = await fetchProductPage(localOffset);
+          if (cancelled || viewLoadRequestRef.current !== requestID) return;
+
+          localProducts = mergeProductsByID(localProducts, page);
+          localOffset += page.length;
+          localHasMore = page.length === PRODUCTS_PAGE_SIZE;
+          hasLoadedInitialProductsRef.current = true;
+
+          setProducts(localProducts);
+          setNextOffset(localOffset);
+          setHasMoreProducts(localHasMore);
+
+          if (page.length === 0) {
+            break;
+          }
+
+          const nextVisibleCount = filterProductsForView(localProducts.map(normalizeProductForList)).length;
+          if (!restoreState && nextVisibleCount > 0) {
+            break;
+          }
+        }
+
+        if (!cancelled && viewLoadRequestRef.current === requestID) {
+          if (restoreState) {
+            scrollRestoreRef.current = restoreState.scrollY ?? null;
+            pendingRestoreRef.current = null;
+          }
+          setLoading(false);
+        }
+      } catch (_) {
+        if (!cancelled && viewLoadRequestRef.current === requestID) {
+          hasLoadedInitialProductsRef.current = true;
+          setHasMoreProducts(false);
+          setLoading(false);
+        }
+      }
+    };
+
+    settleCurrentView();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    hasSelectedCategory,
+    searchPending,
+    filterProductsForView,
+    fetchProductPage
+  ]);
+
+  useEffect(() => {
+    if (!hasSelectedCategory || loading || hasMoreProducts || filtered.length > 0) {
       setEmptyStateVisible(false);
       return;
     }
@@ -602,7 +675,7 @@ export default function Products() {
     }, EMPTY_STATE_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [hasSelectedCategory, loading, filtered.length]);
+  }, [hasSelectedCategory, loading, hasMoreProducts, filtered.length]);
 
   const mainCategories = useMemo(() => {
     const topLevel = normalizedCategories.filter((category) => !category.parent_id);
@@ -610,10 +683,32 @@ export default function Products() {
     return normalizedCategories;
   }, [normalizedCategories]);
 
+  const handleCategorySelect = (categorySlug) => {
+    const nextCategory = normalizeChiniSlug(categorySlug, "");
+    pendingRestoreRef.current = null;
+    scrollRestoreRef.current = null;
+    setEmptyStateVisible(false);
+    if (normalizedActiveCategory !== nextCategory) {
+      setLoading(true);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.removeItem(PRODUCTS_RETURN_STATE_KEY);
+      } catch (_) {
+        // ignore transient storage failures
+      }
+    }
+    setActiveCategory(nextCategory);
+  };
+
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchInput(value);
     setSearchPending(true);
+    setEmptyStateVisible(false);
+    if (hasSelectedCategory) {
+      setLoading(true);
+    }
   };
   const showSearchLoading = searchPending || (hasSelectedCategory && (loading || loadingMore));
 
@@ -701,7 +796,7 @@ export default function Products() {
   }, [loading]);
 
   return (
-    <section ref={pageRef} className="section-shell pt-16 pb-12">
+    <section ref={pageRef} className="section-shell pt-16 pb-12" aria-busy={hasSelectedCategory && loading ? "true" : "false"}>
       <div className="mb-8 flex flex-col gap-4">
         <p data-products-anim="lead" className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("products.title")}</p>
         <h1 data-products-anim="lead" className="font-display text-3xl md:text-4xl">{t("products.subtitle")}</h1>
@@ -711,7 +806,7 @@ export default function Products() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => setActiveCategory("all")}
+            onClick={() => handleCategorySelect("all")}
             data-products-anim="lead"
             className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${normalizedActiveCategory === "all"
               ? "border-primary bg-primary text-sand"
@@ -720,13 +815,13 @@ export default function Products() {
           >
             {t("products.filterAll")}
           </button>
-          {mainCategories.map((category) => {
+          {categoriesLoading ? <CategorySkeletons /> : mainCategories.map((category) => {
             const slug = normalizeChiniSlug(category.slug, category.title_fa);
             return (
               <button
                 key={category.id}
                 type="button"
-                onClick={() => setActiveCategory(slug)}
+                onClick={() => handleCategorySelect(slug)}
                 data-products-anim="lead"
                 className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${normalizedActiveCategory === slug
                   ? "border-primary bg-primary text-sand"
@@ -771,74 +866,71 @@ export default function Products() {
             <p className="mt-2 text-sm leading-7 text-primary/80">{t("products.supplyNoteBody")}</p>
           </div>
         </div>
-      ) : loading ? (
-        <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center">
-          <span
-            aria-label={t("messages.loading")}
-            className="h-4 w-4 animate-spin rounded-full border border-primary/40 border-t-transparent"
-          />
-        </div>
+      ) : loading && filtered.length === 0 ? (
+        <ProductGridSkeleton />
       ) : filtered.length === 0 ? (
-        emptyStateVisible ? (
+        emptyStateVisible && !hasMoreProducts ? (
           <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center text-center">
             <p className="text-sm text-primary/70">{t("products.empty")}</p>
           </div>
         ) : (
-          <div className="mx-auto mt-10 flex min-h-[180px] w-full items-center justify-center">
-            <span
-              aria-label={t("messages.loading")}
-              className="h-4 w-4 animate-spin rounded-full border border-primary/40 border-t-transparent"
-            />
-          </div>
+          <ProductGridSkeleton />
         )
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((product) => {
-            const isRTL = lang === "fa" || lang === "ar";
-            const gradientDir = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
-            return (
-              <Link
-                key={product.id}
-                to={`/products/${product.slug}`}
-                onClick={rememberListState}
-                data-products-anim="card"
-                className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
-              >
-                <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
-                  {product.image_url ? (
-                    <img
-                      src={resolveImageUrl(product.image_url)}
-                      alt={getLocalized(product, lang) || product.title_en}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-primary/60">{t("productDetail.noImages")}</div>
-                  )}
+        <>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((product) => {
+              const isRTL = lang === "fa" || lang === "ar";
+              const gradientDir = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
+              return (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.slug}`}
+                  onClick={rememberListState}
+                  data-products-anim="card"
+                  className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
+                >
+                  <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
+                    {product.image_url ? (
+                      <img
+                        src={resolveImageUrl(product.image_url)}
+                        alt={getLocalized(product, lang) || product.title_en}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-sm text-primary/60">{t("productDetail.noImages")}</div>
+                    )}
 
-                  <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${gradientDir} from-black/70 via-black/25 to-transparent p-4`}>
-                    <h3 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
-                      {getLocalized(product, lang) || product.title_en}
-                    </h3>
-                    <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]">
-                      {Array.isArray(product.finishes) && product.finishes.length > 0 && (
-                        <p className="truncate">{product.finishes.join(" • ")}</p>
-                      )}
-                      {Array.isArray(product.variants) && product.variants.length > 0 && (
-                        <p className="truncate">{product.variants.join(" • ")}</p>
-                      )}
-                      {Array.isArray(product.mines) && product.mines.length > 0 && (
-                        <p className="truncate">{product.mines.join(" • ")}</p>
-                      )}
+                    <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${gradientDir} from-black/70 via-black/25 to-transparent p-4`}>
+                      <h3 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
+                        {getLocalized(product, lang) || product.title_en}
+                      </h3>
+                      <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]">
+                        {Array.isArray(product.finishes) && product.finishes.length > 0 && (
+                          <p className="truncate">{product.finishes.join(" • ")}</p>
+                        )}
+                        {Array.isArray(product.variants) && product.variants.length > 0 && (
+                          <p className="truncate">{product.variants.join(" • ")}</p>
+                        )}
+                        {Array.isArray(product.mines) && product.mines.length > 0 && (
+                          <p className="truncate">{product.mines.join(" • ")}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+          {loadingMore && (
+            <div className="mt-6">
+              <ProductGridSkeleton />
+            </div>
+          )}
+        </>
       )}
 
       {!loading && hasSelectedCategory && (
