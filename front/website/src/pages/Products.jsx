@@ -895,7 +895,7 @@ export default function Products() {
                 >
                   <div className="relative aspect-square w-full overflow-hidden bg-primary/10">
                     {product.is_popular && (
-                      <span className="absolute left-3 top-3 z-10 rounded-full border border-white/90 bg-white/20 px-3 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
+                      <span className="absolute left-3 top-3 z-10 rounded-full border border-white/90 bg-white/40 px-3 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
                         {t("products.popularBadge")}
                       </span>
                     )}

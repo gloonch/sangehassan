@@ -6,6 +6,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { getLiveDealsConfig, renderDealMessage } from "../lib/liveDeals";
 import { getTileCompletionTime } from "../lib/routeReveal";
+import LanguageSwitch from "./LanguageSwitch";
 import logoImage from "@shared/assets/logo.png";
 import logoWhiteImage from "@shared/assets/logo_white.png";
 
@@ -61,6 +62,7 @@ export default function Navbar() {
   const [dealVisible, setDealVisible] = useState(true);
   const isHome = location.pathname === "/";
   const isAbout = location.pathname === "/about";
+  const isRTL = lang === "fa" || lang === "ar";
   const navSubline = isHome || isAbout ? t("nav.sinceLine") : t("nav.sinceLineAlt");
   const liveDealsConfig = getLiveDealsConfig(lang);
   const liveDeals = liveDealsConfig.deals;
@@ -258,76 +260,78 @@ export default function Navbar() {
   const mobileMenu =
     open && typeof document !== "undefined"
       ? createPortal(
-          <div className={mobileOverlayBaseClass} style={{ backgroundColor: "#E5E1DD", opacity: 1 }}>
-            <div ref={mobileMenuPanelRef} className="h-full w-full">
-              <div className="section-shell flex h-20 items-center justify-between gap-4">
-                <Link to="/" onClick={() => setOpen(false)} className="inline-flex items-center" aria-label={t("brand")}>
-                  <img src={logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
-                </Link>
-                <button
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:bg-primary/10"
-                  onClick={() => setOpen(false)}
-                  aria-label={t("actions.close")}
-                >
-                  <span className="relative block h-4 w-4">
-                    <span className="absolute left-0 top-[7px] h-0.5 w-full -rotate-45 rounded-full bg-primary" />
-                    <span className="absolute left-0 top-[7px] h-0.5 w-full rotate-45 rounded-full bg-primary" />
-                  </span>
-                </button>
-              </div>
+        <div className={mobileOverlayBaseClass} style={{ backgroundColor: "#E5E1DD", opacity: 1 }}>
+          <div ref={mobileMenuPanelRef} className="h-full w-full">
+            <div className="section-shell flex h-20 items-center justify-between gap-4">
+              <Link to="/" onClick={() => setOpen(false)} className="inline-flex items-center" aria-label={t("brand")}>
+                <img src={logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
+              </Link>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:bg-primary/10"
+                onClick={() => setOpen(false)}
+                aria-label={t("actions.close")}
+              >
+                <span className="relative block h-4 w-4">
+                  <span className="absolute left-0 top-[7px] h-0.5 w-full -rotate-45 rounded-full bg-primary" />
+                  <span className="absolute left-0 top-[7px] h-0.5 w-full rotate-45 rounded-full bg-primary" />
+                </span>
+              </button>
+            </div>
 
-              <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col items-center justify-center overflow-y-auto py-8 text-center">
-                <nav className="flex w-full max-w-md flex-col items-center">
-                  {visibleNavItems.map((item) => (
-                    <NavLink
-                      key={item.key}
-                      to={item.path}
-                      onClick={() => setOpen(false)}
-                      end={item.end}
-                      data-mobile-item="true"
-                      className={({ isActive }) =>
-                        `w-full border-b border-primary/15 py-4 text-center text-xl font-semibold tracking-[0.02em] text-primary transition hover:text-primary ${
-                          isActive ? "border-primary/35 text-primary" : "text-primary/80"
-                        }`
-                      }
-                    >
-                      {t(`nav.${item.key}`)}
-                    </NavLink>
-                  ))}
-                </nav>
+            <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col items-center justify-center overflow-y-auto py-8 text-center">
+              <nav className="flex w-full max-w-md flex-col items-center">
+                {visibleNavItems.map((item) => (
+                  <NavLink
+                    key={item.key}
+                    to={item.path}
+                    onClick={() => setOpen(false)}
+                    end={item.end}
+                    data-mobile-item="true"
+                    className={({ isActive }) =>
+                      `w-full border-b border-primary/15 py-4 text-center text-xl font-semibold tracking-[0.02em] text-primary transition hover:text-primary ${isActive ? "border-primary/35 text-primary" : "text-primary/80"
+                      }`
+                    }
+                  >
+                    {t(`nav.${item.key}`)}
+                  </NavLink>
+                ))}
+              </nav>
 
-                <div className="mt-6 w-full max-w-md border-t border-primary/15 pt-6">
-                  {user ? (
-                    <NavLink
-                      to="/profile"
-                      onClick={() => setOpen(false)}
-                      data-mobile-item="true"
-                      className="mx-auto inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold uppercase text-sand transition hover:bg-primary/90"
-                      aria-label={profileLabel}
-                      title={profileLabel}
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sand/20 text-xs">
-                        {avatarChar}
-                      </span>
-                      <span>{profileLabel}</span>
-                    </NavLink>
-                  ) : (
-                    <NavLink
-                      to="/login"
-                      onClick={() => setOpen(false)}
-                      data-mobile-item="true"
-                      className="w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-sand transition hover:bg-primary/90"
-                    >
-                      {t("actions.loginRegister")}
-                    </NavLink>
-                  )}
+              <div className="mt-6 w-full max-w-md border-t border-primary/15 pt-6">
+                {user ? (
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setOpen(false)}
+                    data-mobile-item="true"
+                    className="mx-auto inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold uppercase text-sand transition hover:bg-primary/90"
+                    aria-label={profileLabel}
+                    title={profileLabel}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sand/20 text-xs">
+                      {avatarChar}
+                    </span>
+                    <span>{profileLabel}</span>
+                  </NavLink>
+                ) : (
+                  <NavLink
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    data-mobile-item="true"
+                    className="w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-sand transition hover:bg-primary/90"
+                  >
+                    {t("actions.loginRegister")}
+                  </NavLink>
+                )}
+                <div data-mobile-item="true" className="mt-4 flex justify-center">
+                  <LanguageSwitch tone="menu" />
                 </div>
               </div>
             </div>
-          </div>,
-          document.body
-        )
+          </div>
+        </div>,
+        document.body
+      )
       : null;
 
   return (
@@ -409,19 +413,22 @@ export default function Navbar() {
 
       <div className={`border-t ${isHome ? "border-sand/20" : "border-primary/10"}`}>
         <div className="section-shell relative flex h-8 items-center">
-          <p className={`min-w-[7.5rem] text-[11px] font-semibold ${isHome ? "text-sand/75" : "text-primary/65"}`}>
+          <p className={`min-w-[6.75rem] shrink-0 text-[11px] font-semibold sm:min-w-[7.5rem] ${isHome ? "text-sand/75" : "text-primary/65"}`}>
             {navSubline}
           </p>
           {activeDeal ? (
             <Link
               to="/ads"
-              className={`ml-3 flex min-w-0 flex-1 items-center justify-end overflow-hidden text-right text-[10px] font-semibold transition-opacity duration-300 ease-out sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:ml-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${dealVisible ? "opacity-100" : "opacity-0"
+              className={`mx-2 flex min-w-0 flex-1 items-center justify-center overflow-hidden text-center text-[10px] font-semibold transition-opacity duration-300 ease-out sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:mx-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${dealVisible ? "opacity-100" : "opacity-0"
                 } ${isHome ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
               aria-label={t("ads.title")}
             >
               <span className="block truncate">{renderDealMessage(activeDeal, liveDealsConfig)}</span>
             </Link>
           ) : null}
+          <div className={`${isRTL ? "mr-auto" : "ml-auto"} hidden shrink-0 lg:block`}>
+            <LanguageSwitch tone={isHome ? "light" : "default"} />
+          </div>
         </div>
       </div>
 

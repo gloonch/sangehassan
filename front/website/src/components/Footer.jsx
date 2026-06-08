@@ -1,6 +1,5 @@
 import { useTranslation } from "../lib/i18n";
 import logoWhiteImage from "@shared/assets/logo_white.png";
-import LanguageSwitch from "./LanguageSwitch";
 
 const iconBaseProps = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -157,7 +156,6 @@ export default function Footer() {
 
           <div className={`flex flex-col items-center gap-2.5 md:gap-4 ${lastColumnAlign}`}>
             <p className="font-display text-lg leading-tight text-sand/92 md:text-2xl">Let&apos;s build in stone</p>
-            <LanguageSwitch tone="footer" />
           </div>
         </div>
       </div>
