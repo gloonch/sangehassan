@@ -3,7 +3,6 @@ import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 
-const MAX_GALLERY_IMAGES = 5;
 const MAX_VIDEO_UPLOAD_BYTES = 90 * 1024 * 1024;
 
 const formatFileSize = (bytes) => `${Math.round(bytes / 1024 / 1024)} MB`;
@@ -173,14 +172,7 @@ export default function Projects() {
 
   const handleGalleryUpload = async (files) => {
     if (!files || files.length === 0) return;
-    const currentCount = form.gallery_images.length;
-    if (currentCount >= MAX_GALLERY_IMAGES) {
-      setError(t("panelProjects.maxGallery"));
-      return;
-    }
-
-    const remaining = MAX_GALLERY_IMAGES - currentCount;
-    const selected = Array.from(files).slice(0, remaining);
+    const selected = Array.from(files);
 
     setUploadingGallery(true);
     setError("");
@@ -190,9 +182,6 @@ export default function Projects() {
         ...prev,
         gallery_images: [...prev.gallery_images, ...uploaded.map((item) => item?.image_url || "").filter(Boolean)]
       }));
-      if (files.length > remaining) {
-        setError(t("panelProjects.maxGallery"));
-      }
     } catch (_) {
       setError(t("messages.error"));
     } finally {
@@ -242,7 +231,7 @@ export default function Projects() {
       description_ar: form.description_ar,
       cover_image_url: form.cover_image_url,
       video_url: form.video_url,
-      gallery_images: form.gallery_images.slice(0, MAX_GALLERY_IMAGES),
+      gallery_images: form.gallery_images,
       product_ids: selectedProductIds,
       sort_order: Number(form.sort_order) || 0
     };
@@ -498,13 +487,13 @@ export default function Projects() {
             </div>
 
             <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-              {t("form.images")} ({form.gallery_images.length}/{MAX_GALLERY_IMAGES})
+              {t("form.images")} ({form.gallery_images.length})
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-                disabled={uploadingGallery || form.gallery_images.length >= MAX_GALLERY_IMAGES}
+                disabled={uploadingGallery}
                 onChange={(event) => handleGalleryUpload(event.target.files)}
               />
             </label>

@@ -86,9 +86,6 @@ func normalizeProjectGallery(cover string, images []string) []string {
 		}
 		seen[image] = struct{}{}
 		normalized = append(normalized, image)
-		if len(normalized) == 5 {
-			break
-		}
 	}
 	return normalized
 }

@@ -79,10 +79,6 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "cover image must be uploaded")
 		return
 	}
-	if len(payload.GalleryImages) > 5 {
-		respondError(c, http.StatusBadRequest, "gallery images cannot exceed 5")
-		return
-	}
 	if !allAllowedImageRefs(payload.GalleryImages) {
 		respondError(c, http.StatusBadRequest, "gallery images must be uploaded")
 		return
@@ -129,10 +125,6 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 	}
 	if payload.CoverImageURL == "" || !isAllowedImageRef(payload.CoverImageURL) {
 		respondError(c, http.StatusBadRequest, "cover image must be uploaded")
-		return
-	}
-	if len(payload.GalleryImages) > 5 {
-		respondError(c, http.StatusBadRequest, "gallery images cannot exceed 5")
 		return
 	}
 	if !allAllowedImageRefs(payload.GalleryImages) {

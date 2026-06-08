@@ -445,7 +445,6 @@
     "title": "Projects",
     "empty": "No projects available yet.",
     "coverRequired": "Cover image is required.",
-    "maxGallery": "Maximum 5 gallery images are allowed.",
     "galleryCount": "gallery images",
     "uploadFailed": "Upload failed. Please try again.",
     "uploadTooLarge": "The selected file is too large.",
