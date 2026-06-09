@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
-import { resolveImageUrl } from "../lib/assets";
+import { resolveImageUrl, resolveProtectedImageUrl, resolveProtectedThumbnailUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import ProtectedImage from "../components/ProtectedImage";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -31,11 +32,22 @@ const getLocalized = (item, lang) => {
   return item.title_en;
 };
 
+const rtlScriptRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+const persianSpecificRegex = /[پچژگکیی]/;
+
+const isLabelUsableForLang = (value, lang) => {
+  const label = String(value || "").trim();
+  if (!label) return false;
+  const hasRTL = rtlScriptRegex.test(label);
+  if (lang === "en") return !hasRTL;
+  if (lang === "ar") return hasRTL && !persianSpecificRegex.test(label);
+  return hasRTL;
+};
+
 const getLocalizedTerm = (term, lang) => {
   if (!term) return "";
-  if (lang === "fa") return term.label_fa || term.label_en || "";
-  if (lang === "ar") return term.label_ar || term.label_en || "";
-  return term.label_en || "";
+  const label = lang === "fa" ? term.label_fa : lang === "ar" ? term.label_ar : term.label_en;
+  return isLabelUsableForLang(label, lang) ? String(label).trim() : "";
 };
 
 const getLocalizedProjectDescription = (project, lang) => {
@@ -99,6 +111,44 @@ const normalizePhone = (value) => {
   return cleaned.replace(/\+/g, "");
 };
 
+const normalizeTermValue = (value) => String(value || "").trim().toLowerCase();
+
+const isSafeMetaLink = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("#")) return raw;
+  if (raw.startsWith("/")) return raw.startsWith("//") ? "" : raw;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? raw : "";
+  } catch (_) {
+    return "";
+  }
+};
+
+const MetaPill = ({ to, children }) => {
+  const className = "inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80 transition hover:border-primary/45 hover:text-primary";
+  if (!to) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80">
+        {children}
+      </span>
+    );
+  }
+  if (/^https?:\/\//i.test(to)) {
+    return (
+      <a href={to} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={to} className={className}>
+      {children}
+    </Link>
+  );
+};
+
 export default function ProductDetail() {
   const { slug } = useParams();
   const { t, lang } = useTranslation();
@@ -110,11 +160,16 @@ export default function ProductDetail() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
+  const [metaTerms, setMetaTerms] = useState([]);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       const hasInitialProduct = initialProduct?.slug === slug;
+      if (hasInitialProduct) {
+        setLoading(false);
+        return;
+      }
       if (!hasInitialProduct) {
         setLoading(true);
       }
@@ -137,6 +192,22 @@ export default function ProductDetail() {
     };
   }, [initialProduct, slug]);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadMetaTerms = async () => {
+      try {
+        const res = await fetchJSON("/api/product-terms");
+        if (mounted) setMetaTerms(res.data || []);
+      } catch (_) {
+        if (mounted) setMetaTerms([]);
+      }
+    };
+    loadMetaTerms();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const images = useMemo(() => {
     if (!product) return [];
     if (product.images?.length) return product.images;
@@ -154,7 +225,31 @@ export default function ProductDetail() {
     setActiveHotspotId(null);
   }, [activeIndex, slug]);
 
+  useEffect(() => {
+    if (!lightboxOpen) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setLightboxOpen(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [lightboxOpen]);
+
   const activeImage = images[activeIndex] || images[0] || "";
+  const openLightbox = () => {
+    if (activeImage) {
+      setLightboxOpen(true);
+    }
+  };
+  const closeLightbox = () => setLightboxOpen(false);
   const localizedTitle = getLocalized(product, lang) || product?.title_en || "";
   const localizedDescriptionHTML =
     (lang === "fa" ? product?.description_html_fa : lang === "ar" ? product?.description_html_ar : product?.description_html_en) ||
@@ -174,7 +269,7 @@ export default function ProductDetail() {
     path: `/products/${slug}`,
     lang,
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
-    image: activeImage ? resolveImageUrl(activeImage) : "",
+    image: activeImage ? resolveProtectedImageUrl(activeImage) : "",
     type: "product",
     robots: !loading && !product ? "noindex,follow" : "index,follow"
   });
@@ -210,14 +305,15 @@ export default function ProductDetail() {
     { key: "use_case_special", label: t("productDetail.useCaseSpecial") }
   ];
 
-  const hasMoreInfo = infoSections.some((section) => (termsByTaxonomy[section.key] || []).length > 0);
-  const metaLists = [
-    { key: "variants", label: t("productDetail.variants"), items: product?.variants || [], linkable: false },
-    { key: "mines", label: t("productDetail.mines"), items: product?.mines || [], linkable: true },
-    { key: "finishes", label: t("productDetail.finishes"), items: product?.finishes || [], linkable: true }
-  ];
-  const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
-  const hasDetailBlocks = hasMoreInfo || hasMetaLists;
+  const localizedInfoSections = infoSections
+    .map((section) => ({
+      ...section,
+      items: (termsByTaxonomy[section.key] || [])
+        .map((term) => ({ term, label: getLocalizedTerm(term, lang) }))
+        .filter((item) => item.label)
+    }))
+    .filter((section) => section.items.length > 0);
+  const hasMoreInfo = localizedInfoSections.length > 0;
   const phoneValue = t("footer.phoneValue");
   const phoneItems = [phoneValue, "09121193835", "09121193935"]
     .map((value) => ({ value, normalized: normalizePhone(value) }))
@@ -234,6 +330,73 @@ export default function ProductDetail() {
     params.set("q", String(value || "").trim());
     return `/products?${params.toString()}`;
   };
+
+  const metaTermsByTaxonomy = useMemo(() => {
+    const grouped = { variants: [], mines: [], finishes: [] };
+    for (const term of metaTerms) {
+      if (!grouped[term?.taxonomy]) continue;
+      grouped[term.taxonomy].push(term);
+    }
+    return grouped;
+  }, [metaTerms]);
+
+  const resolveMetaItem = (taxonomy, value, useFallbackLink) => {
+    const needle = normalizeTermValue(value);
+    const term = (metaTermsByTaxonomy[taxonomy] || []).find((item) =>
+      [item.key, item.label_en, item.label_fa, item.label_ar].some((candidate) => normalizeTermValue(candidate) === needle)
+    );
+    const localizedTermLabel = getLocalizedTerm(term, lang);
+    const label = localizedTermLabel || (isLabelUsableForLang(value, lang) ? String(value).trim() : "");
+    const savedLink = isSafeMetaLink(term?.link_url);
+    return {
+      label,
+      link: savedLink || (useFallbackLink ? buildFilterLink(value) : "")
+    };
+  };
+
+  const buildTermMetaItems = (taxonomy, fallbackValues, useFallbackLink) => {
+    const linkedTerms = termsByTaxonomy[taxonomy] || [];
+    if (linkedTerms.length > 0) {
+      return linkedTerms.map((term) => {
+        const label = getLocalizedTerm(term, lang);
+        const fallbackValue = term.label_fa || term.label_en || term.label_ar || term.key || label;
+        const savedLink = isSafeMetaLink(term.link_url);
+        return {
+          id: `term-${taxonomy}-${term.id}`,
+          label,
+          link: savedLink || (useFallbackLink ? buildFilterLink(fallbackValue) : "")
+        };
+      }).filter((item) => item.label);
+    }
+
+    return (fallbackValues || []).map((value, index) => {
+      const item = resolveMetaItem(taxonomy, value, useFallbackLink);
+      return {
+        id: `legacy-${taxonomy}-${index}-${value}`,
+        ...item
+      };
+    }).filter((item) => item.label);
+  };
+
+  const metaLists = [
+    {
+      key: "variants",
+      label: t("productDetail.variants"),
+      items: buildTermMetaItems("variants", product?.variants || [], false)
+    },
+    {
+      key: "mines",
+      label: t("productDetail.mines"),
+      items: buildTermMetaItems("mines", product?.mines || [], true)
+    },
+    {
+      key: "finishes",
+      label: t("productDetail.finishes"),
+      items: buildTermMetaItems("finishes", product?.finishes || [], true)
+    }
+  ];
+  const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
+  const hasDetailBlocks = hasMoreInfo || hasMetaLists;
 
   const fallbackHotspots = useMemo(() => {
     const options = [];
@@ -346,13 +509,20 @@ export default function ProductDetail() {
               {activeImage ? (
                 <button
                   type="button"
-                  className="group relative h-[42vh] min-h-[320px] w-full md:h-[52vh]"
-                  onClick={() => setLightboxOpen(true)}
+                  className="group relative block h-[42vh] min-h-[320px] w-full cursor-zoom-in appearance-none overflow-hidden border-0 bg-transparent p-0 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 md:h-[52vh]"
+                  onClick={openLightbox}
+                  aria-label={t("productDetail.openGallery")}
+                  aria-haspopup="dialog"
+                  aria-expanded={lightboxOpen}
                 >
-                  <img
-                    src={resolveImageUrl(activeImage)}
+                  <ProtectedImage
+                    src={resolveProtectedImageUrl(activeImage)}
                     alt={localizedTitle}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                    wrapperClassName="h-full w-full"
+                    fit="cover"
+                    className="transition duration-500 group-hover:scale-[1.02]"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </button>
               ) : (
@@ -380,7 +550,7 @@ export default function ProductDetail() {
                           }`}
                       >
                         <img
-                          src={resolveImageUrl(image)}
+                          src={resolveProtectedThumbnailUrl(image)}
                           alt=""
                           className="h-full w-full object-cover"
                           loading="lazy"
@@ -460,47 +630,29 @@ export default function ProductDetail() {
               <section className="space-y-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("productDetail.moreInfo")}</p>
                 <div className="space-y-5 text-sm text-primary">
-                  {infoSections.map((section) => {
-                    const items = termsByTaxonomy[section.key] || [];
-                    if (items.length === 0) return null;
-                    return (
-                      <div key={section.key} className="space-y-2">
-                        <p className="font-semibold">{section.label}</p>
-                        <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-primary/80">
-                          {items.map((term) => (
-                            <span key={`${section.key}-${term.id}`} className="px-2 py-1">
-                              {getLocalizedTerm(term, lang)}
-                            </span>
-                          ))}
-                        </div>
+                  {localizedInfoSections.map((section) => (
+                    <div key={section.key} className="space-y-2">
+                      <p className="font-semibold">{section.label}</p>
+                      <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-primary/80">
+                        {section.items.map(({ term, label }) => (
+                          <span key={`${section.key}-${term.id}`} className="px-2 py-1">
+                            {label}
+                          </span>
+                        ))}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                   {metaLists.map((entry) => {
                     if (!entry.items.length) return null;
                     return (
                       <div key={entry.key} className="space-y-2">
                         <p className="font-semibold">{entry.label}</p>
                         <div className="flex flex-wrap gap-2">
-                          {entry.items.map((value, index) => (
-                            entry.linkable ? (
-                              <Link
-                                key={`${entry.key}-${index}-${value}`}
-                                to={buildFilterLink(value)}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80 transition hover:border-primary/45 hover:text-primary"
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
-                                <span>{value}</span>
-                              </Link>
-                            ) : (
-                              <span
-                                key={`${entry.key}-${index}-${value}`}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80"
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
-                                <span>{value}</span>
-                              </span>
-                            )
+                          {entry.items.map((item) => (
+                            <MetaPill key={item.id} to={item.link}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                              <span>{item.label}</span>
+                            </MetaPill>
                           ))}
                         </div>
                       </div>
@@ -606,14 +758,14 @@ export default function ProductDetail() {
       )}
 
       {lightboxOpen && (
-        <div className="fixed inset-0 z-[9999] bg-[#E5E1DD] text-primary">
+        <div className="fixed inset-0 z-[9999] bg-[#E5E1DD] text-primary" role="dialog" aria-modal="true" aria-label={localizedTitle}>
           <div className="section-shell flex h-20 items-center justify-between gap-4">
             <p className="truncate text-xs font-semibold uppercase tracking-[0.22em] text-primary/60">
               {localizedTitle}
             </p>
             <button
               type="button"
-              onClick={() => setLightboxOpen(false)}
+              onClick={closeLightbox}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:bg-primary/10"
               aria-label={t("actions.close")}
             >
@@ -626,10 +778,11 @@ export default function ProductDetail() {
 
           <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col pb-6">
             <div className="flex-1 overflow-hidden">
-              <img
-                src={resolveImageUrl(activeImage)}
+              <ProtectedImage
+                src={resolveProtectedImageUrl(activeImage)}
                 alt={localizedTitle}
-                className="h-full w-full object-contain"
+                wrapperClassName="h-full w-full"
+                fit="contain"
               />
             </div>
             {images.length > 1 && (

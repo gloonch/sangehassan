@@ -17,6 +17,10 @@ if [ -d /seed/images ]; then
     if [ -d /seed/images/products ] && { [ ! -d /app/storage/images/products ] || [ -z "$(ls -A /app/storage/images/products 2>/dev/null || true)" ]; }; then
       cp -R /seed/images/products /app/storage/images/
     fi
+    if [ -d /seed/images/watermark ]; then
+      mkdir -p /app/storage/images/watermark
+      cp -R /seed/images/watermark/. /app/storage/images/watermark/
+    fi
     # Provide a few generic placeholder images under /images/content/.
     mkdir -p /app/storage/images/content
     for f in /seed/images/granite.jpg /seed/images/marble.jpg /seed/images/travertine.jpg; do

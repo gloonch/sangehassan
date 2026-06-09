@@ -418,7 +418,15 @@
     "templatesCount": "قالب‌ها",
     "blogsCount": "مقالات",
     "categoryUsageTitle": "پوشش دسته‌بندی‌ها",
-    "templatesTitle": "نمای کلی قالب‌ها"
+    "templatesTitle": "نمای کلی قالب‌ها",
+    "mediaSettingsTitle": "تنظیمات رسانه",
+    "watermarkTitle": "واترمارک تصاویر محصول",
+    "watermarkDescription": "فقط لایه واترمارک روی تصاویر محافظت‌شده صفحه جزئیات محصول را کنترل می‌کند. مسیر محافظت‌شده و رفتار غیرقابل دانلود باقی می‌ماند.",
+    "watermarkOn": "روشن",
+    "watermarkOff": "خاموش",
+    "watermarkEnabled": "لایه واترمارک فعال است",
+    "watermarkDisabled": "لایه واترمارک غیرفعال است",
+    "savingSettings": "در حال ذخیره..."
   },
   "categories": {
     "title": "دسته‌بندی‌ها",
@@ -498,6 +506,7 @@
     "useCaseSpecial": "نکات ویژه",
     "singleSelect": "تک‌انتخاب",
     "newTermPlaceholder": "برچسب جدید",
+    "selectTerm": "انتخاب از گزینه‌های ذخیره‌شده",
     "addTerm": "افزودن",
     "noTerms": "برچسبی ثبت نشده است.",
     "detailsTitle": "سورت، معدن، فینیش",
@@ -505,6 +514,10 @@
     "mines": "معدن‌ها",
     "finishes": "فینیش‌ها",
     "aliases": "نام‌های دیگر"
+  },
+  "panelProductTerms": {
+    "title": "گزینه‌های محصول",
+    "empty": "هنوز گزینه‌ای ثبت نشده است."
   },
   "form": {
     "title": "عنوان",
@@ -538,6 +551,7 @@
     "sectionKey": "کلید بخش",
     "ctaLabel": "متن CTA",
     "ctaHref": "لینک CTA",
+    "linkUrl": "لینک",
     "orderIndex": "ترتیب",
     "isActive": "فعال",
     "descriptionEn": "توضیحات (انگلیسی)",
@@ -553,6 +567,7 @@
     "close": "بستن",
     "showForm": "نمایش فرم",
     "hideForm": "بستن فرم",
+    "add": "افزودن",
     "addNew": "افزودن جدید",
     "edit": "ویرایش",
     "logout": "خروج",

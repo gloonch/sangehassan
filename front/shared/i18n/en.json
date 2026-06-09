@@ -180,7 +180,7 @@
     "useCaseProjects": "Project types",
     "useCaseSpecial": "Special notes",
     "variants": "Variants",
-    "mines": "Mines",
+    "mines": "Quarries",
     "finishes": "Finishes",
     "callForMoreInfo": "Call for more information",
     "domesticMessengerHint": "Messaging via Bale and Rubika is also available",
@@ -418,7 +418,15 @@
     "templatesCount": "Templates",
     "blogsCount": "Blogs",
     "categoryUsageTitle": "Category coverage",
-    "templatesTitle": "Templates overview"
+    "templatesTitle": "Templates overview",
+    "mediaSettingsTitle": "Media settings",
+    "watermarkTitle": "Product image watermark",
+    "watermarkDescription": "Controls only the watermark overlay on protected product-detail images. Protected image delivery and non-download UI behavior remain active.",
+    "watermarkOn": "On",
+    "watermarkOff": "Off",
+    "watermarkEnabled": "Watermark overlay is enabled",
+    "watermarkDisabled": "Watermark overlay is disabled",
+    "savingSettings": "Saving..."
   },
   "categories": {
     "title": "Categories",
@@ -498,13 +506,18 @@
     "useCaseSpecial": "Special notes",
     "singleSelect": "single select",
     "newTermPlaceholder": "New tag label",
+    "selectTerm": "Select a saved option",
     "addTerm": "Add",
     "noTerms": "No tags yet.",
     "detailsTitle": "Variants, quarries, finishes",
     "variants": "Variants",
-    "mines": "Mines",
+    "mines": "Quarries",
     "finishes": "Finishes",
     "aliases": "Aliases"
+  },
+  "panelProductTerms": {
+    "title": "Product options",
+    "empty": "No options saved yet."
   },
   "form": {
     "title": "Title",
@@ -538,6 +551,7 @@
     "sectionKey": "Section key",
     "ctaLabel": "CTA label",
     "ctaHref": "CTA link",
+    "linkUrl": "Link URL",
     "orderIndex": "Order",
     "isActive": "Active",
     "descriptionEn": "Description (English)",
@@ -553,6 +567,7 @@
     "close": "Close",
     "showForm": "Show form",
     "hideForm": "Hide form",
+    "add": "Add",
     "addNew": "Add new",
     "edit": "Edit",
     "logout": "Log out",

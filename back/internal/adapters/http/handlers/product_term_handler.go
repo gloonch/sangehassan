@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,6 +27,7 @@ type productTermPayload struct {
 	LabelEN  string `json:"label_en"`
 	LabelFA  string `json:"label_fa"`
 	LabelAR  string `json:"label_ar"`
+	LinkURL  string `json:"link_url"`
 }
 
 func (h *ProductTermHandler) List(c *gin.Context) {
@@ -50,9 +52,14 @@ func (h *ProductTermHandler) Upsert(c *gin.Context) {
 	payload.LabelEN = strings.TrimSpace(payload.LabelEN)
 	payload.LabelFA = strings.TrimSpace(payload.LabelFA)
 	payload.LabelAR = strings.TrimSpace(payload.LabelAR)
+	payload.LinkURL = strings.TrimSpace(payload.LinkURL)
 
 	if payload.Taxonomy == "" {
 		respondError(c, http.StatusBadRequest, "taxonomy is required")
+		return
+	}
+	if !isAllowedProductTermLink(payload.LinkURL) {
+		respondError(c, http.StatusBadRequest, "link_url must be an http(s) or site-relative URL")
 		return
 	}
 
@@ -78,6 +85,10 @@ func (h *ProductTermHandler) Upsert(c *gin.Context) {
 	if payload.Key == "" {
 		payload.Key = slugify(payload.LabelEN)
 	}
+	if payload.Key == "" {
+		respondError(c, http.StatusBadRequest, "key is required")
+		return
+	}
 
 	term, err := h.service.Upsert(c.Request.Context(), domain.ProductTerm{
 		Taxonomy: payload.Taxonomy,
@@ -85,6 +96,7 @@ func (h *ProductTermHandler) Upsert(c *gin.Context) {
 		LabelEN:  payload.LabelEN,
 		LabelFA:  payload.LabelFA,
 		LabelAR:  payload.LabelAR,
+		LinkURL:  payload.LinkURL,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to save product term")
@@ -115,3 +127,16 @@ func slugify(input string) string {
 	return strings.Trim(value, "-")
 }
 
+func isAllowedProductTermLink(raw string) bool {
+	if raw == "" || strings.HasPrefix(raw, "#") {
+		return true
+	}
+	if strings.HasPrefix(raw, "/") {
+		return !strings.HasPrefix(raw, "//")
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	return parsed.Scheme == "http" || parsed.Scheme == "https"
+}

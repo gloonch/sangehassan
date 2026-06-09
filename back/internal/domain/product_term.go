@@ -7,5 +7,5 @@ type ProductTerm struct {
 	LabelEN  string `json:"label_en"`
 	LabelFA  string `json:"label_fa"`
 	LabelAR  string `json:"label_ar"`
+	LinkURL  string `json:"link_url"`
 }
-

@@ -37,15 +37,17 @@ export default function Products() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [formOpen, setFormOpen] = useState(true);
   const [descriptionLang, setDescriptionLang] = useState("en");
-  const [newListInputs, setNewListInputs] = useState({ variants: "", mines: "", finishes: "", aliases: "" });
+  const [newListInputs, setNewListInputs] = useState({ aliases: "" });
+  const [selectedListInputs, setSelectedListInputs] = useState({ variants: "", mines: "", finishes: "" });
+  const [productTerms, setProductTerms] = useState([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  const listFields = useMemo(() => ([
+  const metaListFields = useMemo(() => ([
     { key: "variants", label: t("panelProductMeta.variants") },
     { key: "mines", label: t("panelProductMeta.mines") },
-    { key: "finishes", label: t("panelProductMeta.finishes") },
-    { key: "aliases", label: t("panelProductMeta.aliases") }
+    { key: "finishes", label: t("panelProductMeta.finishes") }
   ]), [t]);
+  const aliasField = useMemo(() => ({ key: "aliases", label: t("panelProductMeta.aliases") }), [t]);
 
   const getTermLabel = (term) => {
     if (!term) return "";
@@ -54,18 +56,43 @@ export default function Products() {
     return term.label_en || "";
   };
 
+  const getStoredTermValue = (term) => term?.label_fa || term?.label_en || term?.label_ar || term?.key || "";
+  const normalizeTermValue = (value) => String(value || "").trim().toLowerCase();
+
+  const termsByTaxonomy = useMemo(() => {
+    const grouped = { variants: [], mines: [], finishes: [] };
+    for (const term of productTerms) {
+      if (!grouped[term.taxonomy]) continue;
+      grouped[term.taxonomy].push(term);
+    }
+    return grouped;
+  }, [productTerms]);
+
+  const findTermForValue = (field, value) => {
+    const needle = normalizeTermValue(value);
+    if (!needle) return null;
+    return (termsByTaxonomy[field] || []).find((term) =>
+      [term.key, term.label_en, term.label_fa, term.label_ar].some((candidate) => normalizeTermValue(candidate) === needle)
+    );
+  };
+
+  const getMetaListItemLabel = (field, value) => getTermLabel(findTermForValue(field, value)) || value;
+
   const loadData = async () => {
     try {
-      const [productRes, categoryRes] = await Promise.all([
+      const [productRes, categoryRes, termRes] = await Promise.all([
         fetchJSON("/api/admin/products"),
-        fetchJSON("/api/admin/categories")
+        fetchJSON("/api/admin/categories"),
+        fetchJSON("/api/admin/product-terms")
       ]);
       setProducts(productRes.data || []);
       setCategories(categoryRes.data || []);
+      setProductTerms(termRes.data || []);
       setError("");
     } catch (err) {
       setProducts([]);
       setCategories([]);
+      setProductTerms([]);
       setError(t("messages.error"));
     } finally {
       setLoading(false);
@@ -169,6 +196,17 @@ export default function Products() {
     setNewListInputs((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const addSelectedListItem = (field) => {
+    const value = String(selectedListInputs[field] || "").trim();
+    if (!value) return;
+    setForm((prev) => {
+      const existing = Array.isArray(prev[field]) ? prev[field] : [];
+      if (existing.some((item) => normalizeTermValue(item) === normalizeTermValue(value))) return prev;
+      return { ...prev, [field]: [...existing, value] };
+    });
+    setSelectedListInputs((prev) => ({ ...prev, [field]: "" }));
+  };
+
   const removeListItem = (field, index) => {
     setForm((prev) => {
       const existing = Array.isArray(prev[field]) ? prev[field] : [];
@@ -206,7 +244,8 @@ export default function Products() {
       setEditingId(null);
       setSelectedImageIndex(0);
       setDescriptionLang("en");
-      setNewListInputs({ variants: "", mines: "", finishes: "", aliases: "" });
+      setNewListInputs({ aliases: "" });
+      setSelectedListInputs({ variants: "", mines: "", finishes: "" });
       loadData();
     } catch (err) {
       setError(t("messages.error"));
@@ -243,6 +282,7 @@ export default function Products() {
       });
       setSelectedImageIndex(0);
       setDescriptionLang("en");
+      setSelectedListInputs({ variants: "", mines: "", finishes: "" });
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -376,55 +416,111 @@ export default function Products() {
                   {t("panelProductMeta.detailsTitle")}
                 </p>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {listFields.map((field) => (
-                    <div key={field.key} className="space-y-2">
-                      <label className="block text-sm font-semibold text-primary">{field.label}</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          className="w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm"
-                          placeholder={t("panelProductMeta.newTermPlaceholder")}
-                          value={newListInputs[field.key] || ""}
-                          onChange={(event) =>
-                            setNewListInputs((prev) => ({ ...prev, [field.key]: event.target.value }))
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              addListItem(field.key);
+                  {metaListFields.map((field) => {
+                    const options = termsByTaxonomy[field.key] || [];
+                    return (
+                      <div key={field.key} className="space-y-2">
+                        <label className="block text-sm font-semibold text-primary">{field.label}</label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm"
+                            value={selectedListInputs[field.key] || ""}
+                            onChange={(event) =>
+                              setSelectedListInputs((prev) => ({ ...prev, [field.key]: event.target.value }))
                             }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => addListItem(field.key)}
-                          className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
-                        >
-                          {t("actions.addNew")}
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {(form[field.key] || []).map((item, index) => (
-                          <span
-                            key={`${field.key}-${item}-${index}`}
-                            className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary/70 shadow-sm"
+                            disabled={options.length === 0}
                           >
-                            {item}
-                            <button
-                              type="button"
-                              onClick={() => removeListItem(field.key, index)}
-                              className="text-primary/50 transition hover:text-primary"
+                            <option value="">
+                              {options.length === 0 ? t("panelProductMeta.noTerms") : t("panelProductMeta.selectTerm")}
+                            </option>
+                            {options.map((term) => {
+                              const value = getStoredTermValue(term);
+                              return (
+                                <option key={term.id} value={value}>
+                                  {getTermLabel(term)}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => addSelectedListItem(field.key)}
+                            disabled={options.length === 0}
+                            className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
+                          >
+                            {t("actions.add")}
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(form[field.key] || []).map((item, index) => (
+                            <span
+                              key={`${field.key}-${item}-${index}`}
+                              className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary/70 shadow-sm"
                             >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                        {(form[field.key] || []).length === 0 && (
-                          <p className="text-xs text-primary/50">{t("messages.empty")}</p>
-                        )}
+                              {getMetaListItemLabel(field.key, item)}
+                              <button
+                                type="button"
+                                onClick={() => removeListItem(field.key, index)}
+                                className="text-primary/50 transition hover:text-primary"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                          {(form[field.key] || []).length === 0 && (
+                            <p className="text-xs text-primary/50">{t("messages.empty")}</p>
+                          )}
+                        </div>
                       </div>
+                    );
+                  })}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-primary">{aliasField.label}</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm"
+                        placeholder={t("panelProductMeta.newTermPlaceholder")}
+                        value={newListInputs.aliases || ""}
+                        onChange={(event) =>
+                          setNewListInputs((prev) => ({ ...prev, aliases: event.target.value }))
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            addListItem("aliases");
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addListItem("aliases")}
+                        className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
+                      >
+                        {t("actions.addNew")}
+                      </button>
                     </div>
-                  ))}
+                    <div className="flex flex-wrap gap-2">
+                      {(form.aliases || []).map((item, index) => (
+                        <span
+                          key={`aliases-${item}-${index}`}
+                          className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary/70 shadow-sm"
+                        >
+                          {item}
+                          <button
+                            type="button"
+                            onClick={() => removeListItem("aliases", index)}
+                            className="text-primary/50 transition hover:text-primary"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      {(form.aliases || []).length === 0 && (
+                        <p className="text-xs text-primary/50">{t("messages.empty")}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
@@ -551,7 +647,8 @@ export default function Products() {
                   setForm(emptyForm);
                   setSelectedImageIndex(0);
                   setDescriptionLang("en");
-                  setNewListInputs({ variants: "", mines: "", finishes: "", aliases: "" });
+                  setNewListInputs({ aliases: "" });
+                  setSelectedListInputs({ variants: "", mines: "", finishes: "" });
                 }}
               >
                 {t("actions.cancel")}

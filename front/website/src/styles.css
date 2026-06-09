@@ -19,6 +19,14 @@ body {
   min-height: 100vh;
 }
 
+[data-protected-image],
+[data-protected-image] img {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
 /* Hide scrollbars globally while preserving scrolling */
 * {
   scrollbar-width: none;

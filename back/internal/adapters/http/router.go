@@ -46,7 +46,11 @@ func NewRouter(
 	}
 	router.Use(cors.New(corsConfig))
 
-	router.Static("/images", "./storage/images")
+	router.Static("/images", cfg.UploadDir)
+
+	imageHandler := handlers.NewImageHandler(cfg.UploadDir, "")
+	router.GET("/protected-images/*filepath", imageHandler.Serve)
+	router.HEAD("/protected-images/*filepath", imageHandler.Serve)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -72,6 +76,7 @@ func NewRouter(
 		api.GET("/categories", categoryHandler.List)
 		api.GET("/products", productHandler.List)
 		api.GET("/products/:slug", productHandler.GetBySlug)
+		api.GET("/product-terms", productTermHandler.List)
 		api.GET("/ads", listingHandler.List)
 		api.GET("/ads/:id", listingHandler.Get)
 
@@ -120,6 +125,8 @@ func NewRouter(
 
 			admin.GET("/session", adminAuthHandler.Session)
 			admin.GET("/dashboard", dashboardHandler.Stats)
+			admin.GET("/protected-images/settings", imageHandler.AdminSettings)
+			admin.PUT("/protected-images/settings", imageHandler.AdminUpdateSettings)
 
 			admin.GET("/product-terms", productTermHandler.List)
 			admin.POST("/product-terms", productTermHandler.Upsert)

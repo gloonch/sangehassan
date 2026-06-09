@@ -8,6 +8,10 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [watermarkSettings, setWatermarkSettings] = useState(null);
+  const [watermarkLoading, setWatermarkLoading] = useState(true);
+  const [watermarkSaving, setWatermarkSaving] = useState(false);
+  const [watermarkError, setWatermarkError] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -30,6 +34,51 @@ export default function Dashboard() {
       mounted = false;
     };
   }, [t]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchJSON("/api/admin/protected-images/settings");
+        if (!mounted) return;
+        setWatermarkSettings(res.data || { watermark_enabled: true });
+        setWatermarkError("");
+      } catch (err) {
+        if (!mounted) return;
+        setWatermarkSettings(null);
+        setWatermarkError(t("messages.error"));
+      } finally {
+        if (mounted) setWatermarkLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [t]);
+
+  const handleWatermarkToggle = async () => {
+    if (!watermarkSettings || watermarkSaving) return;
+
+    const previous = watermarkSettings;
+    const next = { watermark_enabled: !previous.watermark_enabled };
+    setWatermarkSettings(next);
+    setWatermarkSaving(true);
+    setWatermarkError("");
+
+    try {
+      const res = await fetchJSON("/api/admin/protected-images/settings", {
+        method: "PUT",
+        body: JSON.stringify(next)
+      });
+      setWatermarkSettings(res.data || next);
+    } catch (err) {
+      setWatermarkSettings(previous);
+      setWatermarkError(t("messages.error"));
+    } finally {
+      setWatermarkSaving(false);
+    }
+  };
 
   const templates = useMemo(() => stats?.templates || [], [stats]);
   const categoryUsage = useMemo(() => stats?.category_usage || [], [stats]);
@@ -63,6 +112,51 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="panel-card">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.3em] text-primary/60">{t("dashboard.mediaSettingsTitle")}</p>
+            <h3 className="mt-2 font-display text-xl text-primary">{t("dashboard.watermarkTitle")}</h3>
+            <p className="mt-2 text-sm text-primary/65">{t("dashboard.watermarkDescription")}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleWatermarkToggle}
+            disabled={watermarkLoading || watermarkSaving || !watermarkSettings}
+            aria-pressed={Boolean(watermarkSettings?.watermark_enabled)}
+            className={`relative inline-flex h-10 w-20 shrink-0 items-center rounded-full border px-1 transition ${
+              watermarkSettings?.watermark_enabled
+                ? "border-primary bg-primary"
+                : "border-primary/25 bg-white/80"
+            } ${watermarkLoading || watermarkSaving || !watermarkSettings ? "cursor-wait opacity-60" : "hover:border-primary/60"}`}
+          >
+            <span
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-semibold uppercase text-primary shadow-sm transition ${
+                watermarkSettings?.watermark_enabled ? "translate-x-10" : "translate-x-0"
+              }`}
+            >
+              {watermarkSettings?.watermark_enabled ? t("dashboard.watermarkOn") : t("dashboard.watermarkOff")}
+            </span>
+          </button>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            watermarkSettings?.watermark_enabled
+              ? "bg-primary/10 text-primary"
+              : "bg-accent/15 text-accent"
+          }`}>
+            {watermarkLoading
+              ? t("messages.loading")
+              : watermarkSettings?.watermark_enabled
+                ? t("dashboard.watermarkEnabled")
+                : t("dashboard.watermarkDisabled")}
+          </span>
+          {watermarkSaving ? <span className="text-xs font-semibold text-primary/50">{t("dashboard.savingSettings")}</span> : null}
+          {watermarkError ? <span className="text-xs font-semibold text-red-500">{watermarkError}</span> : null}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

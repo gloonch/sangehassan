@@ -6,7 +6,7 @@ import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
-const IMAGE_REV = import.meta.env.VITE_IMAGE_REV || "about-2026-04-17-r4";
+const IMAGE_REV = import.meta.env.VITE_IMAGE_REV || "about-2026-06-08-r1";
 const imageUrl = (path) => `${API_BASE}/images/${path}?v=${IMAGE_REV}`;
 
 const seoContent = {

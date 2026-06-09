@@ -3,6 +3,7 @@ import { useAuth } from "./lib/auth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
+import ProductTerms from "./pages/ProductTerms";
 import Products from "./pages/Products";
 import Blocks from "./pages/Blocks";
 import Blogs from "./pages/Blogs";
@@ -45,6 +46,7 @@ export default function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="categories" element={<Categories />} />
+        <Route path="product-terms" element={<ProductTerms />} />
         <Route path="products" element={<Products />} />
         <Route path="blocks" element={<Blocks />} />
         <Route path="blogs" element={<Blogs />} />

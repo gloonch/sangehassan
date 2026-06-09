@@ -44,6 +44,12 @@ CREATE TABLE IF NOT EXISTS product_images (
   UNIQUE(product_id, image_url)
 );
 
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS aliases TEXT[] NOT NULL DEFAULT '{}'::text[],
+ADD COLUMN IF NOT EXISTS variants TEXT[] NOT NULL DEFAULT '{}'::text[],
+ADD COLUMN IF NOT EXISTS mines TEXT[] NOT NULL DEFAULT '{}'::text[],
+ADD COLUMN IF NOT EXISTS finishes TEXT[] NOT NULL DEFAULT '{}'::text[];
+
 -- Attribute definitions (e.g., کاربرد, فضای کاربری, رنگ)
 CREATE TABLE IF NOT EXISTS attributes (
   id SERIAL PRIMARY KEY,
@@ -245,10 +251,14 @@ CREATE TABLE IF NOT EXISTS product_terms (
   label_en VARCHAR(255) NOT NULL,
   label_fa VARCHAR(255) NOT NULL,
   label_ar VARCHAR(255) NOT NULL,
+  link_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ,
   UNIQUE (taxonomy, term_key)
 );
+
+ALTER TABLE product_terms
+ADD COLUMN IF NOT EXISTS link_url TEXT;
 
 CREATE TABLE IF NOT EXISTS product_term_links (
   product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -329,6 +339,128 @@ VALUES
   ('use_case_special', 'translucent', 'Translucent', 'نیمه‌شفاف', 'شبه شفاف'),
   ('use_case_special', 'handmade', 'Handmade', 'دست‌ساز', 'يدوي')
 ON CONFLICT (taxonomy, term_key) DO NOTHING;
+
+INSERT INTO product_terms (taxonomy, term_key, label_en, label_fa, label_ar)
+VALUES
+  ('finishes', 'cloudy-finish', 'Cloudy Finish', 'ابری', 'تشطيب سحابي'),
+  ('finishes', 'scratch', 'Scratch', 'اسکرچ', 'تشطيب مخدوش'),
+  ('finishes', 'unfilled', 'Unfilled', 'آنفیلد', 'غير مملوء'),
+  ('finishes', 'bush-hammer', 'Bush Hammer', 'بوش همر', 'بوش هامر'),
+  ('finishes', 'leathered-bush-hammer', 'Leathered Bush Hammer', 'بوش همر چرمی', 'بوش هامر جلدي'),
+  ('finishes', 'pre-cut', 'Pre-Cut', 'پری‌کات', 'مقطّع مسبقاً'),
+  ('finishes', 'polished', 'Polished', 'پولیش (صیقلی)', 'مصقول'),
+  ('finishes', 'mesh-backed', 'Mesh-Backed', 'توری', 'مدعّم بشبكة'),
+  ('finishes', 'mesh-backed-resin-epoxy', 'Mesh-Backed, Resin and Epoxy Treated', 'توری، رزین و اپوکسی', 'مدعّم بشبكة ومعالج بالراتنج والإيبوكسي'),
+  ('finishes', 'chiseled-machine-hand', 'Chiseled (Machine and Hand)', 'تیشه‌ای (ماشینی و دستی)', 'منقور بالإزميل (آلي ويدوي)'),
+  ('finishes', 'leathered', 'Leathered', 'چرمی', 'تشطيب جلدي'),
+  ('finishes', 'rock', 'Rock', 'راک (بادبر)', 'تشطيب صخري'),
+  ('finishes', 'resin-epoxy', 'Resin and Epoxy Treated', 'رزین و اپوکسی', 'معالج بالراتنج والإيبوكسي'),
+  ('finishes', 'sandblasted', 'Sandblasted', 'سندبلاست', 'مسفوع بالرمل'),
+  ('finishes', 'shot-blast', 'Shot Blast', 'شات بلاست', 'تشطيب بالقذف الحبيبي'),
+  ('finishes', 'grooved', 'Grooved', 'شیار', 'محزّز'),
+  ('finishes', 'flamed', 'Flamed', 'فلیم', 'معالج باللهب'),
+  ('finishes', 'leather-flamed', 'Leather Flamed', 'فلیم چرمی', 'معالج باللهب وبتشطيب جلدي'),
+  ('finishes', 'flamed-scratch', 'Flamed Scratch', 'فلیم اسکرچ', 'معالج باللهب ومخدوش'),
+  ('finishes', 'filled', 'Filled', 'فیلد', 'مملوء'),
+  ('finishes', 'cut-broken', 'Cut Broken', 'کات بروکن', 'قطع مكسّر'),
+  ('finishes', 'cut-hammered', 'Cut Hammered', 'کات هَمِرد', 'قطع مطرّق'),
+  ('finishes', 'lava', 'Lava', 'لاوا', 'لافا'),
+  ('finishes', 'honed', 'Honed', 'هوند (نسابیده)', 'مصقول مطفي'),
+  ('finishes', 'oblique', 'Oblique', 'اوبلیک (مورب)', 'مائل'),
+  ('finishes', 'super-rock', 'Super Rock', 'سوپر راک', 'سوبر روك'),
+  ('finishes', 'chevron', 'Chevron', 'شورون (هفت‌وهشتی)', 'شيفرون'),
+  ('finishes', 'lineal', 'Lineal', 'لینئال', 'لينيل'),
+  ('finishes', 'lineal-plus', 'Lineal Plus', 'لینئال پلاس', 'لينيل بلس'),
+  ('finishes', 'lineal-extreme', 'Lineal Extreme', 'لینئال اکستریم', 'لينيل إكستريم'),
+  ('finishes', 'vintage', 'Vintage', 'وینتیج', 'فينتج'),
+  ('finishes', 'cotton', 'Cotton', 'کاتن', 'كوتون')
+ON CONFLICT (taxonomy, term_key) DO NOTHING;
+
+WITH source_terms AS (
+  SELECT 'variants' AS taxonomy, LEFT(TRIM(value), 255) AS label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.variants, '{}'::text[])) AS value
+  UNION ALL
+  SELECT 'mines' AS taxonomy, LEFT(TRIM(value), 255) AS label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.mines, '{}'::text[])) AS value
+),
+normalized_terms AS (
+  SELECT
+    taxonomy,
+    label,
+    LOWER(REGEXP_REPLACE(label, '[[:space:]]+', ' ', 'g')) AS normalized_label
+  FROM source_terms
+  WHERE label <> ''
+),
+unique_terms AS (
+  SELECT DISTINCT ON (taxonomy, normalized_label)
+    taxonomy,
+    label,
+    normalized_label
+  FROM normalized_terms
+  ORDER BY taxonomy, normalized_label, label
+)
+INSERT INTO product_terms (taxonomy, term_key, label_en, label_fa, label_ar)
+SELECT
+  taxonomy,
+  'legacy-' || taxonomy || '-' || SUBSTR(MD5(normalized_label), 1, 16),
+  CASE WHEN label ~ '[؀-ۿ]' THEN '' ELSE label END,
+  CASE WHEN label ~ '[؀-ۿ]' THEN label ELSE '' END,
+  ''
+FROM unique_terms u
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM product_terms t
+  WHERE t.taxonomy = u.taxonomy
+    AND (
+      LOWER(REGEXP_REPLACE(TRIM(t.label_en), '[[:space:]]+', ' ', 'g')) = u.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_fa), '[[:space:]]+', ' ', 'g')) = u.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_ar), '[[:space:]]+', ' ', 'g')) = u.normalized_label
+    )
+)
+ON CONFLICT (taxonomy, term_key) DO NOTHING;
+
+UPDATE product_terms
+SET
+  label_en = CASE WHEN label_fa ~ '[؀-ۿ]' THEN '' ELSE label_en END,
+  label_ar = '',
+  label_fa = CASE WHEN label_fa ~ '[؀-ۿ]' THEN label_fa ELSE '' END,
+  updated_at = NOW()
+WHERE taxonomy IN ('variants', 'mines')
+  AND term_key LIKE 'legacy-%'
+  AND label_en = label_fa
+  AND label_fa = label_ar;
+
+WITH source_links AS (
+  SELECT p.id AS product_id, 'variants' AS taxonomy, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', ' ', 'g')) AS normalized_label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.variants, '{}'::text[])) AS value
+  UNION ALL
+  SELECT p.id AS product_id, 'mines' AS taxonomy, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', ' ', 'g')) AS normalized_label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.mines, '{}'::text[])) AS value
+  UNION ALL
+  SELECT p.id AS product_id, 'finishes' AS taxonomy, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', ' ', 'g')) AS normalized_label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.finishes, '{}'::text[])) AS value
+),
+matched_terms AS (
+  SELECT DISTINCT sl.product_id, t.id AS term_id
+  FROM source_links sl
+  JOIN product_terms t
+    ON t.taxonomy = sl.taxonomy
+   AND (
+      LOWER(REGEXP_REPLACE(TRIM(t.label_en), '[[:space:]]+', ' ', 'g')) = sl.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_fa), '[[:space:]]+', ' ', 'g')) = sl.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_ar), '[[:space:]]+', ' ', 'g')) = sl.normalized_label
+   )
+  WHERE sl.normalized_label <> ''
+)
+INSERT INTO product_term_links (product_id, term_id)
+SELECT product_id, term_id
+FROM matched_terms
+ON CONFLICT DO NOTHING;
 
 -- Remove limestone stone_type from existing DBs (and its product links) so it does not appear in UI filters.
 DELETE FROM product_term_links

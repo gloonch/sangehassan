@@ -122,7 +122,7 @@
     "useCaseProjects": "أنواع المشاريع",
     "useCaseSpecial": "ملاحظات خاصة",
     "variants": "الأنواع/السورت",
-    "mines": "المناجم",
+    "mines": "المحاجر",
     "finishes": "التشطيبات",
     "callForMoreInfo": "اتصل لمزيد من المعلومات",
     "domesticMessengerHint": "المراسلة عبر بله وروبيكا متاحة أيضاً",
@@ -418,7 +418,15 @@
     "templatesCount": "القوالب",
     "blogsCount": "المقالات",
     "categoryUsageTitle": "تغطية الفئات",
-    "templatesTitle": "نظرة على القوالب"
+    "templatesTitle": "نظرة على القوالب",
+    "mediaSettingsTitle": "إعدادات الوسائط",
+    "watermarkTitle": "علامة صور المنتجات",
+    "watermarkDescription": "يتحكم فقط في طبقة العلامة على صور تفاصيل المنتج المحمية. يبقى مسار الصور المحمي وسلوك منع التحميل المباشر مفعلاً.",
+    "watermarkOn": "تشغيل",
+    "watermarkOff": "إيقاف",
+    "watermarkEnabled": "طبقة العلامة مفعلة",
+    "watermarkDisabled": "طبقة العلامة غير مفعلة",
+    "savingSettings": "جار الحفظ..."
   },
   "categories": {
     "title": "الفئات",
@@ -498,13 +506,18 @@
     "useCaseSpecial": "ملاحظات خاصة",
     "singleSelect": "اختيار واحد",
     "newTermPlaceholder": "وسم جديد",
+    "selectTerm": "اختر من الخيارات المحفوظة",
     "addTerm": "إضافة",
     "noTerms": "لا توجد وسوم بعد.",
     "detailsTitle": "الأنواع، المناجم، التشطيبات",
     "variants": "الأنواع/السورت",
-    "mines": "المناجم",
+    "mines": "المحاجر",
     "finishes": "التشطيبات",
     "aliases": "أسماء أخرى"
+  },
+  "panelProductTerms": {
+    "title": "خيارات المنتج",
+    "empty": "لا توجد خيارات محفوظة بعد."
   },
   "form": {
     "title": "العنوان",
@@ -538,6 +551,7 @@
     "sectionKey": "مفتاح القسم",
     "ctaLabel": "نص الدعوة",
     "ctaHref": "رابط الدعوة",
+    "linkUrl": "الرابط",
     "orderIndex": "الترتيب",
     "isActive": "نشط",
     "descriptionEn": "الوصف (إنجليزي)",
@@ -553,6 +567,7 @@
     "close": "إغلاق",
     "showForm": "إظهار النموذج",
     "hideForm": "إخفاء النموذج",
+    "add": "إضافة",
     "addNew": "إضافة جديد",
     "edit": "تعديل",
     "logout": "تسجيل خروج",

@@ -51,7 +51,7 @@ func main() {
 	listingService := usecase.NewListingService(listingRepo)
 	dealRequestService := usecase.NewDealRequestService(dealRequestRepo, listingRepo)
 
-	uploadHandler := handlers.NewUploadHandler("./storage/images")
+	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir)
 	router := httpapi.NewRouter(
 		cfg,
 		categoryService,

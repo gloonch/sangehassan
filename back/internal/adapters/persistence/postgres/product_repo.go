@@ -1048,7 +1048,7 @@ func (r *ProductRepository) loadAttributes(ctx context.Context, productID int64)
 
 func (r *ProductRepository) loadTerms(ctx context.Context, productID int64) ([]domain.ProductTerm, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar
+		SELECT t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, '')
 		FROM product_term_links ptl
 		JOIN product_terms t ON t.id = ptl.term_id
 		WHERE ptl.product_id = $1
@@ -1062,7 +1062,7 @@ func (r *ProductRepository) loadTerms(ctx context.Context, productID int64) ([]d
 	var terms []domain.ProductTerm
 	for rows.Next() {
 		var term domain.ProductTerm
-		if err := rows.Scan(&term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR); err != nil {
+		if err := rows.Scan(&term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL); err != nil {
 			return nil, err
 		}
 		terms = append(terms, term)
@@ -1117,7 +1117,7 @@ func (r *ProductRepository) loadTermsForProductIDs(ctx context.Context, productI
 	}
 
 	query := fmt.Sprintf(`
-		SELECT ptl.product_id, t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar
+		SELECT ptl.product_id, t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, '')
 		FROM product_term_links ptl
 		JOIN product_terms t ON t.id = ptl.term_id
 		WHERE ptl.product_id IN (%s)
@@ -1133,7 +1133,7 @@ func (r *ProductRepository) loadTermsForProductIDs(ctx context.Context, productI
 	for rows.Next() {
 		var productID int64
 		var term domain.ProductTerm
-		if err := rows.Scan(&productID, &term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR); err != nil {
+		if err := rows.Scan(&productID, &term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL); err != nil {
 			return nil, err
 		}
 		out[productID] = append(out[productID], term)
