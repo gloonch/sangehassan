@@ -22,7 +22,9 @@ const emptyForm = {
   aliases: [],
   variants: [],
   mines: [],
-  finishes: []
+  finishes: [],
+  terms: [],
+  term_ids: []
 };
 
 export default function Products() {
@@ -77,6 +79,26 @@ export default function Products() {
   };
 
   const getMetaListItemLabel = (field, value) => getTermLabel(findTermForValue(field, value)) || value;
+
+  const getValuesFromTerms = (item, field) => {
+    const termValues = (item.terms || [])
+      .filter((term) => term.taxonomy === field)
+      .map((term) => getStoredTermValue(term))
+      .filter(Boolean);
+    return termValues.length ? termValues : item[field] || [];
+  };
+
+  const getPayloadTermIDs = () => {
+    const metaTaxonomies = new Set(metaListFields.map((field) => field.key));
+    const preservedTermIDs = (form.terms || [])
+      .filter((term) => !metaTaxonomies.has(term.taxonomy))
+      .map((term) => term.id)
+      .filter(Boolean);
+    const selectedTermIDs = metaListFields
+      .flatMap((field) => (form[field.key] || []).map((value) => findTermForValue(field.key, value)?.id))
+      .filter(Boolean);
+    return [...new Set([...preservedTermIDs, ...selectedTermIDs])];
+  };
 
   const loadData = async () => {
     try {
@@ -227,6 +249,7 @@ export default function Products() {
       image_urls: images,
       video_url: form.video_url || ""
     };
+    payload.term_ids = getPayloadTermIDs();
 
     try {
       if (editingId) {
@@ -276,9 +299,11 @@ export default function Products() {
         category_id: item.category_id ? String(item.category_id) : "",
         is_popular: Boolean(item.is_popular),
         aliases: item.aliases || [],
-        variants: item.variants || [],
-        mines: item.mines || [],
-        finishes: item.finishes || []
+        variants: getValuesFromTerms(item, "variants"),
+        mines: getValuesFromTerms(item, "mines"),
+        finishes: getValuesFromTerms(item, "finishes"),
+        terms: item.terms || [],
+        term_ids: item.term_ids || []
       });
       setSelectedImageIndex(0);
       setDescriptionLang("en");

@@ -39,7 +39,7 @@
       "category": "گرانیت",
       "name_fa": "گرانیت مروارید مشهد",
       "variants": [],
-      "mines": ["ریاحی", "هاشمی", "خاتم"],
+      "mines": [],
       "finishes": []
     },
     {
@@ -52,7 +52,7 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت نهبندان",
-      "variants": ["پرتقالی", "طوسی", "آستان", "لطف اللهی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -66,8 +66,8 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت مشکی نطنز",
-      "variants": ["رنگ شده", "نچرال"],
-      "mines": ["علیزاده", "حسینی"],
+      "variants": [],
+      "mines": [],
       "finishes": []
     },
     {
@@ -101,7 +101,7 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت گل پنبه ای هگمتانه",
-      "variants": ["همدان"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -115,7 +115,7 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت کلاردشت",
-      "variants": ["هلویی ایرانی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -136,7 +136,7 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت زنجان",
-      "variants": ["طوسی", "مشکی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -178,29 +178,28 @@
     {
       "category": "گرانیت",
       "name_fa": "گرانیت الموت قزوین",
-      "variants": ["دانه درشت", "دانه ریز"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
     {
       "category": "گرانیت",
       "name_fa": "گرانیت هلویی وارداتی",
-      "variants": ["پیچ رد"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
     {
       "category": "گرانیت",
       "name_fa": "گرانیت پرتقالی وارداتی",
-      "variants": ["دانه درشت", "دانه ریز"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
-
     {
       "category": "تراورتن",
       "name_fa": "تراورتن آتشکوه",
-      "variants": ["شهاب سنگ"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -208,14 +207,14 @@
       "category": "تراورتن",
       "name_fa": "تراورتن حاجی آباد",
       "variants": [],
-      "mines": ["توکلی", "نیکفر", "کربلایی"],
+      "mines": [],
       "finishes": []
     },
     {
       "category": "تراورتن",
       "name_fa": "تراورتن دره بخاری",
       "variants": [],
-      "mines": ["آذرنوش", "حوزه"],
+      "mines": [],
       "finishes": []
     },
     {
@@ -243,13 +242,13 @@
       "category": "تراورتن",
       "name_fa": "تراورتن ابیانه",
       "variants": [],
-      "mines": ["صلصالی", "اسماعیلی", "سلمی"],
+      "mines": [],
       "finishes": []
     },
     {
       "category": "تراورتن",
       "name_fa": "تراورتن عباس آباد",
-      "variants": ["موج دار", "موج کبریتی", "دنده گاوی", "بدون موج"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -298,7 +297,7 @@
     {
       "category": "تراورتن",
       "name_fa": "تراورتن تکاب",
-      "variants": ["سیلور"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -312,14 +311,14 @@
     {
       "category": "تراورتن",
       "name_fa": "تراورتن آذرشهر",
-      "variants": ["لیموئی", "قرمز"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
     {
       "category": "تراورتن",
       "name_fa": "تراورتن درپوش",
-      "variants": ["فلاشینگ"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -344,7 +343,6 @@
       "mines": [],
       "finishes": []
     },
-
     {
       "category": "مرمریت",
       "name_fa": "مرمریت گوهره",
@@ -358,7 +356,9 @@
       "variants": [],
       "mines": [],
       "finishes": [],
-      "aliases": ["LIP"]
+      "aliases": [
+        "LIP"
+      ]
     },
     {
       "category": "مرمریت",
@@ -377,7 +377,7 @@
     {
       "category": "مرمریت",
       "name_fa": "مرمریت کرم آباده",
-      "variants": ["دانه برنجی", "مینیاتوری", "موج دار", "زیتونی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -391,7 +391,7 @@
     {
       "category": "مرمریت",
       "name_fa": "مرمریت خوی",
-      "variants": ["کرم", "طلایی", "زیتونی", "کاربنی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -399,7 +399,7 @@
       "category": "مرمریت",
       "name_fa": "مرمریت کرم دهبید",
       "variants": [],
-      "mines": ["چاه مرغی", "انگورک", "حسن آباد", "زارع"],
+      "mines": [],
       "finishes": []
     },
     {
@@ -426,7 +426,7 @@
     {
       "category": "مرمریت",
       "name_fa": "مرمریت جوشقان",
-      "variants": ["کالباسی", "موج دار"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -464,7 +464,9 @@
       "variants": [],
       "mines": [],
       "finishes": [],
-      "aliases": ["3D BLACK"]
+      "aliases": [
+        "3D BLACK"
+      ]
     },
     {
       "category": "مرمریت",
@@ -472,7 +474,9 @@
       "variants": [],
       "mines": [],
       "finishes": [],
-      "aliases": ["GOLDEN BLACK"]
+      "aliases": [
+        "GOLDEN BLACK"
+      ]
     },
     {
       "category": "مرمریت",
@@ -526,14 +530,14 @@
     {
       "category": "مرمریت",
       "name_fa": "مرمریت اداوی",
-      "variants": ["کرم", "صورتی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
     {
       "category": "مرمریت",
       "name_fa": "مرمریت کرم ایرجی",
-      "variants": ["دانه برنجی"],
+      "variants": [],
       "mines": [],
       "finishes": []
     },
@@ -541,7 +545,7 @@
       "category": "مرمریت",
       "name_fa": "مرمریت نسکافه ای",
       "variants": [],
-      "mines": ["دانشور"],
+      "mines": [],
       "finishes": []
     },
     {
@@ -619,7 +623,7 @@
       "name_fa": "مرمریت گندمک",
       "variants": [],
       "mines": [],
-      "finishes": ["تیشه ای", "بوشهمر", "بادبر", "راک", "فلیم چرمی"]
+      "finishes": []
     },
     {
       "category": "مرمریت",
@@ -635,7 +639,6 @@
       "mines": [],
       "finishes": []
     },
-
     {
       "category": "چینی",
       "name_fa": "چینی کریستال قروه",
@@ -682,8 +685,8 @@
       "category": "چینی",
       "name_fa": "چینی کریستال لایبید",
       "variants": [],
-      "mines": ["احرار"],
-      "finishes": ["ابری", "بوشهمر", "فلیم", "فلیم چرمی", "تیشه ای"]
+      "mines": [],
+      "finishes": []
     },
     {
       "category": "چینی",

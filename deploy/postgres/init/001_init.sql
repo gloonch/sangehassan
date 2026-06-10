@@ -374,7 +374,63 @@ VALUES
   ('finishes', 'lineal-extreme', 'Lineal Extreme', 'لینئال اکستریم', 'لينيل إكستريم'),
   ('finishes', 'vintage', 'Vintage', 'وینتیج', 'فينتج'),
   ('finishes', 'cotton', 'Cotton', 'کاتن', 'كوتون')
-ON CONFLICT (taxonomy, term_key) DO NOTHING;
+ON CONFLICT (taxonomy, term_key) DO UPDATE SET
+  label_en = EXCLUDED.label_en,
+  label_fa = EXCLUDED.label_fa,
+  label_ar = EXCLUDED.label_ar,
+  updated_at = NOW();
+
+WITH finish_products AS (
+  SELECT
+    p.slug,
+    LOWER(REGEXP_REPLACE(REGEXP_REPLACE(TRIM(p.title_en), '[^a-zA-Z0-9]+', '-', 'g'), '(^-|-$)', '', 'g')) AS title_key
+  FROM products p
+  JOIN categories c ON c.id = p.main_category_id
+  WHERE c.slug = 'finishings'
+),
+matched_finish_links AS (
+  SELECT DISTINCT ON (t.id)
+    t.id AS term_id,
+    '/products/' || fp.slug AS link_url
+  FROM product_terms t
+  JOIN finish_products fp
+    ON t.term_key = fp.slug
+    OR t.term_key = fp.title_key
+    OR (t.term_key = 'sandblasted' AND fp.slug = 'sandblast')
+  WHERE t.taxonomy = 'finishes'
+  ORDER BY t.id, fp.slug
+)
+UPDATE product_terms t
+SET
+  link_url = matched_finish_links.link_url,
+  updated_at = NOW()
+FROM matched_finish_links
+WHERE t.id = matched_finish_links.term_id
+  AND COALESCE(t.link_url, '') IS DISTINCT FROM matched_finish_links.link_url;
+
+WITH source_finish_links AS (
+  SELECT p.id AS product_id, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', '', 'g')) AS normalized_label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.finishes, '{}'::text[])) AS value
+  WHERE TRIM(value) <> ''
+),
+matched_terms AS (
+  SELECT DISTINCT sl.product_id, t.id AS term_id
+  FROM source_finish_links sl
+  JOIN product_terms t
+    ON t.taxonomy = 'finishes'
+   AND COALESCE(t.link_url, '') <> ''
+   AND (
+      LOWER(REGEXP_REPLACE(TRIM(t.label_en), '[[:space:]]+', '', 'g')) = sl.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_fa), '[[:space:]]+', '', 'g')) = sl.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.label_ar), '[[:space:]]+', '', 'g')) = sl.normalized_label
+      OR LOWER(REGEXP_REPLACE(TRIM(t.term_key), '[[:space:]]+', '', 'g')) = sl.normalized_label
+   )
+)
+INSERT INTO product_term_links (product_id, term_id)
+SELECT product_id, term_id
+FROM matched_terms
+ON CONFLICT DO NOTHING;
 
 WITH source_terms AS (
   SELECT 'variants' AS taxonomy, LEFT(TRIM(value), 255) AS label
@@ -440,10 +496,6 @@ WITH source_links AS (
   SELECT p.id AS product_id, 'mines' AS taxonomy, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', ' ', 'g')) AS normalized_label
   FROM products p
   CROSS JOIN LATERAL UNNEST(COALESCE(p.mines, '{}'::text[])) AS value
-  UNION ALL
-  SELECT p.id AS product_id, 'finishes' AS taxonomy, LOWER(REGEXP_REPLACE(LEFT(TRIM(value), 255), '[[:space:]]+', ' ', 'g')) AS normalized_label
-  FROM products p
-  CROSS JOIN LATERAL UNNEST(COALESCE(p.finishes, '{}'::text[])) AS value
 ),
 matched_terms AS (
   SELECT DISTINCT sl.product_id, t.id AS term_id
@@ -461,6 +513,209 @@ INSERT INTO product_term_links (product_id, term_id)
 SELECT product_id, term_id
 FROM matched_terms
 ON CONFLICT DO NOTHING;
+
+INSERT INTO product_terms (taxonomy, term_key, label_en, label_fa, label_ar)
+VALUES
+  ('finishes', 'pre-cut', 'Pre-Cut', 'پری‌کات', 'مقطّع مسبقاً'),
+  ('finishes', 'chiseled-machine-hand', 'Chiseled (Machine and Hand)', 'تیشه‌ای (ماشینی و دستی)', 'منقور بالإزميل (آلي ويدوي)'),
+  ('finishes', 'grooved', 'Grooved', 'شیار', 'محزّز'),
+  ('finishes', 'flamed', 'Flamed', 'فلیم', 'معالج باللهب'),
+  ('finishes', 'honed', 'Honed', 'هوند (نسابیده)', 'مصقول مطفي')
+ON CONFLICT (taxonomy, term_key) DO UPDATE SET
+  label_en = EXCLUDED.label_en,
+  label_fa = EXCLUDED.label_fa,
+  label_ar = EXCLUDED.label_ar,
+  updated_at = NOW();
+
+WITH rule_terms AS (
+  SELECT * FROM (VALUES
+    ('pre-cut', 'Pre-Cut', 'پری‌کات', 'مقطّع مسبقاً', ARRAY['granite', 'marble', 'crystal', 'basalt']::text[], FALSE, ARRAY[]::text[]),
+    ('chiseled-machine-hand', 'Chiseled (Machine and Hand)', 'تیشه‌ای (ماشینی و دستی)', 'منقور بالإزميل (آلي ويدوي)', ARRAY['marble', 'travertine', 'granite']::text[], FALSE, ARRAY[]::text[]),
+    ('leathered-bush-hammer', 'Leathered Bush Hammer', 'بوش همر چرمی', 'بوش هامر جلدي', ARRAY['granite', 'travertine', 'basalt']::text[], FALSE, ARRAY[]::text[]),
+    ('flamed', 'Flamed', 'فلیم', 'معالج باللهب', ARRAY['granite']::text[], FALSE, ARRAY[]::text[]),
+    ('honed', 'Honed', 'هوند (نسابیده)', 'مصقول مطفي', ARRAY[]::text[], TRUE, ARRAY[]::text[]),
+    ('grooved', 'Grooved', 'شیار', 'محزّز', ARRAY[]::text[], FALSE, ARRAY['lineal', 'scratch', 'لینئال', 'اسکرچ', 'لينيل', 'تشطيب مخدوش']::text[])
+  ) AS v(term_key, label_en, label_fa, label_ar, category_slugs, all_products, equivalent_labels)
+),
+product_category_slugs AS (
+  SELECT DISTINCT p.id AS product_id, c.slug
+  FROM products p
+  JOIN categories c ON c.id = p.main_category_id
+  UNION
+  SELECT DISTINCT pc.product_id, c.slug
+  FROM product_categories pc
+  JOIN categories c ON c.id = pc.category_id
+),
+category_candidates AS (
+  SELECT DISTINCT pcs.product_id, rt.term_key, rt.label_en, rt.label_fa, rt.label_ar
+  FROM product_category_slugs pcs
+  JOIN rule_terms rt ON pcs.slug = ANY(rt.category_slugs)
+  WHERE NOT rt.all_products
+    AND CARDINALITY(rt.equivalent_labels) = 0
+),
+all_product_candidates AS (
+  SELECT p.id AS product_id, rt.term_key, rt.label_en, rt.label_fa, rt.label_ar
+  FROM products p
+  JOIN rule_terms rt ON rt.all_products
+),
+grooved_candidates AS (
+  SELECT DISTINCT p.id AS product_id, rt.term_key, rt.label_en, rt.label_fa, rt.label_ar
+  FROM products p
+  JOIN rule_terms rt ON rt.term_key = 'grooved'
+  WHERE EXISTS (
+    SELECT 1
+    FROM UNNEST(COALESCE(p.finishes, '{}'::text[])) AS existing_finish
+    WHERE LOWER(REGEXP_REPLACE(TRIM(existing_finish), '[[:space:]]+', ' ', 'g')) = ANY(rt.equivalent_labels)
+  )
+),
+candidate_pairs AS (
+  SELECT * FROM category_candidates
+  UNION
+  SELECT * FROM all_product_candidates
+  UNION
+  SELECT * FROM grooved_candidates
+),
+missing_pairs AS (
+  SELECT cp.*
+  FROM candidate_pairs cp
+  JOIN products p ON p.id = cp.product_id
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM UNNEST(COALESCE(p.finishes, '{}'::text[])) AS existing_finish
+    WHERE LOWER(REGEXP_REPLACE(TRIM(existing_finish), '[[:space:]]+', '', 'g')) IN (
+      LOWER(REGEXP_REPLACE(TRIM(cp.label_en), '[[:space:]]+', '', 'g')),
+      LOWER(REGEXP_REPLACE(TRIM(cp.label_fa), '[[:space:]]+', '', 'g')),
+      LOWER(REGEXP_REPLACE(TRIM(cp.label_ar), '[[:space:]]+', '', 'g'))
+    )
+  )
+),
+additions AS (
+  SELECT product_id, ARRAY_AGG(label_fa ORDER BY term_key) AS labels
+  FROM missing_pairs
+  GROUP BY product_id
+)
+UPDATE products p
+SET
+  finishes = COALESCE(p.finishes, '{}'::text[]) || additions.labels,
+  updated_at = NOW()
+FROM additions
+WHERE p.id = additions.product_id;
+
+WITH canonical_terms AS (
+  SELECT * FROM (VALUES
+    ('pre-cut', 'Pre-Cut', 'پری‌کات', 'مقطّع مسبقاً'),
+    ('chiseled-machine-hand', 'Chiseled (Machine and Hand)', 'تیشه‌ای (ماشینی و دستی)', 'منقور بالإزميل (آلي ويدوي)'),
+    ('grooved', 'Grooved', 'شیار', 'محزّز'),
+    ('flamed', 'Flamed', 'فلیم', 'معالج باللهب'),
+    ('leathered-bush-hammer', 'Leathered Bush Hammer', 'بوش همر چرمی', 'بوش هامر جلدي'),
+    ('honed', 'Honed', 'هوند (نسابیده)', 'مصقول مطفي')
+  ) AS v(term_key, label_en, label_fa, label_ar)
+),
+mapped_finishes AS (
+  SELECT
+    p.id AS product_id,
+    existing_finish.ordinality,
+    COALESCE((
+      SELECT ct.label_fa
+      FROM canonical_terms ct
+      WHERE LOWER(REGEXP_REPLACE(TRIM(existing_finish.label), '[[:space:]]+', '', 'g')) IN (
+        LOWER(REGEXP_REPLACE(TRIM(ct.label_en), '[[:space:]]+', '', 'g')),
+        LOWER(REGEXP_REPLACE(TRIM(ct.label_fa), '[[:space:]]+', '', 'g')),
+        LOWER(REGEXP_REPLACE(TRIM(ct.label_ar), '[[:space:]]+', '', 'g'))
+      )
+      LIMIT 1
+    ), existing_finish.label) AS label
+  FROM products p
+  CROSS JOIN LATERAL UNNEST(COALESCE(p.finishes, '{}'::text[])) WITH ORDINALITY AS existing_finish(label, ordinality)
+),
+deduped_finishes AS (
+  SELECT DISTINCT ON (product_id, LOWER(REGEXP_REPLACE(TRIM(label), '[[:space:]]+', '', 'g')))
+    product_id,
+    label,
+    ordinality
+  FROM mapped_finishes
+  WHERE TRIM(label) <> ''
+  ORDER BY product_id, LOWER(REGEXP_REPLACE(TRIM(label), '[[:space:]]+', '', 'g')), ordinality
+),
+rebuilt_finishes AS (
+  SELECT product_id, ARRAY_AGG(label ORDER BY ordinality) AS finishes
+  FROM deduped_finishes
+  GROUP BY product_id
+)
+UPDATE products p
+SET
+  finishes = rebuilt_finishes.finishes,
+  updated_at = NOW()
+FROM rebuilt_finishes
+WHERE p.id = rebuilt_finishes.product_id
+  AND p.finishes IS DISTINCT FROM rebuilt_finishes.finishes;
+
+WITH rule_terms AS (
+  SELECT * FROM (VALUES
+    ('pre-cut', ARRAY['granite', 'marble', 'crystal', 'basalt']::text[], FALSE, ARRAY[]::text[]),
+    ('chiseled-machine-hand', ARRAY['marble', 'travertine', 'granite']::text[], FALSE, ARRAY[]::text[]),
+    ('leathered-bush-hammer', ARRAY['granite', 'travertine', 'basalt']::text[], FALSE, ARRAY[]::text[]),
+    ('flamed', ARRAY['granite']::text[], FALSE, ARRAY[]::text[]),
+    ('honed', ARRAY[]::text[], TRUE, ARRAY[]::text[]),
+    ('grooved', ARRAY[]::text[], FALSE, ARRAY['lineal', 'scratch', 'لینئال', 'اسکرچ', 'لينيل', 'تشطيب مخدوش']::text[])
+  ) AS v(term_key, category_slugs, all_products, equivalent_labels)
+),
+product_category_slugs AS (
+  SELECT DISTINCT p.id AS product_id, c.slug
+  FROM products p
+  JOIN categories c ON c.id = p.main_category_id
+  UNION
+  SELECT DISTINCT pc.product_id, c.slug
+  FROM product_categories pc
+  JOIN categories c ON c.id = pc.category_id
+),
+category_candidates AS (
+  SELECT DISTINCT pcs.product_id, rt.term_key
+  FROM product_category_slugs pcs
+  JOIN rule_terms rt ON pcs.slug = ANY(rt.category_slugs)
+  WHERE NOT rt.all_products
+    AND CARDINALITY(rt.equivalent_labels) = 0
+),
+all_product_candidates AS (
+  SELECT p.id AS product_id, rt.term_key
+  FROM products p
+  JOIN rule_terms rt ON rt.all_products
+),
+grooved_candidates AS (
+  SELECT DISTINCT p.id AS product_id, rt.term_key
+  FROM products p
+  JOIN rule_terms rt ON rt.term_key = 'grooved'
+  WHERE EXISTS (
+    SELECT 1
+    FROM UNNEST(COALESCE(p.finishes, '{}'::text[])) AS existing_finish
+    WHERE LOWER(REGEXP_REPLACE(TRIM(existing_finish), '[[:space:]]+', ' ', 'g')) = ANY(rt.equivalent_labels)
+  )
+),
+candidate_pairs AS (
+  SELECT * FROM category_candidates
+  UNION
+  SELECT * FROM all_product_candidates
+  UNION
+  SELECT * FROM grooved_candidates
+)
+INSERT INTO product_term_links (product_id, term_id)
+SELECT cp.product_id, t.id
+FROM candidate_pairs cp
+JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
+ON CONFLICT DO NOTHING;
+
+UPDATE products
+SET
+  variants = '{}'::text[],
+  mines = '{}'::text[],
+  updated_at = NOW()
+WHERE variants <> '{}'::text[]
+   OR mines <> '{}'::text[];
+
+DELETE FROM product_term_links ptl
+USING product_terms t
+WHERE ptl.term_id = t.id
+  AND t.taxonomy IN ('variants', 'mines');
 
 -- Remove limestone stone_type from existing DBs (and its product links) so it does not appear in UI filters.
 DELETE FROM product_term_links

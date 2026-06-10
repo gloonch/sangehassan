@@ -527,7 +527,7 @@ function productRoute(product) {
         product.description ||
         ""
     ) ||
-    "Detailed natural stone product page from SangeHassan with images, finishes, variants, and sourcing information.";
+    "Detailed natural stone product page from SangeHassan with images, sourcing information, and project references.";
 
   return {
     path: `/products/${slug}`,

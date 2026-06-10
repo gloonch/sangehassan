@@ -50,6 +50,14 @@ const getLocalizedTerm = (term, lang) => {
   return isLabelUsableForLang(label, lang) ? String(label).trim() : "";
 };
 
+const clickableTermTaxonomies = new Set(["variants", "finishes"]);
+
+const getTermLink = (sectionKey, term) => {
+  const link = String(term?.link_url || "").trim();
+  if (!clickableTermTaxonomies.has(sectionKey) || !link) return "";
+  return link;
+};
+
 const getLocalizedProjectDescription = (project, lang) => {
   if (!project) return "";
   if (lang === "fa") return project.description_fa || project.description_en || project.description_ar || project.description || "";
@@ -111,44 +119,6 @@ const normalizePhone = (value) => {
   return cleaned.replace(/\+/g, "");
 };
 
-const normalizeTermValue = (value) => String(value || "").trim().toLowerCase();
-
-const isSafeMetaLink = (value) => {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  if (raw.startsWith("#")) return raw;
-  if (raw.startsWith("/")) return raw.startsWith("//") ? "" : raw;
-  try {
-    const parsed = new URL(raw);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? raw : "";
-  } catch (_) {
-    return "";
-  }
-};
-
-const MetaPill = ({ to, children }) => {
-  const className = "inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80 transition hover:border-primary/45 hover:text-primary";
-  if (!to) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 px-3 py-1.5 text-[12px] font-semibold text-primary/80">
-        {children}
-      </span>
-    );
-  }
-  if (/^https?:\/\//i.test(to)) {
-    return (
-      <a href={to} className={className} target="_blank" rel="noreferrer">
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link to={to} className={className}>
-      {children}
-    </Link>
-  );
-};
-
 export default function ProductDetail() {
   const { slug } = useParams();
   const { t, lang } = useTranslation();
@@ -160,7 +130,6 @@ export default function ProductDetail() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
-  const [metaTerms, setMetaTerms] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -191,22 +160,6 @@ export default function ProductDetail() {
       mounted = false;
     };
   }, [initialProduct, slug]);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadMetaTerms = async () => {
-      try {
-        const res = await fetchJSON("/api/product-terms");
-        if (mounted) setMetaTerms(res.data || []);
-      } catch (_) {
-        if (mounted) setMetaTerms([]);
-      }
-    };
-    loadMetaTerms();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -261,7 +214,7 @@ export default function ProductDetail() {
   const seoTitle = localizedTitle ? `${localizedTitle} | SangeHassan` : "Product Detail | SangeHassan";
   const seoDescription =
     stripHTML(localizedDescriptionHTML).slice(0, 160) ||
-    "Detailed natural stone product page from SangeHassan with images, finishes, variants, and sourcing information.";
+    "Detailed natural stone product page from SangeHassan with images, sourcing information, and project references.";
 
   usePageSeo({
     title: seoTitle,
@@ -295,6 +248,9 @@ export default function ProductDetail() {
 
   const infoSections = [
     { key: "stone_type", label: t("productDetail.stoneType") },
+    { key: "variants", label: t("productDetail.variants") },
+    { key: "mines", label: t("productDetail.mines") },
+    { key: "finishes", label: t("productDetail.finishes") },
     { key: "tone", label: t("productDetail.tone") },
     { key: "pattern", label: t("productDetail.pattern") },
     { key: "visual_impact", label: t("productDetail.visualImpact") },
@@ -320,91 +276,12 @@ export default function ProductDetail() {
     .filter((item) => item.normalized);
   const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();
   const showDomesticMessengerLinks = siteUrl.includes("sangehassan.ir");
-  const primaryCategorySlug = categoriesAdjusted[0]?.slug || "";
-
-  const buildFilterLink = (value) => {
-    const params = new URLSearchParams();
-    if (primaryCategorySlug) {
-      params.set("category", primaryCategorySlug);
-    }
-    params.set("q", String(value || "").trim());
-    return `/products?${params.toString()}`;
-  };
-
-  const metaTermsByTaxonomy = useMemo(() => {
-    const grouped = { variants: [], mines: [], finishes: [] };
-    for (const term of metaTerms) {
-      if (!grouped[term?.taxonomy]) continue;
-      grouped[term.taxonomy].push(term);
-    }
-    return grouped;
-  }, [metaTerms]);
-
-  const resolveMetaItem = (taxonomy, value, useFallbackLink) => {
-    const needle = normalizeTermValue(value);
-    const term = (metaTermsByTaxonomy[taxonomy] || []).find((item) =>
-      [item.key, item.label_en, item.label_fa, item.label_ar].some((candidate) => normalizeTermValue(candidate) === needle)
-    );
-    const localizedTermLabel = getLocalizedTerm(term, lang);
-    const label = localizedTermLabel || (isLabelUsableForLang(value, lang) ? String(value).trim() : "");
-    const savedLink = isSafeMetaLink(term?.link_url);
-    return {
-      label,
-      link: savedLink || (useFallbackLink ? buildFilterLink(value) : "")
-    };
-  };
-
-  const buildTermMetaItems = (taxonomy, fallbackValues, useFallbackLink) => {
-    const linkedTerms = termsByTaxonomy[taxonomy] || [];
-    if (linkedTerms.length > 0) {
-      return linkedTerms.map((term) => {
-        const label = getLocalizedTerm(term, lang);
-        const fallbackValue = term.label_fa || term.label_en || term.label_ar || term.key || label;
-        const savedLink = isSafeMetaLink(term.link_url);
-        return {
-          id: `term-${taxonomy}-${term.id}`,
-          label,
-          link: savedLink || (useFallbackLink ? buildFilterLink(fallbackValue) : "")
-        };
-      }).filter((item) => item.label);
-    }
-
-    return (fallbackValues || []).map((value, index) => {
-      const item = resolveMetaItem(taxonomy, value, useFallbackLink);
-      return {
-        id: `legacy-${taxonomy}-${index}-${value}`,
-        ...item
-      };
-    }).filter((item) => item.label);
-  };
-
-  const metaLists = [
-    {
-      key: "variants",
-      label: t("productDetail.variants"),
-      items: buildTermMetaItems("variants", product?.variants || [], false)
-    },
-    {
-      key: "mines",
-      label: t("productDetail.mines"),
-      items: buildTermMetaItems("mines", product?.mines || [], true)
-    },
-    {
-      key: "finishes",
-      label: t("productDetail.finishes"),
-      items: buildTermMetaItems("finishes", product?.finishes || [], true)
-    }
-  ];
-  const hasMetaLists = metaLists.some((entry) => entry.items.length > 0);
-  const hasDetailBlocks = hasMoreInfo || hasMetaLists;
+  const hasDetailBlocks = hasMoreInfo;
 
   const fallbackHotspots = useMemo(() => {
     const options = [];
     const stoneType = terms.find((term) => term?.taxonomy === "stone_type");
     if (stoneType) options.push(getLocalizedTerm(stoneType, lang));
-    if (product?.finishes?.[0]) options.push(product.finishes[0]);
-    if (product?.variants?.[0]) options.push(product.variants[0]);
-    if (product?.mines?.[0]) options.push(product.mines[0]);
 
     const seed = options.filter(Boolean).slice(0, 4);
     const points = [
@@ -420,7 +297,7 @@ export default function ProductDetail() {
       x: points[index].x,
       y: points[index].y
     }));
-  }, [lang, product?.finishes, product?.mines, product?.variants, terms]);
+  }, [lang, terms]);
 
   const hotspots = useMemo(() => {
     const rawHotspots = Array.isArray(product?.hotspots)
@@ -634,30 +511,32 @@ export default function ProductDetail() {
                     <div key={section.key} className="space-y-2">
                       <p className="font-semibold">{section.label}</p>
                       <div className="flex flex-wrap gap-2 text-[12px] font-semibold text-primary/80">
-                        {section.items.map(({ term, label }) => (
-                          <span key={`${section.key}-${term.id}`} className="px-2 py-1">
-                            {label}
-                          </span>
-                        ))}
+                        {section.items.map(({ term, label }) => {
+                          const termLink = getTermLink(section.key, term);
+                          if (!termLink) {
+                            return (
+                              <span key={`${section.key}-${term.id}`} className="px-2 py-1">
+                                {label}
+                              </span>
+                            );
+                          }
+                          const linkClass = "px-2 py-1 underline underline-offset-4 transition hover:text-primary";
+                          if (/^https?:\/\//i.test(termLink)) {
+                            return (
+                              <a key={`${section.key}-${term.id}`} href={termLink} className={linkClass}>
+                                {label}
+                              </a>
+                            );
+                          }
+                          return (
+                            <Link key={`${section.key}-${term.id}`} to={termLink} className={linkClass}>
+                              {label}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
-                  {metaLists.map((entry) => {
-                    if (!entry.items.length) return null;
-                    return (
-                      <div key={entry.key} className="space-y-2">
-                        <p className="font-semibold">{entry.label}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {entry.items.map((item) => (
-                            <MetaPill key={item.id} to={item.link}>
-                              <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
-                              <span>{item.label}</span>
-                            </MetaPill>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               </section>
             )}
