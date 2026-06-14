@@ -887,7 +887,8 @@ export default function Products() {
               return (
                 <Link
                   key={product.id}
-                  to={`/products/${product.slug}`}
+                  to={`/${lang}/products/${product.slug}`}
+                  state={{ catalogRouteKind: "product" }}
                   onClick={rememberListState}
                   data-products-anim="card"
                   className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"

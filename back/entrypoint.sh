@@ -10,12 +10,16 @@ if [ -d /seed/images ]; then
   if ! find /app/storage/images -type f -maxdepth 3 2>/dev/null | grep -q .; then
     cp -R /seed/images/. /app/storage/images/
   else
-    # Otherwise, ensure key subtrees exist (templates, products) without overwriting uploads.
+    # Otherwise, ensure key subtrees exist without overwriting user uploads.
     if [ -d /seed/images/templates ] && { [ ! -d /app/storage/images/templates ] || [ -z "$(ls -A /app/storage/images/templates 2>/dev/null || true)" ]; }; then
       cp -R /seed/images/templates /app/storage/images/
     fi
     if [ -d /seed/images/products ] && { [ ! -d /app/storage/images/products ] || [ -z "$(ls -A /app/storage/images/products 2>/dev/null || true)" ]; }; then
       cp -R /seed/images/products /app/storage/images/
+    fi
+    if [ -d /seed/images/category_images ]; then
+      mkdir -p /app/storage/images/category_images
+      cp -R /seed/images/category_images/. /app/storage/images/category_images/
     fi
     if [ -d /seed/images/watermark ]; then
       mkdir -p /app/storage/images/watermark

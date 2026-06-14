@@ -10,7 +10,7 @@ const prerenderData = getBrowserPrerenderData();
 
 const app = (
   <React.StrictMode>
-    <LanguageProvider>
+    <LanguageProvider initialLang={typeof window !== "undefined" ? undefined : "en"}>
       <PrerenderDataProvider data={prerenderData}>
         <BrowserRouter>
           <App />

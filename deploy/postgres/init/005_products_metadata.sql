@@ -375,19 +375,6 @@ FROM candidate_pairs cp
 JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
 ON CONFLICT DO NOTHING;
 
-UPDATE products
-SET
-  variants = '{}'::text[],
-  mines = '{}'::text[],
-  updated_at = NOW()
-WHERE variants <> '{}'::text[]
-   OR mines <> '{}'::text[];
-
-DELETE FROM product_term_links ptl
-USING product_terms t
-WHERE ptl.term_id = t.id
-  AND t.taxonomy IN ('variants', 'mines');
-
 -- Prevent duplicate base products within the same category (case-insensitive on Persian name)
 -- Exclude legacy category_id = 5 slab dataset to avoid blocking existing rows.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_products_category_title_fa

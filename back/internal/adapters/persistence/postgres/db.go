@@ -32,8 +32,72 @@ func NewDB(cfg config.Config) (*sql.DB, error) {
 	if err := ensureProductTermMetadata(db); err != nil {
 		return nil, err
 	}
+	if err := ensureCatalogMetadata(db); err != nil {
+		return nil, err
+	}
 
 	return db, nil
+}
+
+func ensureCatalogMetadata(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	statements := []string{
+		`ALTER TABLE IF EXISTS categories
+		ADD COLUMN IF NOT EXISTS image_url TEXT,
+		ADD COLUMN IF NOT EXISTS intro_en TEXT,
+		ADD COLUMN IF NOT EXISTS intro_fa TEXT,
+		ADD COLUMN IF NOT EXISTS intro_ar TEXT,
+		ADD COLUMN IF NOT EXISTS seo_title_en VARCHAR(255),
+		ADD COLUMN IF NOT EXISTS seo_title_fa VARCHAR(255),
+		ADD COLUMN IF NOT EXISTS seo_title_ar VARCHAR(255),
+		ADD COLUMN IF NOT EXISTS seo_description_en TEXT,
+		ADD COLUMN IF NOT EXISTS seo_description_fa TEXT,
+		ADD COLUMN IF NOT EXISTS seo_description_ar TEXT,
+		ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+		ADD COLUMN IF NOT EXISTS is_indexable BOOLEAN NOT NULL DEFAULT TRUE`,
+		`ALTER TABLE IF EXISTS products
+		ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+		ADD COLUMN IF NOT EXISTS is_indexable BOOLEAN NOT NULL DEFAULT TRUE`,
+		`ALTER TABLE IF EXISTS product_terms
+		ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+		ADD COLUMN IF NOT EXISTS is_indexable BOOLEAN NOT NULL DEFAULT TRUE`,
+		`CREATE INDEX IF NOT EXISTS idx_categories_catalog ON categories (is_active, is_indexable, slug)`,
+		`CREATE INDEX IF NOT EXISTS idx_products_catalog_category ON products (main_category_id, is_active, is_indexable)`,
+		`CREATE INDEX IF NOT EXISTS idx_product_categories_category_product ON product_categories (category_id, product_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_product_term_links_term_product ON product_term_links (term_id, product_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_product_terms_catalog ON product_terms (taxonomy, term_key, is_active, is_indexable)`,
+		`CREATE TABLE IF NOT EXISTS catalog_facet_pages (
+			id SERIAL PRIMARY KEY,
+			category_id INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+			term_id INT NOT NULL REFERENCES product_terms(id) ON DELETE CASCADE,
+			title_en VARCHAR(255), title_fa VARCHAR(255), title_ar VARCHAR(255),
+			description_en TEXT, description_fa TEXT, description_ar TEXT,
+			h1_en VARCHAR(255), h1_fa VARCHAR(255), h1_ar VARCHAR(255),
+			intro_en TEXT, intro_fa TEXT, intro_ar TEXT,
+			is_active BOOLEAN NOT NULL DEFAULT TRUE,
+			is_indexable BOOLEAN NOT NULL DEFAULT TRUE,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMPTZ,
+			UNIQUE (category_id, term_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_catalog_facet_pages_lookup ON catalog_facet_pages (category_id, term_id, is_active, is_indexable)`,
+		`INSERT INTO product_terms (taxonomy, term_key, label_en, label_fa, label_ar)
+		VALUES
+			('availability', 'in-stock', 'In stock', 'موجود', 'متوفر'),
+			('availability', 'available-on-order', 'Available on order', 'قابل سفارش', 'متوفر حسب الطلب'),
+			('availability', 'limited', 'Limited availability', 'موجودی محدود', 'توفر محدود'),
+			('availability', 'unavailable', 'Unavailable', 'ناموجود', 'غير متوفر')
+		ON CONFLICT (taxonomy, term_key) DO NOTHING`,
+	}
+
+	for _, statement := range statements {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureMediaColumns(db *sql.DB) error {
@@ -445,17 +509,6 @@ func ensureProductTermMetadata(db *sql.DB) error {
 		FROM candidate_pairs cp
 		JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
 		ON CONFLICT DO NOTHING`,
-		`UPDATE products
-		SET
-			variants = '{}'::text[],
-			mines = '{}'::text[],
-			updated_at = NOW()
-		WHERE variants <> '{}'::text[]
-		   OR mines <> '{}'::text[]`,
-		`DELETE FROM product_term_links ptl
-		USING product_terms t
-		WHERE ptl.term_id = t.id
-		  AND t.taxonomy IN ('variants', 'mines')`,
 	}
 
 	for _, statement := range statements {

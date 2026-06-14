@@ -124,6 +124,7 @@
     "variants": "الأنواع/السورت",
     "mines": "المحاجر",
     "finishes": "التشطيبات",
+    "availability": "التوفر",
     "callForMoreInfo": "اتصل لمزيد من المعلومات",
     "domesticMessengerHint": "المراسلة عبر بله وروبيكا متاحة أيضاً",
     "popularBadge": "اختيار شائع",
@@ -519,6 +520,15 @@
     "title": "خيارات المنتج",
     "empty": "لا توجد خيارات محفوظة بعد."
   },
+  "catalogFacetSEO": {
+    "title": "SEO صفحات الكتالوج",
+    "description": "بيانات وصفية اختيارية بثلاث لغات لفئة وقيمة تصفية واحدة. تستخدم الحقول الفارغة القيم الافتراضية.",
+    "selectCategory": "اختر الفئة",
+    "facetValue": "قيمة التصفية",
+    "selectFacet": "اختر قيمة التصفية",
+    "saved": "صفحات محفوظة",
+    "empty": "لم يتم حفظ أي تخصيص بعد."
+  },
   "form": {
     "title": "العنوان",
     "titleEn": "العنوان (إنجليزي)",
@@ -529,6 +539,11 @@
     "templateImageUrl": "رابط صورة القالب",
     "active": "نشط",
     "inactive": "غير نشط",
+    "indexable": "قابل للفهرسة",
+    "noindex": "غير قابل للفهرسة",
+    "introFa": "المقدمة الفارسية",
+    "seoTitleFa": "عنوان SEO الفارسي",
+    "seoDescriptionFa": "وصف SEO الفارسي",
     "popular": "شائع",
     "featured": "مميز",
     "description": "الوصف",

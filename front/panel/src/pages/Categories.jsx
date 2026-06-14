@@ -12,7 +12,20 @@ const slugify = (value) =>
 const emptyForm = {
   title_en: "",
   title_fa: "",
-  title_ar: ""
+  title_ar: "",
+  slug: "",
+  image_url: "",
+  intro_en: "",
+  intro_fa: "",
+  intro_ar: "",
+  seo_title_en: "",
+  seo_title_fa: "",
+  seo_title_ar: "",
+  seo_description_en: "",
+  seo_description_fa: "",
+  seo_description_ar: "",
+  is_active: true,
+  is_indexable: true
 };
 
 export default function Categories() {
@@ -23,8 +36,9 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formOpen, setFormOpen] = useState(true);
+  const [contentLang, setContentLang] = useState("en");
 
-  const slugPreview = useMemo(() => slugify(form.title_en), [form.title_en]);
+  const slugPreview = useMemo(() => form.slug || slugify(form.title_en), [form.slug, form.title_en]);
 
   const loadCategories = async () => {
     try {
@@ -69,9 +83,22 @@ export default function Categories() {
   const handleEdit = (category) => {
     setEditingId(category.id);
     setForm({
-      title_en: category.title_en,
-      title_fa: category.title_fa,
-      title_ar: category.title_ar
+        title_en: category.title_en,
+        title_fa: category.title_fa,
+        title_ar: category.title_ar,
+        slug: category.slug || "",
+        image_url: category.image_url || "",
+        intro_en: category.intro_en || "",
+        intro_fa: category.intro_fa || "",
+        intro_ar: category.intro_ar || "",
+        seo_title_en: category.seo_title_en || "",
+        seo_title_fa: category.seo_title_fa || "",
+        seo_title_ar: category.seo_title_ar || "",
+        seo_description_en: category.seo_description_en || "",
+        seo_description_fa: category.seo_description_fa || "",
+        seo_description_ar: category.seo_description_ar || "",
+        is_active: category.is_active !== false,
+        is_indexable: category.is_indexable !== false
     });
   };
 
@@ -137,8 +164,51 @@ export default function Categories() {
                   type="text"
                   className="mt-2 w-full rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm"
                   value={slugPreview}
-                  readOnly
+                  onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })}
+                  readOnly={Boolean(editingId)}
                 />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                {t("form.imageUrl")}
+                <input type="text" className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm" value={form.image_url} onChange={(event) => setForm({ ...form, image_url: event.target.value })} />
+              </label>
+              <div className="md:col-span-2">
+                <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="SEO content language">
+                  {[{ key: "en", label: "English" }, { key: "fa", label: "فارسی" }, { key: "ar", label: "العربية" }].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={contentLang === item.key}
+                      onClick={() => setContentLang(item.key)}
+                      className={`rounded-full border px-4 py-2 text-xs font-semibold ${contentLang === item.key ? "border-primary bg-primary text-sand" : "border-primary/20 text-primary/70"}`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-4">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    Introduction ({contentLang.toUpperCase()})
+                    <textarea rows="4" dir={contentLang === "en" ? "ltr" : "rtl"} className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm" value={form[`intro_${contentLang}`]} onChange={(event) => setForm({ ...form, [`intro_${contentLang}`]: event.target.value })} />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    SEO title ({contentLang.toUpperCase()})
+                    <input type="text" dir={contentLang === "en" ? "ltr" : "rtl"} className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm" value={form[`seo_title_${contentLang}`]} onChange={(event) => setForm({ ...form, [`seo_title_${contentLang}`]: event.target.value })} />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                    SEO description ({contentLang.toUpperCase()})
+                    <textarea rows="3" dir={contentLang === "en" ? "ltr" : "rtl"} className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm" value={form[`seo_description_${contentLang}`]} onChange={(event) => setForm({ ...form, [`seo_description_${contentLang}`]: event.target.value })} />
+                  </label>
+                </div>
+              </div>
+              <label className="flex items-center gap-3 text-sm font-semibold text-primary/70">
+                <input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} />
+                {t("form.active")}
+              </label>
+              <label className="flex items-center gap-3 text-sm font-semibold text-primary/70">
+                <input type="checkbox" checked={form.is_indexable} onChange={(event) => setForm({ ...form, is_indexable: event.target.checked })} />
+                {t("form.indexable")}
               </label>
             </div>
 
@@ -188,6 +258,7 @@ export default function Categories() {
                   <p className="text-sm font-semibold text-primary">{category.title_en}</p>
                   <p className="text-xs text-primary/60">{category.title_fa} • {category.title_ar}</p>
                   <p className="text-xs text-primary/40">{category.slug}</p>
+                  <p className="mt-1 text-xs text-primary/40">{category.is_active ? t("form.active") : t("form.inactive")} • {category.is_indexable ? t("form.indexable") : t("form.noindex")}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

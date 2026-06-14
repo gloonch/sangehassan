@@ -182,6 +182,7 @@
     "variants": "Variants",
     "mines": "Quarries",
     "finishes": "Finishes",
+    "availability": "Availability",
     "callForMoreInfo": "Call for more information",
     "domesticMessengerHint": "Messaging via Bale and Rubika is also available",
     "popularBadge": "Popular choice",
@@ -519,6 +520,15 @@
     "title": "Product options",
     "empty": "No options saved yet."
   },
+  "catalogFacetSEO": {
+    "title": "Catalog landing SEO",
+    "description": "Optional localized metadata for a category and one facet value. Empty fields use generated defaults.",
+    "selectCategory": "Select a category",
+    "facetValue": "Facet value",
+    "selectFacet": "Select a facet value",
+    "saved": "Saved landing overrides",
+    "empty": "No landing override has been saved."
+  },
   "form": {
     "title": "Title",
     "titleEn": "Title (English)",
@@ -529,6 +539,11 @@
     "templateImageUrl": "Template image URL",
     "active": "Active",
     "inactive": "Inactive",
+    "indexable": "Indexable",
+    "noindex": "Noindex",
+    "introFa": "Persian introduction",
+    "seoTitleFa": "Persian SEO title",
+    "seoDescriptionFa": "Persian SEO description",
     "popular": "Popular",
     "featured": "Featured",
     "description": "Description",

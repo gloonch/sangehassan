@@ -43,6 +43,8 @@ type productPayload struct {
 	VideoURL               string   `json:"video_url"`
 	CategoryID             int64    `json:"category_id"`
 	IsPopular              bool     `json:"is_popular"`
+	IsActive               *bool    `json:"is_active"`
+	IsIndexable            *bool    `json:"is_indexable"`
 	TermIDs                []int64  `json:"term_ids"`
 }
 
@@ -137,6 +139,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
+	isActive, isIndexable := productVisibility(payload.IsActive, payload.IsIndexable)
 	product, err := h.service.Create(c.Request.Context(), domain.Product{
 		TitleEN:                payload.TitleEN,
 		TitleFA:                payload.TitleFA,
@@ -162,6 +165,8 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		VideoURL:               normalizeMediaRef(payload.VideoURL),
 		MainCategoryID:         mainCategoryID,
 		IsPopular:              payload.IsPopular,
+		IsActive:               isActive,
+		IsIndexable:            isIndexable,
 		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
@@ -203,6 +208,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
+	isActive, isIndexable := productVisibility(payload.IsActive, payload.IsIndexable)
 	product, err := h.service.Update(c.Request.Context(), domain.Product{
 		ID:                     id,
 		TitleEN:                payload.TitleEN,
@@ -229,6 +235,8 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		VideoURL:               normalizeMediaRef(payload.VideoURL),
 		MainCategoryID:         mainCategoryID,
 		IsPopular:              payload.IsPopular,
+		IsActive:               isActive,
+		IsIndexable:            isIndexable,
 		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
@@ -259,4 +267,16 @@ func buildCategoryID(value int64) *int64 {
 		return nil
 	}
 	return &value
+}
+
+func productVisibility(active, indexable *bool) (bool, bool) {
+	isActive := true
+	isIndexable := true
+	if active != nil {
+		isActive = *active
+	}
+	if indexable != nil {
+		isIndexable = *indexable
+	}
+	return isActive, isIndexable
 }

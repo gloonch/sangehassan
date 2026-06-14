@@ -704,19 +704,6 @@ FROM candidate_pairs cp
 JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
 ON CONFLICT DO NOTHING;
 
-UPDATE products
-SET
-  variants = '{}'::text[],
-  mines = '{}'::text[],
-  updated_at = NOW()
-WHERE variants <> '{}'::text[]
-   OR mines <> '{}'::text[];
-
-DELETE FROM product_term_links ptl
-USING product_terms t
-WHERE ptl.term_id = t.id
-  AND t.taxonomy IN ('variants', 'mines');
-
 -- Remove limestone stone_type from existing DBs (and its product links) so it does not appear in UI filters.
 DELETE FROM product_term_links
 WHERE term_id IN (

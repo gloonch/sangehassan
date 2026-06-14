@@ -23,6 +23,7 @@ type Config struct {
 	CookieSecure       bool
 	AllowedOrigins     []string
 	UploadDir          string
+	CatalogMinProducts int
 }
 
 func Load() (Config, error) {
@@ -39,6 +40,7 @@ func Load() (Config, error) {
 		AccessTokenMinutes: atoiDefault(getEnv("ACCESS_TOKEN_MINUTES", "15"), 15),
 		RefreshTokenDays:   atoiDefault(getEnv("REFRESH_TOKEN_DAYS", "30"), 30),
 		UploadDir:          getEnv("UPLOAD_DIR", "./storage/images"),
+		CatalogMinProducts: atoiDefault(getEnv("CATALOG_MIN_PRODUCTS", "2"), 2),
 	}
 
 	if cfg.JWTSecret == "" {

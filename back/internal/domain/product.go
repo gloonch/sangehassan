@@ -29,6 +29,8 @@ type Product struct {
 	ImageCount             int                 `json:"image_count,omitempty"`
 	MainCategoryID         *int64              `json:"category_id"`
 	IsPopular              bool                `json:"is_popular"`
+	IsActive               bool                `json:"is_active"`
+	IsIndexable            bool                `json:"is_indexable"`
 	TermIDs                []int64             `json:"term_ids,omitempty"`
 	CreatedAt              time.Time           `json:"created_at"`
 	UpdatedAt              time.Time           `json:"updated_at,omitempty"`

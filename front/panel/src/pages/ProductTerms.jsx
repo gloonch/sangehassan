@@ -5,7 +5,12 @@ import { fetchJSON } from "../lib/api";
 const taxonomies = [
   { key: "variants", labelKey: "panelProductMeta.variants" },
   { key: "mines", labelKey: "panelProductMeta.mines" },
-  { key: "finishes", labelKey: "panelProductMeta.finishes" }
+  { key: "finishes", labelKey: "panelProductMeta.finishes" },
+  { key: "tone", labelKey: "panelProductMeta.tone" },
+  { key: "use_case_application", labelKey: "panelProductMeta.useCaseApplications" },
+  { key: "use_case_form", labelKey: "panelProductMeta.useCaseForms" },
+  { key: "pattern", labelKey: "panelProductMeta.pattern" },
+  { key: "availability", labelKey: "panelProductMeta.availability" }
 ];
 
 const emptyForm = {
@@ -13,7 +18,9 @@ const emptyForm = {
   label_en: "",
   label_fa: "",
   label_ar: "",
-  link_url: ""
+  link_url: "",
+  is_active: true,
+  is_indexable: true
 };
 
 const slugify = (value) =>
@@ -68,7 +75,9 @@ export default function ProductTerms() {
           label_en: form.label_en,
           label_fa: form.label_fa,
           label_ar: form.label_ar,
-          link_url: form.link_url
+          link_url: form.link_url,
+          is_active: form.is_active,
+          is_indexable: form.is_indexable
         })
       });
       setForm(emptyForm);
@@ -87,7 +96,9 @@ export default function ProductTerms() {
       label_en: term.label_en || "",
       label_fa: term.label_fa || "",
       label_ar: term.label_ar || "",
-      link_url: term.link_url || ""
+      link_url: term.link_url || "",
+      is_active: term.is_active !== false,
+      is_indexable: term.is_indexable !== false
     });
     setFormOpen(true);
   };
@@ -197,6 +208,14 @@ export default function ProductTerms() {
                   onChange={(event) => setForm({ ...form, link_url: event.target.value })}
                   placeholder="/products?category=travertine"
                 />
+              </label>
+              <label className="flex items-center gap-3 text-sm font-semibold text-primary/70">
+                <input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} />
+                {t("form.active")}
+              </label>
+              <label className="flex items-center gap-3 text-sm font-semibold text-primary/70">
+                <input type="checkbox" checked={form.is_indexable} onChange={(event) => setForm({ ...form, is_indexable: event.target.checked })} />
+                {t("form.indexable")}
               </label>
             </div>
 

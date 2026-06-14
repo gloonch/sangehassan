@@ -13,6 +13,10 @@ pnpm-debug.log*
 back/server
 back/storage/images/
 back/storage/images/**
+!back/storage/images/
+back/storage/images/*
+!back/storage/images/category_images/
+!back/storage/images/category_images/**
 **/*.exe
 **/*.exe~
 **/*.dll

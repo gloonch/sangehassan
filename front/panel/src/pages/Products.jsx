@@ -19,12 +19,30 @@ const emptyForm = {
   video_url: "",
   category_id: "",
   is_popular: false,
+  is_active: true,
+  is_indexable: true,
   aliases: [],
   variants: [],
   mines: [],
   finishes: [],
+  tone: [],
+  use_case_application: [],
+  use_case_form: [],
+  pattern: [],
+  availability: [],
   terms: [],
   term_ids: []
+};
+
+const emptySelectedListInputs = {
+  variants: "",
+  mines: "",
+  finishes: "",
+  tone: "",
+  use_case_application: "",
+  use_case_form: "",
+  pattern: "",
+  availability: ""
 };
 
 export default function Products() {
@@ -40,14 +58,19 @@ export default function Products() {
   const [formOpen, setFormOpen] = useState(true);
   const [descriptionLang, setDescriptionLang] = useState("en");
   const [newListInputs, setNewListInputs] = useState({ aliases: "" });
-  const [selectedListInputs, setSelectedListInputs] = useState({ variants: "", mines: "", finishes: "" });
+  const [selectedListInputs, setSelectedListInputs] = useState(emptySelectedListInputs);
   const [productTerms, setProductTerms] = useState([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const metaListFields = useMemo(() => ([
     { key: "variants", label: t("panelProductMeta.variants") },
     { key: "mines", label: t("panelProductMeta.mines") },
-    { key: "finishes", label: t("panelProductMeta.finishes") }
+    { key: "finishes", label: t("panelProductMeta.finishes") },
+    { key: "tone", label: t("panelProductMeta.tone") },
+    { key: "use_case_application", label: t("panelProductMeta.useCaseApplications") },
+    { key: "use_case_form", label: t("panelProductMeta.useCaseForms") },
+    { key: "pattern", label: t("panelProductMeta.pattern") },
+    { key: "availability", label: t("panelProductMeta.availability"), single: true }
   ]), [t]);
   const aliasField = useMemo(() => ({ key: "aliases", label: t("panelProductMeta.aliases") }), [t]);
 
@@ -62,13 +85,14 @@ export default function Products() {
   const normalizeTermValue = (value) => String(value || "").trim().toLowerCase();
 
   const termsByTaxonomy = useMemo(() => {
-    const grouped = { variants: [], mines: [], finishes: [] };
+    const grouped = Object.fromEntries(metaListFields.map((field) => [field.key, []]));
     for (const term of productTerms) {
+      if (term.is_active === false) continue;
       if (!grouped[term.taxonomy]) continue;
       grouped[term.taxonomy].push(term);
     }
     return grouped;
-  }, [productTerms]);
+  }, [metaListFields, productTerms]);
 
   const findTermForValue = (field, value) => {
     const needle = normalizeTermValue(value);
@@ -222,7 +246,8 @@ export default function Products() {
     const value = String(selectedListInputs[field] || "").trim();
     if (!value) return;
     setForm((prev) => {
-      const existing = Array.isArray(prev[field]) ? prev[field] : [];
+      const fieldConfig = metaListFields.find((item) => item.key === field);
+      const existing = fieldConfig?.single ? [] : Array.isArray(prev[field]) ? prev[field] : [];
       if (existing.some((item) => normalizeTermValue(item) === normalizeTermValue(value))) return prev;
       return { ...prev, [field]: [...existing, value] };
     });
@@ -245,6 +270,8 @@ export default function Products() {
       price: form.price ? Number(form.price) : 0,
       category_id: form.category_id ? Number(form.category_id) : 0,
       is_popular: Boolean(form.is_popular),
+      is_active: form.is_active !== false,
+      is_indexable: form.is_indexable !== false,
       image_url: images[0] || form.image_url || "",
       image_urls: images,
       video_url: form.video_url || ""
@@ -268,7 +295,7 @@ export default function Products() {
       setSelectedImageIndex(0);
       setDescriptionLang("en");
       setNewListInputs({ aliases: "" });
-      setSelectedListInputs({ variants: "", mines: "", finishes: "" });
+      setSelectedListInputs(emptySelectedListInputs);
       loadData();
     } catch (err) {
       setError(t("messages.error"));
@@ -298,16 +325,23 @@ export default function Products() {
         video_url: item.video_url || "",
         category_id: item.category_id ? String(item.category_id) : "",
         is_popular: Boolean(item.is_popular),
+        is_active: item.is_active !== false,
+        is_indexable: item.is_indexable !== false,
         aliases: item.aliases || [],
         variants: getValuesFromTerms(item, "variants"),
         mines: getValuesFromTerms(item, "mines"),
         finishes: getValuesFromTerms(item, "finishes"),
+        tone: getValuesFromTerms(item, "tone"),
+        use_case_application: getValuesFromTerms(item, "use_case_application"),
+        use_case_form: getValuesFromTerms(item, "use_case_form"),
+        pattern: getValuesFromTerms(item, "pattern"),
+        availability: getValuesFromTerms(item, "availability"),
         terms: item.terms || [],
         term_ids: item.term_ids || []
       });
       setSelectedImageIndex(0);
       setDescriptionLang("en");
-      setSelectedListInputs({ variants: "", mines: "", finishes: "" });
+      setSelectedListInputs(emptySelectedListInputs);
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -652,6 +686,14 @@ export default function Products() {
                 />
                 {t("form.popular")}
               </label>
+              <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
+                <input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} className="h-4 w-4 rounded border-primary/20" />
+                {t("form.active")}
+              </label>
+              <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
+                <input type="checkbox" checked={form.is_indexable} onChange={(event) => setForm({ ...form, is_indexable: event.target.checked })} className="h-4 w-4 rounded border-primary/20" />
+                {t("form.indexable")}
+              </label>
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -673,7 +715,7 @@ export default function Products() {
                   setSelectedImageIndex(0);
                   setDescriptionLang("en");
                   setNewListInputs({ aliases: "" });
-                  setSelectedListInputs({ variants: "", mines: "", finishes: "" });
+                  setSelectedListInputs(emptySelectedListInputs);
                 }}
               >
                 {t("actions.cancel")}

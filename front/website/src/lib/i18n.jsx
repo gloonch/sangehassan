@@ -17,8 +17,17 @@ const getValue = (obj, path) => {
   return path.split(".").reduce((acc, part) => (acc ? acc[part] : undefined), obj);
 };
 
-export const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState(defaultLang);
+export const getLanguageFromPath = (pathname = "") => {
+  const match = String(pathname).match(/^\/(en|fa|ar)(?:\/|$)/);
+  return match?.[1] || defaultLang;
+};
+
+export const LanguageProvider = ({ children, initialLang }) => {
+  const [lang, setLang] = useState(() => {
+    if (supportedLangs.includes(initialLang)) return initialLang;
+    if (typeof window !== "undefined") return getLanguageFromPath(window.location.pathname);
+    return defaultLang;
+  });
   const setSafeLang = useCallback((nextLang) => {
     setLang(supportedLangs.includes(nextLang) ? nextLang : defaultLang);
   }, []);

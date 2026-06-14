@@ -7,6 +7,7 @@ const navItems = [
   { key: "dashboard", path: "/dashboard", label: "nav.dashboard", end: true },
   { key: "products", path: "/dashboard/products", label: "panelProducts.title" },
   { key: "productTerms", path: "/dashboard/product-terms", label: "panelProductTerms.title" },
+  { key: "catalogFacetSEO", path: "/dashboard/catalog-facet-seo", label: "catalogFacetSEO.title" },
   { key: "blocks", path: "/dashboard/blocks", label: "panelBlocks.title" },
   { key: "projects", path: "/dashboard/projects", label: "panelProjects.title" },
   { key: "categories", path: "/dashboard/categories", label: "categories.title" },

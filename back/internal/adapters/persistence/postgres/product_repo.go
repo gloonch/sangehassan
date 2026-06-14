@@ -33,7 +33,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -111,6 +111,8 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			&videoURL,
 			&mainCategoryID,
 			&product.IsPopular,
+			&product.IsActive,
+			&product.IsIndexable,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -183,7 +185,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -248,6 +250,8 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&videoURL,
 			&mainCategoryID,
 			&product.IsPopular,
+			&product.IsActive,
+			&product.IsIndexable,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -320,7 +324,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -379,6 +383,8 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&videoURL,
 		&mainCategoryID,
 		&product.IsPopular,
+		&product.IsActive,
+		&product.IsIndexable,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -447,13 +453,13 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
-		WHERE p.slug = $1 OR p.slug = $2
+		WHERE (p.slug = $1 OR p.slug = $2) AND p.is_active = TRUE
 	`, slug, escapedSlug)
 
 	var product domain.Product
@@ -506,6 +512,8 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&videoURL,
 		&mainCategoryID,
 		&product.IsPopular,
+		&product.IsActive,
+		&product.IsIndexable,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -576,9 +584,9 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  description_html, short_description_html,
 		  description_html_en, description_html_fa, description_html_ar,
 		  short_description_html_en, short_description_html_fa, short_description_html_ar,
-		  price, price_html, image_url, video_url, main_category_id, is_popular
+		  price, price_html, image_url, video_url, main_category_id, is_popular, is_active, is_indexable
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
 		ON CONFLICT (slug) DO UPDATE SET
 		  title_en = EXCLUDED.title_en,
 		  title_fa = EXCLUDED.title_fa,
@@ -601,6 +609,8 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  video_url = EXCLUDED.video_url,
 		  main_category_id = EXCLUDED.main_category_id,
 		  is_popular = EXCLUDED.is_popular,
+		  is_active = EXCLUDED.is_active,
+		  is_indexable = EXCLUDED.is_indexable,
 		  updated_at = NOW()
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
 	`,
@@ -626,6 +636,8 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		nullableString(product.VideoURL),
 		nullableInt64(product.MainCategoryID),
 		product.IsPopular,
+		product.IsActive,
+		product.IsIndexable,
 	)
 
 	if err := row.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt); err != nil {
@@ -661,8 +673,10 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		    video_url = $20,
 		    main_category_id = $21,
 		    is_popular = $22,
+		    is_active = $23,
+		    is_indexable = $24,
 		    updated_at = NOW()
-		WHERE id = $23
+		WHERE id = $25
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
@@ -687,6 +701,8 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		nullableString(product.VideoURL),
 		nullableInt64(product.MainCategoryID),
 		product.IsPopular,
+		product.IsActive,
+		product.IsIndexable,
 		product.ID,
 	)
 
@@ -1048,7 +1064,7 @@ func (r *ProductRepository) loadAttributes(ctx context.Context, productID int64)
 
 func (r *ProductRepository) loadTerms(ctx context.Context, productID int64) ([]domain.ProductTerm, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, '')
+		SELECT t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, ''), t.is_active, t.is_indexable
 		FROM product_term_links ptl
 		JOIN product_terms t ON t.id = ptl.term_id
 		WHERE ptl.product_id = $1
@@ -1062,7 +1078,7 @@ func (r *ProductRepository) loadTerms(ctx context.Context, productID int64) ([]d
 	var terms []domain.ProductTerm
 	for rows.Next() {
 		var term domain.ProductTerm
-		if err := rows.Scan(&term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL); err != nil {
+		if err := rows.Scan(&term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL, &term.IsActive, &term.IsIndexable); err != nil {
 			return nil, err
 		}
 		terms = append(terms, term)
@@ -1117,7 +1133,7 @@ func (r *ProductRepository) loadTermsForProductIDs(ctx context.Context, productI
 	}
 
 	query := fmt.Sprintf(`
-		SELECT ptl.product_id, t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, '')
+		SELECT ptl.product_id, t.id, t.taxonomy, t.term_key, t.label_en, t.label_fa, t.label_ar, COALESCE(t.link_url, ''), t.is_active, t.is_indexable
 		FROM product_term_links ptl
 		JOIN product_terms t ON t.id = ptl.term_id
 		WHERE ptl.product_id IN (%s)
@@ -1133,7 +1149,7 @@ func (r *ProductRepository) loadTermsForProductIDs(ctx context.Context, productI
 	for rows.Next() {
 		var productID int64
 		var term domain.ProductTerm
-		if err := rows.Scan(&productID, &term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL); err != nil {
+		if err := rows.Scan(&productID, &term.ID, &term.Taxonomy, &term.Key, &term.LabelEN, &term.LabelFA, &term.LabelAR, &term.LinkURL, &term.IsActive, &term.IsIndexable); err != nil {
 			return nil, err
 		}
 		out[productID] = append(out[productID], term)

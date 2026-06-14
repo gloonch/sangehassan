@@ -32,6 +32,7 @@ export const usePageSeo = ({
   image = "",
   type = "website",
   robots = "index,follow",
+  alternates = [],
   jsonLd = null,
   jsonLdId = ""
 }) => {
@@ -99,6 +100,30 @@ export const usePageSeo = ({
       });
     };
 
+    const upsertAlternates = (items) => {
+      const created = [];
+      for (const item of items || []) {
+        if (!item?.lang || !item?.path) continue;
+        const selector = `link[rel="alternate"][hreflang="${item.lang}"]`;
+        let el = document.head.querySelector(selector);
+        const isCreated = !el;
+        if (!el) {
+          el = document.createElement("link");
+          el.setAttribute("rel", "alternate");
+          el.setAttribute("hreflang", item.lang);
+          document.head.appendChild(el);
+        }
+        const prevHref = el.getAttribute("href");
+        el.setAttribute("href", getCanonicalUrl(item.path));
+        created.push(() => {
+          if (isCreated) el.remove();
+          else if (prevHref === null) el.removeAttribute("href");
+          else el.setAttribute("href", prevHref);
+        });
+      }
+      cleanups.push(...created);
+    };
+
     const upsertJsonLd = (payload, id) => {
       if (!payload || !id) return;
 
@@ -126,6 +151,7 @@ export const usePageSeo = ({
 
     document.title = title;
     upsertCanonical(pageUrl);
+    upsertAlternates(alternates);
     upsertMeta('meta[name="description"]', { name: "description" }, description);
     upsertMeta('meta[name="robots"]', { name: "robots" }, robots);
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, type);
@@ -143,5 +169,5 @@ export const usePageSeo = ({
     return () => {
       cleanups.reverse().forEach((fn) => fn());
     };
-  }, [description, image, jsonLd, jsonLdId, lang, locale, path, robots, title, type]);
+  }, [alternates, description, image, jsonLd, jsonLdId, lang, locale, path, robots, title, type]);
 };

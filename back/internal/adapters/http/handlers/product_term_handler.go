@@ -22,12 +22,14 @@ func NewProductTermHandler(service *usecase.ProductTermService) *ProductTermHand
 }
 
 type productTermPayload struct {
-	Taxonomy string `json:"taxonomy"`
-	Key      string `json:"key"`
-	LabelEN  string `json:"label_en"`
-	LabelFA  string `json:"label_fa"`
-	LabelAR  string `json:"label_ar"`
-	LinkURL  string `json:"link_url"`
+	Taxonomy    string `json:"taxonomy"`
+	Key         string `json:"key"`
+	LabelEN     string `json:"label_en"`
+	LabelFA     string `json:"label_fa"`
+	LabelAR     string `json:"label_ar"`
+	LinkURL     string `json:"link_url"`
+	IsActive    *bool  `json:"is_active"`
+	IsIndexable *bool  `json:"is_indexable"`
 }
 
 func (h *ProductTermHandler) List(c *gin.Context) {
@@ -90,13 +92,23 @@ func (h *ProductTermHandler) Upsert(c *gin.Context) {
 		return
 	}
 
+	isActive := true
+	isIndexable := true
+	if payload.IsActive != nil {
+		isActive = *payload.IsActive
+	}
+	if payload.IsIndexable != nil {
+		isIndexable = *payload.IsIndexable
+	}
 	term, err := h.service.Upsert(c.Request.Context(), domain.ProductTerm{
-		Taxonomy: payload.Taxonomy,
-		Key:      payload.Key,
-		LabelEN:  payload.LabelEN,
-		LabelFA:  payload.LabelFA,
-		LabelAR:  payload.LabelAR,
-		LinkURL:  payload.LinkURL,
+		Taxonomy:    payload.Taxonomy,
+		Key:         payload.Key,
+		LabelEN:     payload.LabelEN,
+		LabelFA:     payload.LabelFA,
+		LabelAR:     payload.LabelAR,
+		LinkURL:     payload.LinkURL,
+		IsActive:    isActive,
+		IsIndexable: isIndexable,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to save product term")

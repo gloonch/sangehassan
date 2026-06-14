@@ -63,6 +63,7 @@ Image hosting base URL:
 - Set `VITE_SITE_URL` to the canonical public origin, for example `https://sangehassan.com`, so canonical and Open Graph URLs do not follow `www` or IP hosts.
 - `npm run build` prerenders public static routes and writes `sitemap.xml` plus `robots.txt`. Set `VITE_PRERENDER_API_BASE_URL` only when a reachable API is available at build time and you also want product/block/project/ad detail pages prerendered.
 - `VITE_SITEMAP_LASTMOD` is optional. Leave it blank to use the build date, or set a `YYYY-MM-DD` value for deterministic sitemap `lastmod` entries.
+- `CATALOG_MIN_PRODUCTS` controls the minimum number of products required for a single-facet page to be indexable and included in the sitemap. The default is `2`.
 - Keep `COOKIE_SECURE=true` for HTTPS production domains. For temporary direct HTTP/IP testing, cookies require `COOKIE_SECURE=false`.
 
 ## DB schema updates (existing volumes)

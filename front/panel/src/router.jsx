@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import ProductTerms from "./pages/ProductTerms";
+import CatalogFacetPages from "./pages/CatalogFacetPages";
 import Products from "./pages/Products";
 import Blocks from "./pages/Blocks";
 import Blogs from "./pages/Blogs";
@@ -47,6 +48,7 @@ export default function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="categories" element={<Categories />} />
         <Route path="product-terms" element={<ProductTerms />} />
+        <Route path="catalog-facet-seo" element={<CatalogFacetPages />} />
         <Route path="products" element={<Products />} />
         <Route path="blocks" element={<Blocks />} />
         <Route path="blogs" element={<Blogs />} />

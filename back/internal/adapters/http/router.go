@@ -18,6 +18,7 @@ func NewRouter(
 	categoryService *usecase.CategoryService,
 	productService *usecase.ProductService,
 	productTermService *usecase.ProductTermService,
+	catalogService *usecase.CatalogService,
 	blogService *usecase.BlogService,
 	projectService *usecase.ProjectService,
 	templateService *usecase.TemplateService,
@@ -59,6 +60,7 @@ func NewRouter(
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 	productHandler := handlers.NewProductHandler(productService)
 	productTermHandler := handlers.NewProductTermHandler(productTermService)
+	catalogHandler := handlers.NewCatalogHandler(catalogService)
 	blogHandler := handlers.NewBlogHandler(blogService)
 	projectHandler := handlers.NewProjectHandler(projectService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
@@ -77,6 +79,10 @@ func NewRouter(
 		api.GET("/products", productHandler.List)
 		api.GET("/products/:slug", productHandler.GetBySlug)
 		api.GET("/product-terms", productTermHandler.List)
+		api.GET("/catalog/categories", catalogHandler.Hub)
+		api.GET("/catalog/categories/:categorySlug", catalogHandler.Page)
+		api.GET("/catalog/categories/:categorySlug/:facet/:value", catalogHandler.Page)
+		api.GET("/catalog/routes", catalogHandler.Routes)
 		api.GET("/ads", listingHandler.List)
 		api.GET("/ads/:id", listingHandler.Get)
 
@@ -131,6 +137,9 @@ func NewRouter(
 			admin.GET("/product-terms", productTermHandler.List)
 			admin.POST("/product-terms", productTermHandler.Upsert)
 			admin.DELETE("/product-terms/:id", productTermHandler.Delete)
+			admin.GET("/catalog-facet-pages", catalogHandler.AdminListFacetPages)
+			admin.POST("/catalog-facet-pages", catalogHandler.AdminUpsertFacetPage)
+			admin.DELETE("/catalog-facet-pages/:id", catalogHandler.AdminDeleteFacetPage)
 
 			admin.GET("/categories", categoryHandler.List)
 			admin.POST("/categories", categoryHandler.Create)

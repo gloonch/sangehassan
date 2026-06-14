@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl, resolveProtectedImageUrl, resolveProtectedThumbnailUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
+import { catalogAlternates } from "../lib/catalogLocale";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -121,6 +122,7 @@ const normalizePhone = (value) => {
 
 export default function ProductDetail() {
   const { slug } = useParams();
+  const location = useLocation();
   const { t, lang } = useTranslation();
   const isRTL = lang === "fa" || lang === "ar";
   const prerenderedProduct = usePrerenderData("product");
@@ -215,16 +217,19 @@ export default function ProductDetail() {
   const seoDescription =
     stripHTML(localizedDescriptionHTML).slice(0, 160) ||
     "Detailed natural stone product page from SangeHassan with images, sourcing information, and project references.";
+  const localizedProductPath = `/${lang}/products/${slug}`;
+  const isLegacyProductPath = /^\/products\/[^/]+\/?$/.test(location.pathname);
 
   usePageSeo({
     title: seoTitle,
     description: seoDescription,
-    path: `/products/${slug}`,
+    path: localizedProductPath,
     lang,
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
     image: activeImage ? resolveProtectedImageUrl(activeImage) : "",
     type: "product",
-    robots: !loading && !product ? "noindex,follow" : "index,follow"
+    robots: isLegacyProductPath || (!loading && !product) ? "noindex,follow" : "index,follow",
+    alternates: catalogAlternates(`/${slug}`)
   });
 
   const terms = product?.terms || [];
@@ -235,6 +240,7 @@ export default function ProductDetail() {
       : cat
   );
   const categoryLine = categoriesAdjusted.map((cat) => getLocalized(cat, lang)).filter(Boolean).join(" • ");
+  const productsPath = `/${lang}/products`;
 
   const termsByTaxonomy = useMemo(() => {
     const grouped = {};
@@ -364,9 +370,17 @@ export default function ProductDetail() {
                   SangeHassan
                 </Link>
                 <span>/</span>
-                <Link to="/products" className="transition hover:text-primary">
+                <Link to={productsPath} className="transition hover:text-primary">
                   {t("nav.products")}
                 </Link>
+                {categoriesAdjusted[0]?.slug ? (
+                  <>
+                    <span>/</span>
+                    <Link to={`/${lang}/products/${categoriesAdjusted[0].slug}`} state={{ catalogRouteKind: "category" }} className="transition hover:text-primary">
+                      {getLocalized(categoriesAdjusted[0], lang)}
+                    </Link>
+                  </>
+                ) : null}
                 {localizedTitle && (
                   <>
                     <span>/</span>
@@ -375,7 +389,7 @@ export default function ProductDetail() {
                 )}
               </nav>
               <Link
-                to="/products"
+                to={productsPath}
                 className={`${isRTL ? "mr-auto" : "ml-auto"} rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50`}
               >
                 {t("productDetail.backToProducts")}
@@ -443,9 +457,18 @@ export default function ProductDetail() {
               {(categoryLine || product?.is_popular) && (
                 <div className={`flex flex-wrap items-center gap-2 ${isRTL ? "justify-end" : "justify-start"}`}>
                   {categoryLine ? (
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/65">
-                      {categoryLine}
-                    </p>
+                    <div className="flex flex-wrap gap-2 text-sm font-semibold uppercase tracking-[0.24em] text-primary/65">
+                      {categoriesAdjusted.map((category, index) => (
+                        <span key={category.id || category.slug}>
+                          {index > 0 ? <span className="px-1">•</span> : null}
+                          {category.slug ? (
+                            <Link to={`/${lang}/products/${category.slug}`} state={{ catalogRouteKind: "category" }} className="transition hover:text-primary">
+                              {getLocalized(category, lang)}
+                            </Link>
+                          ) : getLocalized(category, lang)}
+                        </span>
+                      ))}
+                    </div>
                   ) : null}
                   {product?.is_popular && (
                     <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
@@ -565,7 +588,8 @@ export default function ProductDetail() {
                     return (
                       <Link
                         key={relatedProduct.id}
-                        to={`/products/${relatedProduct.slug}`}
+                        to={`/${lang}/products/${relatedProduct.slug}`}
+                        state={{ catalogRouteKind: "product" }}
                         className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
                       >
                         <div className="aspect-[4/3] bg-primary/10">

@@ -449,7 +449,8 @@ export default function ProjectDetail() {
                   return (
                     <Link
                       key={product.id}
-                      to={`/products/${product.slug}`}
+                      to={`/${lang}/products/${product.slug}`}
+                      state={{ catalogRouteKind: "product" }}
                       className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
                     >
                       <div className="aspect-[4/3] bg-primary/10">

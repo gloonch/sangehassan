@@ -245,7 +245,9 @@ export default function Navbar() {
   const avatarSource = displayName.startsWith("+") ? displayName.slice(1) : displayName;
   const avatarChar = (avatarSource || "U").trim().charAt(0).toUpperCase();
   const profileLabel = displayName || t("nav.profile");
-  const visibleNavItems = navItems;
+  const visibleNavItems = navItems.map((item) => (
+    item.key === "products" ? { ...item, path: `/${lang}/products` } : item
+  ));
   const navHeaderClass = isHome
     ? open
       ? "border-b border-sand/25 bg-primary/45 backdrop-blur-xl"

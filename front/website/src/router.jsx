@@ -15,6 +15,9 @@ import NewAd from "./pages/NewAd";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import RequireUserAuth from "./components/RequireUserAuth";
+import ProductHub from "./pages/ProductHub";
+import ProductCatalog from "./pages/ProductCatalog";
+import LocalizedProductRoute from "./pages/LocalizedProductRoute";
 
 export default function AppRoutes() {
   return (
@@ -23,6 +26,15 @@ export default function AppRoutes() {
       <Route path="/products" element={<ProductsLanding />} />
       <Route path="/products/overview" element={<Navigate to="/products" replace />} />
       <Route path="/products/:slug" element={<ProductDetail />} />
+      <Route path="/fa/products" element={<ProductHub />} />
+      <Route path="/fa/products/:slug" element={<LocalizedProductRoute />} />
+      <Route path="/fa/products/:categorySlug/:facet/:value" element={<ProductCatalog />} />
+      <Route path="/en/products" element={<ProductHub />} />
+      <Route path="/en/products/:slug" element={<LocalizedProductRoute />} />
+      <Route path="/en/products/:categorySlug/:facet/:value" element={<ProductCatalog />} />
+      <Route path="/ar/products" element={<ProductHub />} />
+      <Route path="/ar/products/:slug" element={<LocalizedProductRoute />} />
+      <Route path="/ar/products/:categorySlug/:facet/:value" element={<ProductCatalog />} />
       <Route path="/blocks" element={<BlocksLanding />} />
       <Route path="/blocks/:slug" element={<BlockDetail />} />
       <Route path="/ads" element={<Ads />} />
