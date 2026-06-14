@@ -129,13 +129,13 @@ export default function ProductHub() {
       </header>
 
       {loading ? (
-        <div className="mx-auto mt-12 grid max-w-6xl sm:grid-cols-3" aria-hidden="true">
-          {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-20 animate-pulse bg-primary/10 md:h-24" />)}
+        <div className="mx-auto mt-12 grid max-w-6xl gap-3 sm:grid-cols-2" aria-hidden="true">
+          {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-[100px] animate-pulse bg-primary/10 md:h-[116px]" />)}
         </div>
       ) : categories.length === 0 ? (
         <p className="mt-16 text-center text-sm text-primary/60">{copy.emptyCategories}</p>
       ) : (
-        <div className="mx-auto mt-12 grid max-w-6xl sm:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-6xl gap-3 sm:grid-cols-2">
           {categories.map((category) => {
             const image = getCategoryBackground(category);
             const title = localizedField(category, "title", lang);
@@ -144,7 +144,7 @@ export default function ProductHub() {
                 key={category.id}
                 to={`${basePath}/${category.slug}`}
                 state={{ catalogRouteKind: "category" }}
-                className="group relative flex h-20 items-center overflow-hidden bg-primary text-white transition focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-white md:h-24"
+                className="group relative flex h-[100px] items-center overflow-hidden bg-primary text-white transition focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-white md:h-[116px]"
               >
                 {image ? <img src={resolveImageUrl(image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : null}
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/35 to-primary/15 rtl:bg-gradient-to-l" />

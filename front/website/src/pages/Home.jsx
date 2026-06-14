@@ -463,8 +463,9 @@ export default function Home() {
           const ctaLabel = pickField(section, "cta_label", lang);
           const fallbackCTA = isBlocks ? t("blocks.cta") : t("hero.ctaPrimary");
           const rawCtaHref = section.cta_href || (isBlocks ? "/blocks" : "/products");
-          const ctaHref =
-            rawCtaHref === "/products/overview" ? "/products" : rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref;
+          const ctaHref = isBlocks
+            ? rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref
+            : `/${lang}/products`;
           const lines = splitLines(description);
           const slides = isBlocks ? slideDecks.blocks : slideDecks.products;
           const activeSlide = isBlocks ? activeSlides.blocks : activeSlides.products;
