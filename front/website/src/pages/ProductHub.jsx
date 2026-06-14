@@ -42,6 +42,7 @@ const categoryBackgrounds = {
   granite: "/images/category_images/granite_category.jpg",
   "imported-stones": "/images/category_images/imported_stones_category.png",
   onyx: "/images/category_images/onyx_category.jpg",
+  "sand-stone": "/images/category_images/sandstone_category.jpg",
   sandstone: "/images/category_images/sandstone_category.jpg",
   travertine: "/images/category_images/travertine_category.jpg"
 };
