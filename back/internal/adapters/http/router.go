@@ -95,7 +95,8 @@ func NewRouter(
 			adsAuth.POST("/:id/requests", listingHandler.CreateDealRequest)
 			adsAuth.DELETE("/:id", listingHandler.Delete)
 		}
-		api.GET("/blogs", blogHandler.List)
+		api.GET("/blogs", blogHandler.ListPublic)
+		api.GET("/blogs/:locale/:slug", blogHandler.GetPublicBySlug)
 		api.GET("/projects", projectHandler.ListPublic)
 		api.GET("/projects/:id", projectHandler.GetByID)
 		api.GET("/templates", templateHandler.List)
@@ -158,7 +159,8 @@ func NewRouter(
 			admin.PUT("/blocks/:id", blockHandler.Update)
 			admin.DELETE("/blocks/:id", blockHandler.Delete)
 
-			admin.GET("/blogs", blogHandler.List)
+			admin.GET("/blogs", blogHandler.ListAdmin)
+			admin.GET("/blogs/:id", blogHandler.GetByID)
 			admin.POST("/blogs", blogHandler.Create)
 			admin.PUT("/blogs/:id", blogHandler.Update)
 			admin.DELETE("/blogs/:id", blogHandler.Delete)

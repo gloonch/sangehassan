@@ -246,7 +246,7 @@ export default function Navbar() {
   const avatarChar = (avatarSource || "U").trim().charAt(0).toUpperCase();
   const profileLabel = displayName || t("nav.profile");
   const visibleNavItems = navItems.map((item) => (
-    item.key === "products" ? { ...item, path: `/${lang}/products` } : item
+    item.key === "products" || item.key === "blogs" ? { ...item, path: `/${lang}/${item.key}` } : item
   ));
   const navHeaderClass = isHome
     ? open

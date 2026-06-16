@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import ProductsLanding from "./pages/ProductsLanding";
 import ProductDetail from "./pages/ProductDetail";
 import Blogs from "./pages/Blogs";
+import BlogDetail from "./pages/BlogDetail";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Gallery from "./pages/Gallery";
@@ -43,6 +44,12 @@ export default function AppRoutes() {
         <Route path="/ads/new" element={<NewAd />} />
       </Route>
       <Route path="/blogs" element={<Blogs />} />
+      <Route path="/fa/blogs" element={<Blogs />} />
+      <Route path="/fa/blogs/:slug" element={<BlogDetail />} />
+      <Route path="/en/blogs" element={<Blogs />} />
+      <Route path="/en/blogs/:slug" element={<BlogDetail />} />
+      <Route path="/ar/blogs" element={<Blogs />} />
+      <Route path="/ar/blogs/:slug" element={<BlogDetail />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:id" element={<ProjectDetail />} />
       <Route path="/login" element={<Login />} />

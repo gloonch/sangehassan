@@ -557,6 +557,15 @@ all_product_candidates AS (
   SELECT p.id AS product_id, rt.term_key, rt.label_en, rt.label_fa, rt.label_ar
   FROM products p
   JOIN rule_terms rt ON rt.all_products
+  WHERE NOT (
+    rt.term_key = 'honed'
+    AND EXISTS (
+      SELECT 1
+      FROM product_category_slugs pcs
+      WHERE pcs.product_id = p.id
+        AND pcs.slug = 'accessories'
+    )
+  )
 ),
 grooved_candidates AS (
   SELECT DISTINCT p.id AS product_id, rt.term_key, rt.label_en, rt.label_fa, rt.label_ar
@@ -680,6 +689,15 @@ all_product_candidates AS (
   SELECT p.id AS product_id, rt.term_key
   FROM products p
   JOIN rule_terms rt ON rt.all_products
+  WHERE NOT (
+    rt.term_key = 'honed'
+    AND EXISTS (
+      SELECT 1
+      FROM product_category_slugs pcs
+      WHERE pcs.product_id = p.id
+        AND pcs.slug = 'accessories'
+    )
+  )
 ),
 grooved_candidates AS (
   SELECT DISTINCT p.id AS product_id, rt.term_key

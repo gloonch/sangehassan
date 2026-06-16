@@ -23,6 +23,11 @@ const defaultShareImage = sharedAssetUrl("../shared/assets/landing_page/landingp
 const fetchTimeoutMs = Number(process.env.VITE_PRERENDER_FETCH_TIMEOUT_MS || 10000);
 
 const catalogLocales = ["en", "fa", "ar"];
+const blogLocaleMeta = {
+  en: { locale: "en_US", home: "Home", articles: "Articles", title: "Natural stone articles | SangeHassan", description: "Practical guidance for choosing, processing, installing and maintaining natural stone." },
+  fa: { locale: "fa_IR", home: "خانه", articles: "مقالات", title: "مقالات سنگ طبیعی | سنگ حسن", description: "راهنماهای کاربردی برای انتخاب، فرآوری، اجرا و نگهداری سنگ طبیعی." },
+  ar: { locale: "ar_SA", home: "الرئيسية", articles: "المقالات", title: "مقالات الحجر الطبيعي | سانج حسن", description: "أدلة عملية لاختيار الحجر الطبيعي ومعالجته وتركيبه وصيانته." }
+};
 const catalogLocaleMeta = {
   en: {
     locale: "en_US",
@@ -125,16 +130,27 @@ const staticRoutes = [
     changefreq: "weekly",
     priority: 0.8
   },
-  {
-    path: "/blogs",
-    title: "Natural Stone Articles | SangeHassan",
-    description:
-      "Read SangeHassan articles and guides about choosing, sourcing, and using natural stone in building projects.",
+  ...catalogLocales.map((lang) => ({
+    path: `/${lang}/blogs`,
+    title: blogLocaleMeta[lang].title,
+    description: blogLocaleMeta[lang].description,
     schemaType: "Blog",
-    breadcrumbName: "Articles",
+    breadcrumbName: blogLocaleMeta[lang].articles,
     image: defaultShareImage,
+    lang,
+    locale: blogLocaleMeta[lang].locale,
+    alternates: [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }],
     changefreq: "weekly",
     priority: 0.75
+  })),
+  {
+    path: "/blogs",
+    canonical: "/en/blogs",
+    title: blogLocaleMeta.en.title,
+    description: blogLocaleMeta.en.description,
+    schemaType: "Blog",
+    robots: "noindex,follow",
+    sitemap: false
   },
   {
     path: "/about",
@@ -1042,6 +1058,75 @@ function adRoute(ad) {
   };
 }
 
+function blogRoute(blog, locale) {
+  if (!blog?.slug) return null;
+  const meta = blogLocaleMeta[locale];
+  const routePath = `/${locale}/blogs/${blog.slug}`;
+  const description = blog.seo_description || blog.excerpt || truncate(blog.content_html) || blog.title;
+  const translations = Array.isArray(blog.translations) ? blog.translations : [];
+  const alternateItems = translations.map((item) => ({ lang: item.locale, path: `/${item.locale}/blogs/${item.slug}` }));
+  const defaultAlternate = alternateItems.find((item) => item.lang === "en") || alternateItems[0];
+  return {
+    path: routePath,
+    canonical: blog.canonical_url || routePath,
+    title: blog.seo_title || blog.title,
+    description,
+    image: blog.og_image_url || blog.cover_image_url || defaultShareImage,
+    type: "article",
+    schemaType: "Article",
+    routeKind: "blog-detail",
+    lang: locale,
+    locale: meta.locale,
+    robots: blog.robots || "index,follow",
+    alternates: defaultAlternate ? [...alternateItems, { lang: "x-default", path: defaultAlternate.path }] : alternateItems,
+    breadcrumbs: [
+      { name: meta.articles, path: `/${locale}/blogs` },
+      { name: blog.title, path: routePath }
+    ],
+    changefreq: "monthly",
+    priority: 0.7,
+    lastmod: blog.updated_at || blog.published_at || blog.created_at,
+    prerenderData: { blog }
+  };
+}
+
+async function loadBlogRoutes() {
+  const routes = [];
+  for (const locale of catalogLocales) {
+    try {
+      const blogs = (await fetchApi(`/api/blogs?locale=${locale}`)) || [];
+      const meta = blogLocaleMeta[locale];
+      routes.push({
+        path: `/${locale}/blogs`,
+        title: meta.title,
+        description: meta.description,
+        schemaType: "Blog",
+        routeKind: "blog-list",
+        image: blogs.find((blog) => blog.cover_image_url)?.cover_image_url || defaultShareImage,
+        lang: locale,
+        locale: meta.locale,
+        alternates: [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }],
+        changefreq: "weekly",
+        priority: 0.75,
+        lastmod: blogs[0]?.updated_at || blogs[0]?.published_at,
+        prerenderData: { blogs }
+      });
+      for (const summary of blogs) {
+        try {
+          const blog = (await fetchApi(`/api/blogs/${locale}/${summary.slug}`)) || summary;
+          const route = blogRoute(blog, locale);
+          if (route) routes.push(route);
+        } catch (error) {
+          console.warn(`prerender: blog skipped for ${locale}/${summary.slug}: ${error.message}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`prerender: ${locale} blogs skipped: ${error.message}`);
+    }
+  }
+  return routes;
+}
+
 async function loadDynamicRoutes() {
   if (!prerenderApiBase) {
     console.log("prerender: VITE_PRERENDER_API_BASE_URL is not set; dynamic detail pages were skipped.");
@@ -1068,15 +1153,16 @@ async function loadDynamicRoutes() {
       })
     ]);
 
-    const [productRoutes, blockRoutes, projectRoutes, adRoutes, catalogRoutes] = await Promise.all([
+    const [productRoutes, blockRoutes, projectRoutes, adRoutes, catalogRoutes, blogRoutes] = await Promise.all([
       detailRoutes(products, productRoute, (product) => `/api/products/${product.slug}`, "product", "product"),
       detailRoutes(blocks, blockRoute, (block) => `/api/blocks/${block.slug}`, "block", "block"),
       detailRoutes(projects, projectRoute, (project) => `/api/projects/${project.id}`, "project", "project"),
       detailRoutes(ads, adRoute, (ad) => `/api/ads/${ad.id}`, "ad", "ad"),
-      loadCatalogRoutes()
+      loadCatalogRoutes(),
+      loadBlogRoutes()
     ]);
 
-    return [...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes, ...catalogRoutes];
+    return [...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes, ...catalogRoutes, ...blogRoutes];
   } catch (error) {
     console.warn(`prerender: dynamic detail pages skipped: ${error.message}`);
     return [];

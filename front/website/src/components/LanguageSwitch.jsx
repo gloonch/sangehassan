@@ -16,6 +16,15 @@ export default function LanguageSwitch({ tone = "default" }) {
 
   const changeLanguage = (nextLang) => {
     setLang(nextLang);
+    if (typeof window !== "undefined" && window.__SH_BLOG_ALTERNATES__?.[nextLang]) {
+      navigate(window.__SH_BLOG_ALTERNATES__[nextLang]);
+      return;
+    }
+    const blogMatch = location.pathname.match(/^\/(?:en|fa|ar)\/blogs(?:\/.*)?$/);
+    if (blogMatch) {
+      navigate(`/${nextLang}/blogs`);
+      return;
+    }
     const catalogMatch = location.pathname.match(/^\/(?:en|fa|ar)\/products(\/.*)?$/);
     if (catalogMatch) {
       navigate(`/${nextLang}/products${catalogMatch[1] || ""}${location.search}`, { state: location.state });

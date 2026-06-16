@@ -10,6 +10,44 @@
   --color-base: #e5e1dd;
 }
 
+.blog-editor-content {
+  min-height: 22rem;
+  padding: 1.25rem;
+  outline: none;
+  line-height: 1.85;
+}
+
+.blog-editor-content p.is-editor-empty:first-child::before {
+  color: rgba(8, 58, 79, 0.35);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.blog-editor-content h2,
+.blog-preview-content h2 { margin: 1.8rem 0 0.7rem; font-size: 1.65rem; font-weight: 700; }
+.blog-editor-content h3,
+.blog-preview-content h3 { margin: 1.5rem 0 0.6rem; font-size: 1.3rem; font-weight: 700; }
+.blog-editor-content h4,
+.blog-preview-content h4 { margin: 1.2rem 0 0.5rem; font-size: 1.08rem; font-weight: 700; }
+.blog-editor-content ul,
+.blog-preview-content ul { list-style: disc; padding-inline-start: 1.5rem; }
+.blog-editor-content ol,
+.blog-preview-content ol { list-style: decimal; padding-inline-start: 1.5rem; }
+.blog-editor-content blockquote,
+.blog-preview-content blockquote { margin: 1.25rem 0; border-inline-start: 3px solid #a58d66; padding-inline-start: 1rem; color: rgba(8, 58, 79, 0.72); }
+.blog-editor-content a,
+.blog-preview-content a { color: #176f96; text-decoration: underline; text-underline-offset: 3px; }
+.blog-editor-content img,
+.blog-preview-content img { margin: 1.5rem auto; max-width: 100%; height: auto; }
+.blog-editor-content table,
+.blog-preview-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+.blog-editor-content th, .blog-editor-content td,
+.blog-preview-content th, .blog-preview-content td { border: 1px solid rgba(8, 58, 79, 0.2); padding: 0.65rem; }
+.blog-editor-content pre,
+.blog-preview-content pre { overflow-x: auto; background: #082f40; color: white; padding: 1rem; }
+
 body {
   background-color: var(--color-base);
   color: var(--color-primary);

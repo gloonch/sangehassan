@@ -8,8 +8,8 @@ module.exports = {
         sand: "#E5E1DD"
       },
       fontFamily: {
-        display: ["Playfair Display", "Noto Sans Arabic", "serif"],
-        body: ["Manrope", "Noto Sans Arabic", "sans-serif"]
+        display: ["var(--font-display)"],
+        body: ["var(--font-body)"]
       },
       keyframes: {
         marquee: {
