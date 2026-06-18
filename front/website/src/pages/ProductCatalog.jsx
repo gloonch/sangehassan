@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import { useTranslation } from "../lib/i18n";
+import {
+  clearCatalogProductReturnState,
+  currentCatalogReturnPath,
+  currentHistoryKey,
+  readCatalogProductReturnState,
+  writeCatalogProductReturnState
+} from "../lib/productReturnState";
 import {
   catalogAlternates,
   catalogBasePath,
@@ -18,13 +25,13 @@ const facetOrder = ["color", "application", "finish", "form", "origin", "pattern
 
 const localizedTermLabel = (term, lang) => localizedField(term, "label", lang) || term?.key || "";
 
-function catalogApiPath(categorySlug, facet, value, search, lang) {
+function catalogApiPath(categorySlug, facet, value, search, lang, limit = PAGE_SIZE) {
   const route = facet && value
     ? `/api/catalog/categories/${categorySlug}/${facet}/${value}`
     : `/api/catalog/categories/${categorySlug}`;
   const params = new URLSearchParams(search || "");
   params.set("locale", lang);
-  params.set("limit", String(PAGE_SIZE));
+  params.set("limit", String(limit));
   params.set("offset", "0");
   return `${route}?${params.toString()}`;
 }
@@ -56,7 +63,7 @@ function buildFilterHref(basePath, categorySlug, selected, facetKey, valueKey, q
   return `${basePath}/${categorySlug}?${params.toString()}`;
 }
 
-function ProductCard({ product, lang, copy }) {
+function ProductCard({ product, lang, copy, returnPath, onRememberReturnState }) {
   const title = localizedField(product, "title", lang);
   const isRTL = lang === "fa" || lang === "ar";
   const gradientDirection = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
@@ -73,7 +80,8 @@ function ProductCard({ product, lang, copy }) {
   return (
     <Link
       to={`/${lang}/products/${product.slug}`}
-      state={{ catalogRouteKind: "product" }}
+      state={{ catalogRouteKind: "product", productReturnTo: returnPath }}
+      onClick={() => onRememberReturnState(product.slug)}
       className="group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-xl"
       style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
     >
@@ -137,8 +145,11 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
   const { categorySlug: routeCategorySlug, facet, value } = useParams();
   const categorySlug = categorySlugOverride || routeCategorySlug;
   const location = useLocation();
+  const returnPath = currentCatalogReturnPath(location);
+  const restoreReturnState = location.state?.restoreProductReturn === true;
   const prerenderedCatalog = usePrerenderData("catalogPage");
   const prerendered = initialPageOverride || prerenderedCatalog;
+  const pendingReturnStateRef = useRef(null);
   const matchesPrerender = prerendered?.locale === lang
     && prerendered?.category?.slug === categorySlug
     && (prerendered?.selected_facet_key || "") === (facet || "")
@@ -151,7 +162,12 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
   const suffix = `/${categorySlug}${facet && value ? `/${facet}/${value}` : ""}`;
 
   useEffect(() => {
-    const initialMatches = matchesPrerender && !location.search;
+    const storedReturnState = readCatalogProductReturnState(returnPath);
+    const historyRestore = Boolean(storedReturnState?.historyKey && storedReturnState.historyKey === currentHistoryKey());
+    const returnState = restoreReturnState || historyRestore ? storedReturnState : null;
+    pendingReturnStateRef.current = returnState;
+    const restoreLimit = returnState ? Math.max(PAGE_SIZE, returnState.productCount || PAGE_SIZE) : PAGE_SIZE;
+    const initialMatches = matchesPrerender && !location.search && !returnState;
     if (initialMatches) {
       setPage(prerendered);
       setLoading(false);
@@ -161,7 +177,7 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
     let active = true;
     setLoading(true);
     setNotFound(false);
-    fetchJSON(catalogApiPath(categorySlug, facet, value, location.search, lang))
+    fetchJSON(catalogApiPath(categorySlug, facet, value, location.search, lang, restoreLimit))
       .then((response) => {
         if (active) setPage(response.data || null);
       })
@@ -176,7 +192,29 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
     return () => {
       active = false;
     };
-  }, [categorySlug, facet, lang, location.search, matchesPrerender, prerendered, value]);
+  }, [categorySlug, facet, lang, location.search, matchesPrerender, prerendered, restoreReturnState, returnPath, value]);
+
+  useEffect(() => {
+    const returnState = pendingReturnStateRef.current;
+    if (loading || !page || !returnState) return undefined;
+    const productCount = page.products?.length || 0;
+    const wantedCount = Math.min(
+      Math.max(PAGE_SIZE, returnState.productCount || PAGE_SIZE),
+      page.pagination?.total || productCount
+    );
+    if (productCount < wantedCount) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: returnState.scrollY, behavior: "auto" });
+      window.setTimeout(() => {
+        window.scrollTo({ top: returnState.scrollY, behavior: "auto" });
+      }, 120);
+      pendingReturnStateRef.current = null;
+      clearCatalogProductReturnState();
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [loading, page]);
 
   const seo = page?.seo || {
     title: copy.products,
@@ -243,6 +281,17 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
     }
   };
 
+  const rememberCatalogReturnState = (productSlug) => {
+    if (typeof window === "undefined" || !page) return;
+    writeCatalogProductReturnState({
+      path: returnPath,
+      scrollY: window.scrollY,
+      productCount: page.products?.length || PAGE_SIZE,
+      productSlug,
+      lang
+    });
+  };
+
   if (loading && !page) return <div className="section-shell min-h-[55vh] py-20 text-center text-sm text-primary/60" dir={config.dir}>{copy.loading}</div>;
   if (notFound || !page) return <div className="section-shell min-h-[55vh] py-20 text-center" dir={config.dir}><h1 className="font-display text-3xl">{copy.notFound}</h1><Link className="mt-6 inline-block text-sm text-accent" to={basePath}>{copy.back}</Link></div>;
 
@@ -288,7 +337,7 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
       ) : null}
 
       <div className="mt-8">
-        {page.products.length === 0 ? <div className="py-20 text-center text-sm text-primary/60">{copy.emptyProducts}</div> : <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{page.products.map((product) => <ProductCard key={product.id} product={product} lang={lang} copy={copy} />)}</div>}
+        {page.products.length === 0 ? <div className="py-20 text-center text-sm text-primary/60">{copy.emptyProducts}</div> : <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{page.products.map((product) => <ProductCard key={product.id} product={product} lang={lang} copy={copy} returnPath={returnPath} onRememberReturnState={rememberCatalogReturnState} />)}</div>}
         {hasMore ? <div className="mt-9 text-center"><button type="button" disabled={loadingMore} onClick={loadMore} className="rounded-full border border-primary/25 px-6 py-3 text-sm font-semibold disabled:opacity-50">{loadingMore ? copy.loadingMore : copy.loadMore}</button></div> : null}
       </div>
 

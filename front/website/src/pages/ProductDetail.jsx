@@ -7,6 +7,7 @@ import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
+import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -241,6 +242,15 @@ export default function ProductDetail() {
   );
   const categoryLine = categoriesAdjusted.map((cat) => getLocalized(cat, lang)).filter(Boolean).join(" • ");
   const productsPath = `/${lang}/products`;
+  const catalogReturnState = readCatalogProductReturnState();
+  const stateReturnPath = typeof location.state?.productReturnTo === "string" ? location.state.productReturnTo : "";
+  const storedReturnPath = catalogReturnState?.productSlug === slug ? catalogReturnState.path : "";
+  const fallbackCategoryPath = categoriesAdjusted[0]?.slug ? `/${lang}/products/${categoriesAdjusted[0].slug}` : productsPath;
+  const productBackPath = stateReturnPath || storedReturnPath || (hasLegacyProductsReturnState() ? "/products" : fallbackCategoryPath);
+  const restoreProductBack = Boolean(stateReturnPath || storedReturnPath);
+  const productBackState = new RegExp(`^/${lang}/products/[^/?#]+`).test(productBackPath)
+    ? { catalogRouteKind: "category", restoreProductReturn: restoreProductBack }
+    : undefined;
 
   const termsByTaxonomy = useMemo(() => {
     const grouped = {};
@@ -389,7 +399,8 @@ export default function ProductDetail() {
                 )}
               </nav>
               <Link
-                to={productsPath}
+                to={productBackPath}
+                state={productBackState}
                 className={`${isRTL ? "mr-auto" : "ml-auto"} rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50`}
               >
                 {t("productDetail.backToProducts")}
