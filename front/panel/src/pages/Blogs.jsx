@@ -5,6 +5,12 @@ import { resolveImageUrl } from "../lib/assets";
 
 const RichTextEditor = lazy(() => import("../components/RichTextEditor"));
 const locales = ["fa", "en", "ar"];
+const maxBlogUploadBytes = 25 * 1024 * 1024;
+const blogImageTargets = {
+  inline: { maxWidth: 1600, maxHeight: 1600, quality: 0.82 },
+  cover: { maxWidth: 1600, maxHeight: 900, quality: 0.85 },
+  og: { maxWidth: 1200, maxHeight: 630, quality: 0.85 }
+};
 
 const emptyTranslation = (locale) => ({
   locale,
@@ -64,6 +70,94 @@ function contentStats(html = "") {
   };
 }
 
+function formatBytes(bytes = 0) {
+  if (!bytes) return "0 KB";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / (1024 ** index);
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function uploadPhaseLabel(uploadState) {
+  if (!uploadState?.phase) return "";
+  if (uploadState.phase === "optimizing") return "Optimizing image";
+  if (uploadState.phase === "uploading") return `Uploading ${uploadState.percent || 0}%`;
+  return "Preparing image";
+}
+
+function readImageSize(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ image, width: image.naturalWidth || image.width, height: image.naturalHeight || image.height });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read image"));
+    };
+    image.src = url;
+  });
+}
+
+async function optimizeBlogImage(file, target) {
+  if (!file || !file.type.startsWith("image/")) return file;
+  const options = blogImageTargets[target] || blogImageTargets.inline;
+  const { image, width, height } = await readImageSize(file);
+  const scale = Math.min(1, options.maxWidth / width, options.maxHeight / height);
+  const outputWidth = Math.max(1, Math.round(width * scale));
+  const outputHeight = Math.max(1, Math.round(height * scale));
+
+  if (scale === 1 && file.type === "image/webp" && file.size < 900 * 1024) {
+    return file;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) return file;
+  context.drawImage(image, 0, 0, outputWidth, outputHeight);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", options.quality));
+  if (!blob) return file;
+
+  const shouldKeepOriginal = scale === 1 && blob.size >= file.size;
+  if (shouldKeepOriginal) return file;
+
+  const basename = file.name.replace(/\.[^.]+$/, "") || "blog-image";
+  return new File([blob], `${basename}.webp`, { type: "image/webp", lastModified: Date.now() });
+}
+
+function uploadBlogFile(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const data = new FormData();
+    data.append("file", file);
+    const request = new XMLHttpRequest();
+    request.open("POST", `${API_BASE}/api/admin/upload/blog`);
+    request.withCredentials = true;
+    request.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+    request.onload = () => {
+      if (request.status < 200 || request.status >= 300) {
+        reject(new Error("Upload failed"));
+        return;
+      }
+      try {
+        const payload = JSON.parse(request.responseText || "{}");
+        resolve(payload?.data?.image_url || "");
+      } catch (_) {
+        reject(new Error("Upload failed"));
+      }
+    };
+    request.onerror = () => reject(new Error("Upload failed"));
+    request.send(data);
+  });
+}
+
 export default function Blogs() {
   const [blogs, setBlogs] = useState([]);
   const [form, setForm] = useState(createEmptyForm);
@@ -76,7 +170,7 @@ export default function Blogs() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [uploading, setUploading] = useState("");
+  const [uploadState, setUploadState] = useState(null);
 
   const translation = form.translations.find((item) => item.locale === activeLocale) || emptyTranslation(activeLocale);
   const stats = useMemo(() => contentStats(translation.content_html), [translation.content_html]);
@@ -131,19 +225,18 @@ export default function Blogs() {
 
   const uploadImage = async (file, target = "inline") => {
     if (!file) return "";
-    setUploading(target);
+    if (file.size > maxBlogUploadBytes) {
+      setError(`Image is too large. Please choose a file under ${formatBytes(maxBlogUploadBytes)}.`);
+      return "";
+    }
+    setUploadState({ target, phase: "optimizing", percent: 0, originalSize: file.size, optimizedSize: 0 });
     setError("");
     try {
-      const data = new FormData();
-      data.append("file", file);
-      const response = await fetch(`${API_BASE}/api/admin/upload/blog`, {
-        method: "POST",
-        body: data,
-        credentials: "include"
+      const optimized = await optimizeBlogImage(file, target);
+      setUploadState((current) => ({ ...current, phase: "uploading", percent: 0, optimizedSize: optimized.size }));
+      const url = await uploadBlogFile(optimized, (percent) => {
+        setUploadState((current) => ({ ...current, phase: "uploading", percent }));
       });
-      if (!response.ok) throw new Error("Upload failed");
-      const payload = await response.json();
-      const url = payload?.data?.image_url || "";
       if (target === "cover") updateForm({ cover_image_url: url });
       if (target === "og") updateForm({ og_image_url: url });
       return url;
@@ -151,7 +244,7 @@ export default function Blogs() {
       setError(err?.message || "Upload failed.");
       return "";
     } finally {
-      setUploading("");
+      setUploadState(null);
     }
   };
 
@@ -288,9 +381,13 @@ export default function Blogs() {
             {[{ key: "cover", label: "Featured image", value: form.cover_image_url }, { key: "og", label: "Open Graph image", value: form.og_image_url }].map((image) => (
               <label key={image.key} className="border border-primary/10 bg-white p-4 text-xs font-semibold text-primary/65">{image.label}
                 <div className="mt-3 flex items-center gap-4">
-                  <input type="file" accept="image/png,image/jpeg,image/webp" disabled={Boolean(uploading)} onChange={(event) => uploadImage(event.target.files?.[0], image.key)} className="min-w-0 flex-1 text-sm" />
+                  <input type="file" accept="image/png,image/jpeg,image/webp" disabled={Boolean(uploadState)} onChange={(event) => { uploadImage(event.target.files?.[0], image.key); event.target.value = ""; }} className="min-w-0 flex-1 text-sm" />
                   {image.value && <img src={resolveImageUrl(image.value)} alt="" className="h-16 w-24 object-cover" />}
                 </div>
+                {uploadState?.target === image.key && <p className="mt-3 text-[11px] font-medium text-primary/55">
+                  {uploadPhaseLabel(uploadState)}
+                  {uploadState.optimizedSize ? ` · ${formatBytes(uploadState.originalSize)} → ${formatBytes(uploadState.optimizedSize)}` : ""}
+                </p>}
               </label>
             ))}
           </div>
@@ -316,6 +413,10 @@ export default function Blogs() {
               </label>
               <div>
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold text-primary/65"><span>Content</span><span className="font-normal text-primary/45">{stats.words} words · {stats.minutes} min · {stats.links} links</span></div>
+                {uploadState?.target === "inline" && <p className="mb-2 border border-primary/10 bg-white px-3 py-2 text-xs font-medium text-primary/60">
+                  {uploadPhaseLabel(uploadState)}
+                  {uploadState.optimizedSize ? ` · ${formatBytes(uploadState.originalSize)} → ${formatBytes(uploadState.optimizedSize)}` : ""}
+                </p>}
                 <Suspense fallback={<div className="h-72 animate-pulse bg-primary/5" />}>
                   <RichTextEditor value={{ html: translation.content_html, json: translation.content_json }} locale={activeLocale} onUploadImage={(file) => uploadImage(file, "inline")} onChange={({ html, json }) => updateTranslation({ content_html: html, content_json: json })} />
                 </Suspense>

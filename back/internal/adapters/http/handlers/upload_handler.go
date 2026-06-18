@@ -18,6 +18,11 @@ type UploadHandler struct {
 	baseDir string
 }
 
+const (
+	maxImageUploadBytes = 25 << 20
+	maxMediaUploadBytes = 250 << 20
+)
+
 func NewUploadHandler(baseDir string) *UploadHandler {
 	return &UploadHandler{baseDir: baseDir}
 }
@@ -51,9 +56,23 @@ func (h *UploadHandler) UploadListing(c *gin.Context) {
 }
 
 func (h *UploadHandler) uploadFile(c *gin.Context, subdir string, allowVideo bool) {
+	limit := int64(maxImageUploadBytes)
+	if allowVideo {
+		limit = maxMediaUploadBytes
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
+
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "too large") {
+			respondError(c, http.StatusRequestEntityTooLarge, "file is too large")
+			return
+		}
 		respondError(c, http.StatusBadRequest, "file is required")
+		return
+	}
+	if fileHeader.Size > limit {
+		respondError(c, http.StatusRequestEntityTooLarge, "file is too large")
 		return
 	}
 
