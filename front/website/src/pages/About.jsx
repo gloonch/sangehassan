@@ -32,6 +32,7 @@ const seoContent = {
 
 const baseImages = {
   hero: imageUrl("aboutus/workforce_at_travertine_quarry.png"),
+  founderNote: imageUrl("aboutus/note_from_our_founder.png"),
   services: imageUrl("aboutus/services/services_six_points.png"),
   tracking: imageUrl("aboutus/tracking/tracking_four_points.png"),
   "1383": imageUrl("aboutus/1383/photo_2026-04-09%2011.52.40.jpeg"),
@@ -48,6 +49,11 @@ const content = {
         "سنگ حسن یک شبکه تامین و تولید سنگ ساختمانی طبیعی است؛ از کوپ و سنگ خام معدن تا اسلب، تایل و محصولات فرآوری‌شده. تمرکز ما همکاری B2B و صادرات بین‌المللی با مسیر شفاف، کنترل کیفیت و تحویل قابل اتکاست.",
       chips: ["Block", "Slab", "B2B Supply", "Export"],
       image: baseImages.hero
+    },
+    founderNote: {
+      title: "یادداشتی از بنیان‌گذار",
+      hint: "برای خواندن ادامه دست‌نوشته آرام به پایین اسکرول کنید.",
+      alt: "دست‌نوشته بنیان‌گذار درباره زیبایی خام و صادقانه سنگ"
     },
     chapters: [
       {
@@ -138,6 +144,11 @@ const content = {
       chips: ["Block", "Slab", "B2B Supply", "Export"],
       image: baseImages.hero
     },
+    founderNote: {
+      title: "A Note From Our Founder",
+      hint: "",
+      alt: "The founder's handwritten note about the raw and honest beauty of stone"
+    },
     chapters: [
       {
         id: "1383",
@@ -225,6 +236,11 @@ const content = {
         "سانج حسن هي شبكة لتوريد وإنتاج الحجر الطبيعي للبناء، من البلوك الخام وحجر المحجر إلى الألواح والبلاط والمنتجات المعالجة. تركيزنا على التعاون المهني B2B والتصدير الدولي مع مسار واضح وضبط جودة.",
       chips: ["Block", "Slab", "B2B Supply", "Export"],
       image: baseImages.hero
+    },
+    founderNote: {
+      title: "رسالة من المؤسس",
+      hint: "مرّر ببطء لعرض الرسالة المكتوبة بخط اليد كاملة.",
+      alt: "رسالة مكتوبة بخط يد المؤسس عن الجمال الخام والصادق في الحجر"
     },
     chapters: [
       {
@@ -566,6 +582,135 @@ function StoryTimelineStage({ children }) {
     <section className="relative py-8" dir="ltr">
       <div className="relative mx-auto w-full max-w-[1280px] px-5 sm:px-8 lg:px-10">
         <div className="relative z-10">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+const clamp01 = (value) => Math.min(1, Math.max(0, value));
+
+function FounderNoteSection({ note, image, contentDir }) {
+  const sectionRef = useRef(null);
+  const rafRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(query.matches);
+    updatePreference();
+    query.addEventListener?.("change", updatePreference);
+    return () => query.removeEventListener?.("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (reducedMotion) {
+      setProgress(1);
+      return undefined;
+    }
+
+    const update = () => {
+      rafRef.current = null;
+      const element = sectionRef.current;
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const viewport = window.innerHeight || 1;
+      const start = viewport * 0.46;
+      const end = viewport * 0.12;
+      const nextProgress = clamp01((start - rect.top) / (start - end));
+      setProgress((current) => (Math.abs(current - nextProgress) > 0.006 ? nextProgress : current));
+    };
+
+    const requestUpdate = () => {
+      if (rafRef.current) return;
+      rafRef.current = window.requestAnimationFrame(update);
+    };
+
+    requestUpdate();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+
+    return () => {
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+    };
+  }, [reducedMotion]);
+
+  const eased = 1 - Math.pow(1 - progress, 2.2);
+  const imageOpacity = 0.24 + eased * 0.76;
+  const imageBlur = 2.4 - eased * 2.4;
+  const imageScale = 0.965 + eased * 0.035;
+  const imageTranslate = 28 - eased * 28;
+  const revealBottomInset = 76 - eased * 76;
+  const veilOpacity = 0.7 - eased * 0.58;
+  const titleOpacity = 0.62 + eased * 0.38;
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative isolate flex min-h-[74svh] items-center overflow-hidden bg-sand py-12 text-primary sm:min-h-[84svh] sm:py-16 lg:min-h-[92svh]"
+      dir={contentDir}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-primary/10" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(165,141,102,0.16),transparent_42%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-quiet-grid opacity-[0.05]" />
+
+      <div className="section-shell relative z-10 w-full">
+        <div className="mx-auto max-w-5xl text-center">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-10 z-0 -translate-x-1/2 select-none font-display text-[clamp(6rem,18vw,13rem)] font-black leading-none tracking-tight text-accent/[0.08]"
+          >
+            NOTE
+          </span>
+          <p
+            className="relative z-10 text-[10px] font-semibold uppercase tracking-[0.34em] text-accent sm:text-xs"
+            style={{ opacity: titleOpacity }}
+          >
+            {note.title}
+          </p>
+          <p className="relative z-10 mx-auto mt-3 max-w-xl text-xs leading-6 text-primary/55 sm:text-sm">
+            {note.hint}
+          </p>
+
+          <div className="relative mx-auto mt-8 w-full max-w-[820px] sm:mt-10">
+            <div className="absolute -left-5 top-8 h-[62%] w-[48%] bg-[#D8C6A8]/46 sm:-left-8" />
+            <div className="absolute -right-5 bottom-8 h-[52%] w-[44%] bg-[#6D7F8B]/18 sm:-right-8" />
+            <div
+              className="relative mx-auto aspect-[3/2] w-full overflow-hidden shadow-[0_26px_64px_rgba(8,58,79,0.10)]"
+              style={{
+                opacity: imageOpacity,
+                filter: `blur(${imageBlur}px) contrast(${0.96 + eased * 0.18})`,
+                transform: `translateY(${imageTranslate}px) scale(${imageScale})`,
+                clipPath: `inset(0 0 ${revealBottomInset}% 0)`,
+                transition: reducedMotion ? "none" : "filter 120ms linear, opacity 120ms linear, transform 120ms linear, clip-path 120ms linear"
+              }}
+            >
+              <img
+                src={image}
+                alt={note.alt}
+                className="h-full w-full object-contain mix-blend-multiply"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(246,241,232,0)_0%,rgba(246,241,232,0.04)_24%,rgba(246,241,232,0.72)_58%,rgba(246,241,232,0.92)_100%)]"
+              style={{ opacity: veilOpacity }}
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-[radial-gradient(ellipse_at_center,rgba(165,141,102,0.10),transparent_70%)]"
+              style={{ opacity: 0.2 + eased * 0.18 }}
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -990,9 +1135,13 @@ export default function About() {
         </section>
       </div>
 
+      <div ref={(el) => { stepRefs.current[1] = el; }} className="scroll-mt-24">
+        <FounderNoteSection note={data.founderNote} image={baseImages.founderNote} contentDir={contentDir} />
+      </div>
+
       <StoryTimelineStage>
         {storySteps.map((step, idx) => {
-          const stepNodeIndex = idx + 1;
+          const stepNodeIndex = idx + 2;
 
           return (
             <div key={step.id} ref={(el) => { stepRefs.current[stepNodeIndex] = el; }} className="scroll-mt-24">
