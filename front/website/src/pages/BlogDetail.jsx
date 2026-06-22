@@ -13,6 +13,25 @@ const localeMeta = {
   ar: { locale: "ar_SA", articles: "المقالات", home: "الرئيسية", updated: "آخر تحديث", min: "دقيقة قراءة", toc: "في هذا المقال", back: "العودة إلى المقالات" }
 };
 
+const faArticleSeoOverrides = {
+  "everything-about-granite-stone": {
+    title: "سنگ گرانیت چیست؟ ویژگی‌ها، کاربردها و انواع گرانیت | سنگ حسن",
+    description: "راهنمای کامل سنگ گرانیت؛ بررسی ویژگی‌ها، مزایا، معایب، کاربردها، انواع رنگ و نکات مهم خرید گرانیت برای پروژه‌های ساختمانی.",
+    h1: "سنگ گرانیت چیست؟ راهنمای کامل ویژگی‌ها، کاربردها و انواع گرانیت",
+    canonical: "/fa/blogs/everything-about-granite-stone"
+  },
+  "everything-about-travertine-stone": {
+    title: "سنگ تراورتن چیست؟ انواع، معادن، کاربردها و ویژگی‌ها | سنگ حسن",
+    description: "راهنمای کامل سنگ تراورتن؛ بررسی انواع تراورتن، ویژگی‌ها، مزایا، معایب، کاربرد در نما و ساختمان و نکات مهم خرید سنگ تراورتن.",
+    h1: "سنگ تراورتن چیست؟ راهنمای کامل انواع، معادن و کاربردها",
+    canonical: "/fa/blogs/everything-about-travertine-stone"
+  }
+};
+
+function getArticleSeoOverride(locale, slug) {
+  return locale === "fa" ? faArticleSeoOverrides[slug] || null : null;
+}
+
 const freshRequest = () => ({
   cache: "no-store",
   headers: {
@@ -110,16 +129,18 @@ export default function BlogDetail() {
     const english = items.find((item) => item.lang === "en") || items[0];
     return english ? [...items, { lang: "x-default", path: english.path }] : items;
   }, [blog?.translations]);
-  const path = blog?.canonical_url || `${basePath}/${blog?.slug || slug}`;
-  const title = blog?.seo_title || blog?.title || "Article";
-  const description = blog?.seo_description || blog?.excerpt || title;
+  const seoOverride = getArticleSeoOverride(locale, blog?.slug || slug);
+  const path = seoOverride?.canonical || blog?.canonical_url || `${basePath}/${blog?.slug || slug}`;
+  const title = seoOverride?.title || blog?.seo_title || blog?.title || "Article";
+  const description = seoOverride?.description || blog?.seo_description || blog?.excerpt || title;
+  const headingTitle = seoOverride?.h1 || blog?.title || title;
   const published = blog?.published_at || blog?.created_at;
   const image = blog?.og_image_url || blog?.cover_image_url || "";
   const resolvedImage = image ? resolveVersionedImageUrl(image, imageVersion) : "";
   const robots = notFound ? "noindex,follow" : blog?.robots || "index,follow";
   const canonical = getCanonicalUrl(path);
   const jsonLd = blog ? [
-    { "@context": "https://schema.org", "@type": "BlogPosting", headline: blog.title, description, image: resolvedImage || undefined, author: { "@type": "Organization", name: blog.author_name || "SangeHassan" }, publisher: { "@type": "Organization", name: "SangeHassan", url: getCanonicalUrl("/") }, datePublished: published, dateModified: blog.updated_at, mainEntityOfPage: canonical, inLanguage: locale },
+    { "@context": "https://schema.org", "@type": "BlogPosting", headline: headingTitle, description, image: resolvedImage || undefined, author: { "@type": "Organization", name: blog.author_name || "SangeHassan" }, publisher: { "@type": "Organization", name: locale === "fa" ? "سنگ حسن" : "SangeHassan", url: getCanonicalUrl("/") }, datePublished: published, dateModified: blog.updated_at, mainEntityOfPage: canonical, inLanguage: locale === "fa" ? "fa-IR" : locale },
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: meta.home, item: getCanonicalUrl("/") }, { "@type": "ListItem", position: 2, name: meta.articles, item: getCanonicalUrl(basePath) }, { "@type": "ListItem", position: 3, name: blog.title, item: canonical }] }
   ] : null;
 
@@ -135,21 +156,21 @@ export default function BlogDetail() {
   if (notFound || !blog) return <div className="section-shell min-h-[55vh] py-16" dir={isRTL ? "rtl" : "ltr"}><h1 className="font-display text-4xl">404</h1><Link to={basePath} className="mt-6 inline-block text-accent underline">{meta.back}</Link></div>;
 
   return (
-    <article dir={isRTL ? "rtl" : "ltr"}>
+    <article dir={isRTL ? "rtl" : "ltr"} itemScope itemType="https://schema.org/BlogPosting">
       <div className="section-shell pt-5">
         <nav className="flex flex-wrap items-center gap-2 text-xs text-primary/45"><Link to="/">{meta.home}</Link><span>/</span><Link to={basePath}>{meta.articles}</Link><span>/</span><span>{blog.title}</span></nav>
       </div>
       <header className="section-shell pb-9 pt-10">
         {blog.category_slug && <p className="text-xs font-semibold uppercase text-accent">{blog.category_slug}</p>}
-        <h1 className="mt-3 max-w-4xl font-display text-4xl leading-tight md:text-6xl">{blog.title}</h1>
-        {blog.excerpt && <p className="mt-6 max-w-3xl text-lg leading-9 text-primary/65">{blog.excerpt}</p>}
+        <h1 itemProp="headline" className="mt-3 max-w-4xl font-display text-4xl leading-tight md:text-6xl">{headingTitle}</h1>
+        {blog.excerpt && <p itemProp="description" className="mt-6 max-w-3xl text-lg leading-9 text-primary/65">{blog.excerpt}</p>}
         <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-primary/50">
-          <span>{blog.author_name}</span><time dateTime={published}>{new Date(published).toLocaleDateString(locale)}</time>
+          <span itemProp="author" itemScope itemType="https://schema.org/Organization"><span itemProp="name">{blog.author_name}</span></span><time itemProp="datePublished" dateTime={published}>{new Date(published).toLocaleDateString(locale)}</time>
           {blog.reading_time_minutes > 0 && <span className="inline-flex items-center gap-1.5"><Clock3 size={15} />{blog.reading_time_minutes} {meta.min}</span>}
-          {blog.updated_at && blog.updated_at !== blog.created_at && <span>{meta.updated}: {new Date(blog.updated_at).toLocaleDateString(locale)}</span>}
+          {blog.updated_at && blog.updated_at !== blog.created_at && <span>{meta.updated}: <time itemProp="dateModified" dateTime={blog.updated_at}>{new Date(blog.updated_at).toLocaleDateString(locale)}</time></span>}
         </div>
       </header>
-      {blog.cover_image_url && <div className="section-shell"><img src={resolveVersionedImageUrl(blog.cover_image_url, imageVersion)} alt={blog.featured_image_alt || blog.title} width="1200" height="675" className="aspect-[16/9] w-full object-cover" /></div>}
+      {blog.cover_image_url && <div className="section-shell"><img itemProp="image" src={resolveVersionedImageUrl(blog.cover_image_url, imageVersion)} alt={blog.featured_image_alt || blog.title} width="1200" height="675" className="aspect-[16/9] w-full object-cover" /></div>}
 
       <div className="section-shell grid gap-10 py-12 lg:grid-cols-[220px_minmax(0,720px)] lg:justify-center">
         {prepared.headings.length > 2 && <aside className="lg:sticky lg:top-28 lg:self-start"><p className="text-xs font-semibold uppercase text-primary/45">{meta.toc}</p><ol className="mt-4 space-y-3 border-s border-primary/15 ps-4 text-sm text-primary/60">{prepared.headings.map((heading) => <li key={heading.id} className={heading.level > 2 ? "ps-3" : ""}><a href={`#${heading.id}`} className="hover:text-primary">{heading.text}</a></li>)}</ol></aside>}

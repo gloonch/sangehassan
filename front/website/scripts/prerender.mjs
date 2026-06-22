@@ -28,6 +28,30 @@ const blogLocaleMeta = {
   fa: { locale: "fa_IR", home: "خانه", articles: "مقالات", title: "مقالات سنگ طبیعی | سنگ حسن", description: "راهنماهای کاربردی برای انتخاب، فرآوری، اجرا و نگهداری سنگ طبیعی." },
   ar: { locale: "ar_SA", home: "الرئيسية", articles: "المقالات", title: "مقالات الحجر الطبيعي | سانج حسن", description: "أدلة عملية لاختيار الحجر الطبيعي ومعالجته وتركيبه وصيانته." }
 };
+
+const requiredFaBlogSlugs = [
+  "everything-about-granite-stone",
+  "everything-about-travertine-stone"
+];
+
+const faArticleSeoOverrides = {
+  "everything-about-granite-stone": {
+    title: "سنگ گرانیت چیست؟ ویژگی‌ها، کاربردها و انواع گرانیت | سنگ حسن",
+    description: "راهنمای کامل سنگ گرانیت؛ بررسی ویژگی‌ها، مزایا، معایب، کاربردها، انواع رنگ و نکات مهم خرید گرانیت برای پروژه‌های ساختمانی.",
+    h1: "سنگ گرانیت چیست؟ راهنمای کامل ویژگی‌ها، کاربردها و انواع گرانیت",
+    canonical: "/fa/blogs/everything-about-granite-stone"
+  },
+  "everything-about-travertine-stone": {
+    title: "سنگ تراورتن چیست؟ انواع، معادن، کاربردها و ویژگی‌ها | سنگ حسن",
+    description: "راهنمای کامل سنگ تراورتن؛ بررسی انواع تراورتن، ویژگی‌ها، مزایا، معایب، کاربرد در نما و ساختمان و نکات مهم خرید سنگ تراورتن.",
+    h1: "سنگ تراورتن چیست؟ راهنمای کامل انواع، معادن و کاربردها",
+    canonical: "/fa/blogs/everything-about-travertine-stone"
+  }
+};
+
+function articleSeoOverride(locale, slug) {
+  return locale === "fa" ? faArticleSeoOverrides[slug] || null : null;
+}
 const catalogLocaleMeta = {
   en: {
     locale: "en_US",
@@ -244,6 +268,7 @@ function organizationJsonLd() {
     "@type": "Organization",
     "@id": organizationId,
     name: "SangeHassan",
+    alternateName: "سنگ حسن",
     url: siteUrl,
     logo: absoluteUrl("/favicon.png"),
     sameAs: [
@@ -327,12 +352,25 @@ function pageJsonLd(route) {
     };
   }
 
-  if (route.schemaType === "Article") {
-    page.headline = route.title;
+  if (route.schemaType === "Article" || route.schemaType === "BlogPosting") {
+    page.headline = route.headline || route.title;
     page.author = {
       "@id": organizationId
     };
+    page.publisher = {
+      "@id": organizationId
+    };
+    if (route.datePublished) {
+      page.datePublished = route.datePublished;
+    }
     page.dateModified = normalizeDate(route.lastmod);
+    if (route.schemaLanguage) {
+      page.inLanguage = route.schemaLanguage;
+    }
+    page.mainEntityOfPage = canonical;
+    if (image) {
+      page.image = image;
+    }
   }
 
   if (route.schemaType === "AboutPage") {
@@ -406,7 +444,7 @@ function injectRouteHtml(template, route, appHtml) {
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace("</head>", `  ${buildHead(route)}\n</head>`)
     .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)
-    .replace(/(\s*<script type="module")/, `\n${prerenderDataScript}$1`);
+    .replace("</body>", `${prerenderDataScript}</body>`);
 }
 
 async function loadAssetReplacements() {
@@ -1062,18 +1100,21 @@ function blogRoute(blog, locale) {
   if (!blog?.slug) return null;
   const meta = blogLocaleMeta[locale];
   const routePath = `/${locale}/blogs/${blog.slug}`;
-  const description = blog.seo_description || blog.excerpt || truncate(blog.content_html) || blog.title;
+  const seoOverride = articleSeoOverride(locale, blog.slug);
+  const description = seoOverride?.description || blog.seo_description || blog.excerpt || truncate(blog.content_html) || blog.title;
   const translations = Array.isArray(blog.translations) ? blog.translations : [];
   const alternateItems = translations.map((item) => ({ lang: item.locale, path: `/${item.locale}/blogs/${item.slug}` }));
   const defaultAlternate = alternateItems.find((item) => item.lang === "en") || alternateItems[0];
+  const canonical = seoOverride?.canonical || blog.canonical_url || routePath;
+  const headline = seoOverride?.h1 || blog.title;
   return {
     path: routePath,
-    canonical: blog.canonical_url || routePath,
-    title: blog.seo_title || blog.title,
+    canonical,
+    title: seoOverride?.title || blog.seo_title || blog.title,
     description,
     image: blog.og_image_url || blog.cover_image_url || defaultShareImage,
     type: "article",
-    schemaType: "Article",
+    schemaType: "BlogPosting",
     routeKind: "blog-detail",
     lang: locale,
     locale: meta.locale,
@@ -1086,12 +1127,26 @@ function blogRoute(blog, locale) {
     changefreq: "monthly",
     priority: 0.7,
     lastmod: blog.updated_at || blog.published_at || blog.created_at,
+    datePublished: blog.published_at || blog.created_at,
+    headline,
+    schemaLanguage: locale === "fa" ? "fa-IR" : locale,
     prerenderData: { blog }
   };
 }
 
 async function loadBlogRoutes() {
   const routes = [];
+  const seenDetailKeys = new Set();
+
+  const addBlogRoute = (blog, locale) => {
+    const route = blogRoute(blog, locale);
+    if (!route) return;
+    const key = `${locale}/${blog.slug}`;
+    if (seenDetailKeys.has(key)) return;
+    seenDetailKeys.add(key);
+    routes.push(route);
+  };
+
   for (const locale of catalogLocales) {
     try {
       const blogs = (await fetchApi(`/api/blogs?locale=${locale}`)) || [];
@@ -1114,8 +1169,7 @@ async function loadBlogRoutes() {
       for (const summary of blogs) {
         try {
           const blog = (await fetchApi(`/api/blogs/${locale}/${summary.slug}`)) || summary;
-          const route = blogRoute(blog, locale);
-          if (route) routes.push(route);
+          addBlogRoute(blog, locale);
         } catch (error) {
           console.warn(`prerender: blog skipped for ${locale}/${summary.slug}: ${error.message}`);
         }
@@ -1124,6 +1178,16 @@ async function loadBlogRoutes() {
       console.warn(`prerender: ${locale} blogs skipped: ${error.message}`);
     }
   }
+
+  for (const slug of requiredFaBlogSlugs) {
+    try {
+      const blog = await fetchApi(`/api/blogs/fa/${slug}`);
+      addBlogRoute(blog, "fa");
+    } catch (error) {
+      console.warn(`prerender: required fa blog skipped for ${slug}: ${error.message}`);
+    }
+  }
+
   return routes;
 }
 
