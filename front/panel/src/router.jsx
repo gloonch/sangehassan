@@ -11,6 +11,7 @@ import Blogs from "./pages/Blogs";
 import Projects from "./pages/Projects";
 import Templates from "./pages/Templates";
 import ContentSections from "./pages/ContentSections";
+import TeamMembers from "./pages/TeamMembers";
 import Ads from "./pages/Ads";
 import Users from "./pages/Users";
 import PanelLayout from "./components/PanelLayout";
@@ -55,6 +56,7 @@ export default function AppRoutes() {
         <Route path="projects" element={<Projects />} />
         <Route path="templates" element={<Templates />} />
         <Route path="content" element={<ContentSections />} />
+        <Route path="team" element={<TeamMembers />} />
         <Route path="ads" element={<Ads />} />
         <Route path="users" element={<Users />} />
       </Route>

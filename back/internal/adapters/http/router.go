@@ -24,6 +24,7 @@ func NewRouter(
 	templateService *usecase.TemplateService,
 	blockService *usecase.BlockService,
 	contentSectionService *usecase.ContentSectionService,
+	teamMemberService *usecase.TeamMemberService,
 	adminAuthService *usecase.AuthService,
 	userAuthService *usecase.UserAuthService,
 	userRepo ports.UserRepository,
@@ -66,6 +67,7 @@ func NewRouter(
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	blockHandler := handlers.NewBlockHandler(blockService)
 	contentSectionHandler := handlers.NewContentSectionHandler(contentSectionService)
+	teamMemberHandler := handlers.NewTeamMemberHandler(teamMemberService)
 	adminAuthHandler := handlers.NewAuthHandler(adminAuthService, cfg.CookieSecure, cfg.JWTTTLHours)
 	userAuthHandler := handlers.NewUserAuthHandler(userAuthService, cfg.CookieSecure)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
@@ -103,6 +105,7 @@ func NewRouter(
 		api.GET("/blocks", blockHandler.List)
 		api.GET("/blocks/:slug", blockHandler.GetBySlug)
 		api.GET("/content-sections", contentSectionHandler.ListPublic)
+		api.GET("/team-members", teamMemberHandler.ListPublic)
 
 		api.POST("/admin/login", adminAuthHandler.Login)
 		api.POST("/admin/logout", adminAuthHandler.Logout)
@@ -127,6 +130,7 @@ func NewRouter(
 			admin.POST("/upload/product", uploadHandler.UploadProduct)
 			admin.POST("/upload/block", uploadHandler.UploadBlock)
 			admin.POST("/upload/content", uploadHandler.UploadContent)
+			admin.POST("/upload/team", uploadHandler.UploadTeam)
 			admin.POST("/upload/blog", uploadHandler.UploadBlog)
 			admin.POST("/upload/project", uploadHandler.UploadProject)
 
@@ -181,6 +185,12 @@ func NewRouter(
 			admin.POST("/content-sections", contentSectionHandler.Create)
 			admin.PUT("/content-sections/:id", contentSectionHandler.Update)
 			admin.DELETE("/content-sections/:id", contentSectionHandler.Delete)
+
+			admin.GET("/team-members", teamMemberHandler.List)
+			admin.GET("/team-members/:id", teamMemberHandler.GetByID)
+			admin.POST("/team-members", teamMemberHandler.Create)
+			admin.PUT("/team-members/:id", teamMemberHandler.Update)
+			admin.DELETE("/team-members/:id", teamMemberHandler.Delete)
 
 			admin.GET("/requests", listingHandler.AdminListRequests)
 			admin.GET("/requests/:id", listingHandler.AdminGetRequest)

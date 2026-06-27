@@ -248,15 +248,16 @@ export default function Navbar() {
   const visibleNavItems = navItems.map((item) => (
     item.key === "products" || item.key === "blogs" ? { ...item, path: `/${lang}/${item.key}` } : item
   ));
-  const navHeaderClass = isHome
+  const useLightHomeNav = isHome;
+  const navHeaderClass = useLightHomeNav
     ? open
       ? "border-b border-sand/25 bg-primary/45 backdrop-blur-xl"
-      : "border-transparent bg-transparent"
+      : "border-b border-sand/15 bg-primary/22 backdrop-blur-xl"
     : "border-b border-primary/10 bg-sand/80 backdrop-blur-lg";
-  const navTextClass = isHome
+  const navTextClass = useLightHomeNav
     ? "text-sand/80 hover:text-sand"
     : "text-primary/70 hover:text-primary";
-  const navActiveClass = isHome ? "text-sand" : "text-accent";
+  const navActiveClass = useLightHomeNav ? "text-sand" : "text-accent";
   const mobileOverlayBaseClass = "fixed inset-0 z-[9999] bg-[#E5E1DD] text-primary lg:hidden";
 
   const mobileMenu =
@@ -340,7 +341,7 @@ export default function Navbar() {
     <header ref={headerRef} className={`fixed left-0 right-0 top-0 z-50 transition-colors duration-300 ${navHeaderClass}`}>
       <div className="section-shell flex h-20 items-center justify-between gap-4">
         <Link to="/" className="inline-flex items-center will-change-transform" aria-label={t("brand")} data-nav-block="left">
-          <img src={isHome ? logoWhiteImage : logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
+          <img src={useLightHomeNav ? logoWhiteImage : logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium lg:flex will-change-transform" data-nav-block="center">
@@ -362,7 +363,7 @@ export default function Navbar() {
           {user ? (
             <NavLink
               to="/profile"
-              className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold uppercase shadow transition ${isHome
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold uppercase shadow transition ${useLightHomeNav
                 ? "border border-sand/30 bg-sand/15 text-sand hover:bg-sand/25"
                 : "bg-primary text-sand hover:bg-primary/90"
                 }`}
@@ -374,7 +375,7 @@ export default function Navbar() {
           ) : (
             <NavLink
               to="/login"
-              className={`rounded-full px-4 py-2 text-xs font-semibold transition ${isHome
+              className={`rounded-full px-4 py-2 text-xs font-semibold transition ${useLightHomeNav
                 ? "border border-sand/35 bg-sand/15 text-sand hover:bg-sand/25"
                 : "bg-primary text-sand hover:bg-primary/90"
                 }`}
@@ -387,7 +388,7 @@ export default function Navbar() {
         <button
           type="button"
           data-nav-block="right"
-          className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold leading-none transition will-change-transform lg:hidden ${isHome
+          className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold leading-none transition will-change-transform lg:hidden ${useLightHomeNav
             ? "bg-sand/10 text-sand hover:bg-sand/20"
             : "bg-transparent text-primary hover:bg-primary/10"
             }`}
@@ -398,38 +399,38 @@ export default function Navbar() {
           <span className="sr-only">{t("actions.menu")}</span>
           <span className="relative block h-4 w-5">
             <span
-              className={`absolute left-0 top-0 h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "translate-y-[7px] rotate-45" : ""
+              className={`absolute left-0 top-0 h-0.5 w-full rounded-full transition-all duration-300 ${useLightHomeNav ? "bg-sand" : "bg-primary"} ${open ? "translate-y-[7px] rotate-45" : ""
                 }`}
             />
             <span
-              className={`absolute left-0 top-[7px] h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "opacity-0" : "opacity-100"
+              className={`absolute left-0 top-[7px] h-0.5 w-full rounded-full transition-all duration-300 ${useLightHomeNav ? "bg-sand" : "bg-primary"} ${open ? "opacity-0" : "opacity-100"
                 }`}
             />
             <span
-              className={`absolute left-0 top-[14px] h-0.5 w-full rounded-full transition-all duration-300 ${isHome ? "bg-sand" : "bg-primary"} ${open ? "-translate-y-[7px] -rotate-45" : ""
+              className={`absolute left-0 top-[14px] h-0.5 w-full rounded-full transition-all duration-300 ${useLightHomeNav ? "bg-sand" : "bg-primary"} ${open ? "-translate-y-[7px] -rotate-45" : ""
                 }`}
             />
           </span>
         </button>
       </div>
 
-      <div className={`border-t ${isHome ? "border-sand/20" : "border-primary/10"}`}>
+      <div className={`border-t ${useLightHomeNav ? "border-sand/20" : "border-primary/10"}`}>
         <div className="section-shell relative flex h-8 items-center">
-          <p className={`min-w-[6.75rem] shrink-0 text-[11px] font-semibold sm:min-w-[7.5rem] ${isHome ? "text-sand/75" : "text-primary/65"}`}>
+          <p className={`min-w-[6.75rem] shrink-0 text-[11px] font-semibold sm:min-w-[7.5rem] ${useLightHomeNav ? "text-sand/75" : "text-primary/65"}`}>
             {navSubline}
           </p>
           {activeDeal ? (
             <Link
               to="/ads"
               className={`mx-2 flex min-w-0 flex-1 items-center justify-center overflow-hidden text-center text-[10px] font-semibold transition-opacity duration-300 ease-out sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:mx-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${dealVisible ? "opacity-100" : "opacity-0"
-                } ${isHome ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
+                } ${useLightHomeNav ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
               aria-label={t("ads.title")}
             >
               <span className="block truncate">{renderDealMessage(activeDeal, liveDealsConfig)}</span>
             </Link>
           ) : null}
           <div className={`${isRTL ? "mr-auto" : "ml-auto"} hidden shrink-0 lg:block`}>
-            <LanguageSwitch tone={isHome ? "light" : "default"} />
+            <LanguageSwitch tone={useLightHomeNav ? "light" : "default"} />
           </div>
         </div>
       </div>

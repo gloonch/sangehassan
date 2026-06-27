@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { gsap } from "gsap";
+import { ChevronDown } from "lucide-react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
+import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
+import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.png";
+import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.png";
+import trustQualityIllustration from "@shared/assets/landing_icons/trust_quality_icon_transparent.png";
 import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
 import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
 import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
@@ -139,7 +144,7 @@ const homeSeoContent = {
 const pickField = (section, field, lang) => {
   if (!section) return "";
   const key = `${field}_${lang}`;
-  return section[key] || section[`${field}_en`] || "";
+  return section[key] || section[`${field}_en`] || section[`${field}_fa`] || section[`${field}_ar`] || "";
 };
 
 const splitLines = (text) =>
@@ -148,9 +153,274 @@ const splitLines = (text) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+const whySangehassanIllustrations = {
+  market: {
+    src: marketComplexityIllustration,
+    width: 802,
+    height: 648
+  },
+  network: {
+    src: networkSupplyIllustration,
+    width: 941,
+    height: 942
+  },
+  trust: {
+    src: trustQualityIllustration,
+    width: 1059,
+    height: 726
+  }
+};
+
+const whySangehassanContent = {
+  fa: {
+    eyebrow: "چرا سنگ حسن؟",
+    title: "بازار سنگ نباید اینقدر سخت باشد",
+    intro:
+      "خرید سنگ ساختمانی هنوز برای بسیاری از پروژه‌ها مسیری پیچیده است؛ تماس‌های متعدد، بازدیدهای پی‌درپی، قیمت‌های متفاوت، اطلاعات ناقص و انتخاب‌هایی که اغلب به موجودی چند انبار محدود می‌شوند.",
+    support:
+      "مشکل بازار سنگ، کمبود سنگ خوب نیست. مشکل، پراکندگی اطلاعات، فاصله با منبع واقعی و سختی دسترسی به انتخاب درست است.",
+    quote: "انتخاب شما نباید به موجودی یک انبار محدود شود؛ باید به ظرفیت یک شبکه متصل باشد.",
+    cta: "مشاهده محصولات",
+    cards: [
+      {
+        key: "market",
+        title: "بازار پراکنده، تصمیم سخت",
+        imageAlt: "مسیرهای پراکنده بازار سنگ و انتخاب سخت",
+        summary:
+          "خریدار معمولاً بین چند فروشنده، چند قیمت و روایت متفاوت تصمیم می‌گیرد؛ سنگ حسن این فاصله را با نمایش شفاف‌تر محصولات، پروژه‌ها و منابع تأمین کمتر می‌کند.",
+        paragraphs: [
+          "در بازار سنتی سنگ، خریدار معمولاً باید بین چند فروشنده، چند قیمت و چند روایت متفاوت تصمیم بگیرد. بسیاری از گزینه‌های بهتر اصلاً دیده نمی‌شوند، چون در مسیر جست‌وجوی مشتری قرار نمی‌گیرند.",
+          "سنگ حسن تلاش می‌کند این فاصله را کمتر کند؛ با نمایش شفاف‌تر محصولات، پروژه‌ها، منابع تأمین و مسیر انتخاب."
+        ]
+      },
+      {
+        key: "network",
+        title: "انتخاب محدود به یک انبار نیست",
+        imageAlt: "شبکه‌ای از منابع تأمین سنگ متصل به یک هاب مرکزی",
+        summary:
+          "انتخاب شما نباید به موجودی یک انبار محدود شود؛ سنگ حسن به شبکه‌ای از تولیدکنندگان، معادن، کارخانه‌ها و منابع تأمین وصل است تا گزینه مناسب‌تر پروژه پیدا شود.",
+        paragraphs: [
+          "سنگ حسن یک انبار سنتی نیست. این یک تصمیم آگاهانه است.",
+          "ما نمی‌خواهیم انتخاب شما فقط به موجودی خودمان محدود شود. به‌جای انبارمحور بودن، به شبکه‌ای از تولیدکنندگان، معادن، کارخانه‌ها و منابع تأمین متصل هستیم تا برای هر پروژه، گزینه مناسب‌تر پیدا شود.",
+          "هدف ما فروش آن چیزی نیست که صرفاً موجود است؛ هدف ما پیدا کردن سنگی است که برای پروژه شما درست‌تر است."
+        ]
+      },
+      {
+        key: "trust",
+        title: "رقابت بر پایه اعتماد، نه قیمت‌شکنی",
+        imageAlt: "کنترل کیفیت و اعتماد در انتخاب سنگ ساختمانی",
+        summary:
+          "ارزان‌ترین انتخاب همیشه کم‌هزینه‌ترین نیست؛ ما روی کیفیت، خدمات و اعتماد رقابت می‌کنیم تا خرید سنگ شفاف‌تر و مطمئن‌تر شود.",
+        paragraphs: [
+          "در پروژه‌های ساختمانی، ارزان‌ترین انتخاب همیشه کم‌هزینه‌ترین انتخاب نیست. انتخاب اشتباه سنگ می‌تواند باعث پرت، دوباره‌کاری، تأخیر، ناهماهنگی رنگ و افت کیفیت نهایی شود.",
+          "ما در کیفیت، خدمات و اعتماد رقابت می‌کنیم؛ نه در قیمت‌شکنی.",
+          "سنگ حسن تلاش می‌کند خرید سنگ را از یک تصمیم پراکنده و پرریسک، به یک فرآیند شفاف‌تر، قابل بررسی‌تر و مطمئن‌تر تبدیل کند."
+        ]
+      }
+    ]
+  },
+  en: {
+    eyebrow: "Why SangeHassan?",
+    title: "The stone market should not be this hard",
+    intro:
+      "Buying building stone is still a fragmented path for many projects: repeated calls, repeated visits, different prices, incomplete information, and choices often limited to a few warehouses.",
+    support:
+      "The problem is not a lack of good stone. The problem is scattered information, distance from the real source, and hard access to the right option.",
+    quote: "Your choice should not be limited to one warehouse inventory; it should be connected to the capacity of a network.",
+    cta: "View products",
+    cards: [
+      {
+        key: "market",
+        title: "A scattered market, a hard decision",
+        imageAlt: "Scattered stone market paths and difficult selection",
+        summary:
+          "Buyers often choose between several sellers, prices, and narratives; SangeHassan reduces that distance with clearer product, project, and supply visibility.",
+        paragraphs: [
+          "In the traditional stone market, buyers usually have to decide between several sellers, several prices, and several different narratives. Many better options are never seen because they are not in the customer's search path.",
+          "SangeHassan works to reduce that distance through clearer visibility into products, projects, supply sources, and the selection path."
+        ]
+      },
+      {
+        key: "network",
+        title: "Selection is not limited to one warehouse",
+        imageAlt: "Connected stone supply network around a central hub",
+        summary:
+          "Your options should not be limited to one warehouse; SangeHassan connects producers, quarries, factories, and supply sources to find a better fit.",
+        paragraphs: [
+          "SangeHassan is not a traditional warehouse. That is a deliberate choice.",
+          "We do not want your selection to be limited to what we personally have in stock. Instead of being warehouse-driven, we are connected to a network of producers, quarries, factories, and supply sources to find the better option for each project.",
+          "The goal is not to sell only what is available; the goal is to find the stone that is more right for your project."
+        ]
+      },
+      {
+        key: "trust",
+        title: "Competing on trust, not price-cutting",
+        imageAlt: "Quality control and trust in building stone selection",
+        summary:
+          "The cheapest stone is not always the lowest-cost choice; we compete on quality, service, and trust to make buying clearer and more reliable.",
+        paragraphs: [
+          "In construction projects, the cheapest choice is not always the lowest-cost choice. The wrong stone can cause waste, rework, delays, color mismatch, and weaker final quality.",
+          "We compete on quality, service, and trust; not on price-cutting.",
+          "SangeHassan works to turn stone buying from a scattered and risky decision into a clearer, more reviewable, and more reliable process."
+        ]
+      }
+    ]
+  },
+  ar: {
+    eyebrow: "لماذا سانج حسن؟",
+    title: "لا ينبغي أن يكون سوق الحجر بهذه الصعوبة",
+    intro:
+      "ما زال شراء حجر البناء في كثير من المشاريع مساراً معقداً؛ اتصالات متعددة، زيارات متكررة، أسعار مختلفة، معلومات ناقصة، وخيارات غالباً ما تنحصر في مخزون بضعة مستودعات.",
+    support:
+      "مشكلة سوق الحجر ليست ندرة الحجر الجيد. المشكلة هي تشتت المعلومات، والبعد عن المصدر الحقيقي، وصعوبة الوصول إلى الخيار الصحيح.",
+    quote: "لا ينبغي أن يقتصر اختيارك على مخزون مستودع واحد؛ بل يجب أن يتصل بقدرة شبكة كاملة.",
+    cta: "عرض المنتجات",
+    cards: [
+      {
+        key: "market",
+        title: "سوق متشتت وقرار صعب",
+        imageAlt: "مسارات متفرقة في سوق الحجر واختيار صعب",
+        summary:
+          "غالباً ما يختار المشتري بين عدة بائعين وأسعار وروايات؛ وتعمل سانج حسن على تقليل هذه المسافة بعرض أوضح للمنتجات والمشاريع ومصادر التوريد.",
+        paragraphs: [
+          "في سوق الحجر التقليدي، يضطر المشتري غالباً إلى الاختيار بين عدة بائعين وعدة أسعار وعدة روايات مختلفة. كثير من الخيارات الأفضل لا تظهر أصلاً لأنها ليست في طريق بحث العميل.",
+          "تعمل سانج حسن على تقليل هذه المسافة من خلال عرض أوضح للمنتجات والمشاريع ومصادر التوريد ومسار الاختيار."
+        ]
+      },
+      {
+        key: "network",
+        title: "الاختيار لا يقتصر على مستودع واحد",
+        imageAlt: "شبكة توريد حجر متصلة حول مركز واحد",
+        summary:
+          "لا ينبغي أن يكون اختيارك محدوداً بمستودع واحد؛ سانج حسن متصل بالمنتجين والمحاجر والمصانع ومصادر التوريد للوصول إلى الأنسب.",
+        paragraphs: [
+          "سانج حسن ليس مستودعاً تقليدياً. هذا خيار واعٍ.",
+          "لا نريد أن يكون اختيارك محدوداً بما نملكه فقط. بدلاً من العمل بمنطق المستودع، نحن متصلون بشبكة من المنتجين والمحاجر والمصانع ومصادر التوريد للوصول إلى الخيار الأنسب لكل مشروع.",
+          "هدفنا ليس بيع ما هو متوفر فقط؛ هدفنا العثور على الحجر الأنسب لمشروعك."
+        ]
+      },
+      {
+        key: "trust",
+        title: "المنافسة على الثقة لا على كسر الأسعار",
+        imageAlt: "فحص جودة وثقة في اختيار حجر البناء",
+        summary:
+          "الخيار الأرخص ليس دائماً الأقل تكلفة؛ نحن ننافس في الجودة والخدمة والثقة حتى يصبح شراء الحجر أوضح وأكثر اطمئناناً.",
+        paragraphs: [
+          "في مشاريع البناء، الخيار الأرخص ليس دائماً الأقل تكلفة. اختيار الحجر الخطأ قد يؤدي إلى هدر، وإعادة عمل، وتأخير، وعدم تناسق في اللون، وانخفاض جودة النتيجة النهائية.",
+          "نحن ننافس في الجودة والخدمة والثقة؛ لا في كسر الأسعار.",
+          "تعمل سانج حسن على تحويل شراء الحجر من قرار متشتت ومحفوف بالمخاطر إلى عملية أكثر وضوحاً وقابلية للمراجعة واطمئناناً."
+        ]
+      }
+    ]
+  }
+};
+
+const teamSectionContent = {
+  fa: {
+    eyebrow: "تیم",
+    title: "تیم پشت سنگ حسن",
+    intro:
+      "برای ساخت یک شبکه قابل اعتماد در صنعت سنگ، فقط محصول کافی نیست. سنگ حسن با ترکیب تجربه بازار سنگ، فناوری، امور حقوقی و مشاوره طراحی تلاش می‌کند مسیر انتخاب و تأمین سنگ را شفاف‌تر و مطمئن‌تر کند.",
+    linkedinLabel: "LinkedIn",
+    cards: [
+      {
+        initials: "FS",
+        name: "Founder / Stone Supply Lead",
+        role: "هدایت شبکه تأمین",
+        bio: "مسئول توسعه مسیرهای تأمین، ارتباط با تولیدکنندگان و هماهنگی ظرفیت‌های بازار سنگ."
+      },
+      {
+        initials: "CT",
+        name: "CTO",
+        role: "فناوری و محصول",
+        bio: "مسئول توسعه محصول دیجیتال، زیرساخت فنی و مسیرهای قابل پیگیری در تجربه کاربر."
+      },
+      {
+        initials: "LC",
+        name: "Legal & Contracts",
+        role: "امور حقوقی و قراردادها",
+        bio: "همراهی در تنظیم قراردادها، مستندسازی و هماهنگی‌های رسمی معاملات."
+      },
+      {
+        initials: "DC",
+        name: "Design Consultant",
+        role: "مشاوره طراحی و انتخاب سنگ",
+        bio: "مشاور انتخاب سنگ، متریال‌شناسی و هماهنگی سنگ با نیاز پروژه‌های معماری."
+      }
+    ]
+  },
+  en: {
+    eyebrow: "Team",
+    title: "The Team Behind SangeHassan",
+    intro:
+      "A reliable stone network needs more than products. SangeHassan combines stone-market experience, technology, legal coordination, and design consulting to make selection and supply clearer and more dependable.",
+    linkedinLabel: "LinkedIn",
+    cards: [
+      {
+        initials: "FS",
+        name: "Founder / Stone Supply Lead",
+        role: "Supply network leadership",
+        bio: "Leads supply paths, producer relationships, and coordination across the stone market."
+      },
+      {
+        initials: "CT",
+        name: "CTO",
+        role: "Technology and product",
+        bio: "Leads digital product development, technical infrastructure, and traceable user workflows."
+      },
+      {
+        initials: "LC",
+        name: "Legal & Contracts",
+        role: "Legal and contracts",
+        bio: "Supports contract preparation, documentation, and formal transaction coordination."
+      },
+      {
+        initials: "DC",
+        name: "Design Consultant",
+        role: "Stone and design consulting",
+        bio: "Advises on stone selection, material fit, and alignment with architectural project needs."
+      }
+    ]
+  },
+  ar: {
+    eyebrow: "الفريق",
+    title: "الفريق وراء سانج حسن",
+    intro:
+      "بناء شبكة موثوقة في صناعة الحجر يحتاج إلى أكثر من المنتجات. تجمع سانج حسن بين خبرة سوق الحجر والتكنولوجيا والتنسيق القانوني والاستشارات التصميمية لجعل الاختيار والتوريد أوضح وأكثر اطمئناناً.",
+    linkedinLabel: "LinkedIn",
+    cards: [
+      {
+        initials: "FS",
+        name: "Founder / Stone Supply Lead",
+        role: "قيادة شبكة التوريد",
+        bio: "مسؤول عن تطوير مسارات التوريد والعلاقات مع المنتجين وتنسيق قدرات سوق الحجر."
+      },
+      {
+        initials: "CT",
+        name: "CTO",
+        role: "التكنولوجيا والمنتج",
+        bio: "مسؤول عن تطوير المنتج الرقمي والبنية التقنية ومسارات تجربة المستخدم القابلة للمتابعة."
+      },
+      {
+        initials: "LC",
+        name: "Legal & Contracts",
+        role: "الشؤون القانونية والعقود",
+        bio: "يدعم إعداد العقود والتوثيق والتنسيقات الرسمية للمعاملات."
+      },
+      {
+        initials: "DC",
+        name: "Design Consultant",
+        role: "استشارات التصميم واختيار الحجر",
+        bio: "يقدم المشورة في اختيار الحجر وملاءمة المواد مع احتياجات المشاريع المعمارية."
+      }
+    ]
+  }
+};
+
 export default function Home() {
   const { t, lang } = useTranslation();
   const [sections, setSections] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [slideDecks, setSlideDecks] = useState(initialSlideDecks);
   const [activeSlides, setActiveSlides] = useState({ products: 0, blocks: 0 });
   const [previousSlides, setPreviousSlides] = useState({ products: null, blocks: null });
@@ -296,6 +566,22 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+    fetchJSON("/api/team-members")
+      .then((res) => {
+        if (!mounted) return;
+        setTeamMembers(res.data || []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setTeamMembers([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const decks = createSlideDecks();
     logSlideDebug("deck-init", {
       products: decks.products.map((slide) => getSlideAssetName(slide.src)),
@@ -398,6 +684,22 @@ export default function Home() {
 
   const blocksSection = sectionsByKey.blocks || fallbackSections.blocks;
   const finishedSection = sectionsByKey.finished || fallbackSections.finished;
+  const whyContent = whySangehassanContent[lang] || whySangehassanContent.fa;
+  const teamContent = teamSectionContent[lang] || teamSectionContent.fa;
+  const dynamicTeamCards = useMemo(
+    () =>
+      teamMembers.map((member) => ({
+        id: member.id,
+        name: pickField(member, "name", lang),
+        role: pickField(member, "role", lang),
+        bio: pickField(member, "bio", lang),
+        photo: member.photo_url ? resolveImageUrl(member.photo_url) : "",
+        linkedin: member.linkedin_url || ""
+      })),
+    [teamMembers, lang]
+  );
+  const teamCards = dynamicTeamCards.length ? dynamicTeamCards : teamContent.cards;
+  const whySectionDir = lang === "en" ? "ltr" : "rtl";
 
   /*
   const renderDealNotification = (deal) => (
@@ -453,152 +755,273 @@ export default function Home() {
   }, [lang, blocksSection, finishedSection]);
 
   return (
-    <div ref={rootRef} className="relative h-[100dvh] w-full overflow-hidden">
-      <section className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
-        {[finishedSection, blocksSection].map((section, index) => {
-          const isBlocks = section.key === "blocks";
-          const title = pickField(section, "title", lang) || (isBlocks ? t("blocks.title") : t("products.title"));
-          const subtitle = pickField(section, "subtitle", lang);
-          const description = pickField(section, "description", lang);
-          const ctaLabel = pickField(section, "cta_label", lang);
-          const fallbackCTA = isBlocks ? t("blocks.cta") : t("hero.ctaPrimary");
-          const rawCtaHref = section.cta_href || (isBlocks ? "/blocks" : "/products");
-          const ctaHref = isBlocks
-            ? rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref
-            : `/${lang}/products`;
-          const lines = splitLines(description);
-          const slides = isBlocks ? slideDecks.blocks : slideDecks.products;
-          const activeSlide = isBlocks ? activeSlides.blocks : activeSlides.products;
-          const previousSlide = isBlocks ? previousSlides.blocks : previousSlides.products;
-          const nextSlide = getNextSlideIndex(activeSlide, slides);
-          const visibleSlideIndexes = [previousSlide, activeSlide, nextSlide].filter(
-            (slideIndex, slideIndexPosition, slideIndexes) =>
-              slideIndex !== null && slideIndexes.indexOf(slideIndex) === slideIndexPosition
-          );
+    <>
+      <div ref={rootRef} className="relative h-[100dvh] w-full overflow-hidden">
+        <section className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
+          {[finishedSection, blocksSection].map((section, index) => {
+            const isBlocks = section.key === "blocks";
+            const title = pickField(section, "title", lang) || (isBlocks ? t("blocks.title") : t("products.title"));
+            const subtitle = pickField(section, "subtitle", lang);
+            const description = pickField(section, "description", lang);
+            const ctaLabel = pickField(section, "cta_label", lang);
+            const fallbackCTA = isBlocks ? t("blocks.cta") : t("hero.ctaPrimary");
+            const rawCtaHref = section.cta_href || (isBlocks ? "/blocks" : "/products");
+            const ctaHref = isBlocks
+              ? rawCtaHref === "/blocks/catalog" ? "/blocks" : rawCtaHref
+              : `/${lang}/products`;
+            const lines = splitLines(description);
+            const slides = isBlocks ? slideDecks.blocks : slideDecks.products;
+            const activeSlide = isBlocks ? activeSlides.blocks : activeSlides.products;
+            const previousSlide = isBlocks ? previousSlides.blocks : previousSlides.products;
+            const nextSlide = getNextSlideIndex(activeSlide, slides);
+            const visibleSlideIndexes = [previousSlide, activeSlide, nextSlide].filter(
+              (slideIndex, slideIndexPosition, slideIndexes) =>
+                slideIndex !== null && slideIndexes.indexOf(slideIndex) === slideIndexPosition
+            );
 
-          return (
-            <Link
-              key={section.key || index}
-              to={ctaHref}
-              className="group relative block h-1/2 w-full overflow-hidden lg:h-full lg:w-1/2"
-              aria-label={title}
-            >
-              <div className="absolute inset-0 z-0">
-                {visibleSlideIndexes.map((slideIndex) => {
-                  const image = slides[slideIndex];
-                  const isActiveSlide = slideIndex === activeSlide;
-                  const isPreviousSlide = slideIndex === previousSlide;
-                  const role = isActiveSlide ? "active" : isPreviousSlide ? "previous" : "preload";
-                  const panel = isBlocks ? "blocks" : "products";
+            return (
+              <Link
+                key={section.key || index}
+                to={ctaHref}
+                className="group relative block h-1/2 w-full overflow-hidden lg:h-full lg:w-1/2"
+                aria-label={title}
+              >
+                <div className="absolute inset-0 z-0">
+                  {visibleSlideIndexes.map((slideIndex) => {
+                    const image = slides[slideIndex];
+                    const isActiveSlide = slideIndex === activeSlide;
+                    const isPreviousSlide = slideIndex === previousSlide;
+                    const role = isActiveSlide ? "active" : isPreviousSlide ? "previous" : "preload";
+                    const panel = isBlocks ? "blocks" : "products";
 
-                  return (
-                    <img
-                      key={image.src}
-                      src={image.src}
-                      alt=""
-                      width={image.width}
-                      height={image.height}
-                      className={`landing-slide-layer absolute inset-0 h-full w-full object-cover object-center ${isActiveSlide
-                        ? "landing-slide-active"
-                        : isPreviousSlide
-                          ? "landing-slide-previous"
-                          : "landing-slide-preload"
-                        }`}
-                      data-slide-panel={panel}
-                      data-slide-role={role}
-                      data-slide-index={slideIndex}
-                      loading={isPreviousSlide ? "lazy" : "eager"}
-                      decoding="async"
-                      fetchpriority={isActiveSlide ? "high" : "low"}
-                      onLoad={(event) => {
-                        const styles = window.getComputedStyle(event.currentTarget);
-                        logSlideDebug("image-load", {
-                          panel,
-                          role,
-                          slideIndex,
-                          asset: getSlideAssetName(image.src),
-                          opacity: styles.opacity,
-                          transitionDuration: styles.transitionDuration
-                        });
-                      }}
-                      onTransitionStart={(event) => {
-                        if (event.propertyName !== "opacity") return;
-                        const styles = window.getComputedStyle(event.currentTarget);
-                        logSlideDebug("transition-start", {
-                          panel,
-                          role,
-                          slideIndex,
-                          asset: getSlideAssetName(image.src),
-                          opacity: styles.opacity,
-                          filter: styles.filter,
-                          transitionDuration: styles.transitionDuration
-                        });
-                      }}
-                      onTransitionEnd={(event) => {
-                        if (event.propertyName !== "opacity") return;
-                        const styles = window.getComputedStyle(event.currentTarget);
-                        logSlideDebug("transition-end", {
-                          panel,
-                          role,
-                          slideIndex,
-                          asset: getSlideAssetName(image.src),
-                          opacity: styles.opacity,
-                          filter: styles.filter,
-                          transitionDuration: styles.transitionDuration
-                        });
-                      }}
-                    />
-                  );
-                })}
-              </div>
+                    return (
+                      <img
+                        key={image.src}
+                        src={image.src}
+                        alt=""
+                        width={image.width}
+                        height={image.height}
+                        className={`landing-slide-layer absolute inset-0 h-full w-full object-cover object-center ${isActiveSlide
+                          ? "landing-slide-active"
+                          : isPreviousSlide
+                            ? "landing-slide-previous"
+                            : "landing-slide-preload"
+                          }`}
+                        data-slide-panel={panel}
+                        data-slide-role={role}
+                        data-slide-index={slideIndex}
+                        loading={isPreviousSlide ? "lazy" : "eager"}
+                        decoding="async"
+                        fetchpriority={isActiveSlide ? "high" : "low"}
+                        onLoad={(event) => {
+                          const styles = window.getComputedStyle(event.currentTarget);
+                          logSlideDebug("image-load", {
+                            panel,
+                            role,
+                            slideIndex,
+                            asset: getSlideAssetName(image.src),
+                            opacity: styles.opacity,
+                            transitionDuration: styles.transitionDuration
+                          });
+                        }}
+                        onTransitionStart={(event) => {
+                          if (event.propertyName !== "opacity") return;
+                          const styles = window.getComputedStyle(event.currentTarget);
+                          logSlideDebug("transition-start", {
+                            panel,
+                            role,
+                            slideIndex,
+                            asset: getSlideAssetName(image.src),
+                            opacity: styles.opacity,
+                            filter: styles.filter,
+                            transitionDuration: styles.transitionDuration
+                          });
+                        }}
+                        onTransitionEnd={(event) => {
+                          if (event.propertyName !== "opacity") return;
+                          const styles = window.getComputedStyle(event.currentTarget);
+                          logSlideDebug("transition-end", {
+                            panel,
+                            role,
+                            slideIndex,
+                            asset: getSlideAssetName(image.src),
+                            opacity: styles.opacity,
+                            filter: styles.filter,
+                            transitionDuration: styles.transitionDuration
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
 
-              <div className="absolute inset-0 z-[1] bg-primary/25" />
-              <div
-                className={`absolute inset-0 z-[2] ${isBlocks
-                  ? "bg-gradient-to-br from-primary/35 via-primary/15 to-primary/48"
-                  : "bg-gradient-to-br from-primary/40 via-primary/20 to-primary/52"
-                  }`}
-              />
-              <div className="absolute inset-0 z-[3] bg-[radial-gradient(circle_at_25%_20%,rgba(165,141,102,0.16),transparent_48%)]" />
+                <div className="absolute inset-0 z-[1] bg-primary/25" />
+                <div
+                  className={`absolute inset-0 z-[2] ${isBlocks
+                    ? "bg-gradient-to-br from-primary/35 via-primary/15 to-primary/48"
+                    : "bg-gradient-to-br from-primary/40 via-primary/20 to-primary/52"
+                    }`}
+                />
+                <div className="absolute inset-0 z-[3] bg-[radial-gradient(circle_at_25%_20%,rgba(165,141,102,0.16),transparent_48%)]" />
 
-              <div className="relative z-10 flex h-full items-center justify-center px-6 py-10 text-sand sm:px-10 lg:px-12">
-                <div className="mx-auto w-full max-w-[38rem] text-center">
-                  <p data-home-anim="item" className="text-[10px] uppercase tracking-[0.34em] text-sand/72 sm:text-xs">
-                    {isBlocks ? t("blocks.title") : t("products.title")}
-                  </p>
-                  <h1 data-home-anim="item" className="mt-2 font-display text-xl leading-tight sm:text-2xl md:text-3xl lg:text-4xl">
-                    {title}
-                  </h1>
-                  {subtitle ? <p data-home-anim="item" className="mx-auto mt-3 max-w-[33rem] text-[11px] text-sand/88 sm:text-xs md:text-sm lg:text-base">{subtitle}</p> : null}
+                <div className="relative z-10 flex h-full items-center justify-center px-6 py-10 text-sand sm:px-10 lg:px-12">
+                  <div className="mx-auto w-full max-w-[38rem] text-center">
+                    <p data-home-anim="item" className="text-[10px] uppercase tracking-[0.34em] text-sand/72 sm:text-xs">
+                      {isBlocks ? t("blocks.title") : t("products.title")}
+                    </p>
+                    <h1 data-home-anim="item" className="mt-2 font-display text-xl leading-tight sm:text-2xl md:text-3xl lg:text-4xl">
+                      {title}
+                    </h1>
+                    {subtitle ? <p data-home-anim="item" className="mx-auto mt-3 max-w-[33rem] text-[11px] text-sand/88 sm:text-xs md:text-sm lg:text-base">{subtitle}</p> : null}
 
-                  {lines.length > 0 && (
-                    <ul className="mx-auto mt-4 max-w-[32rem] space-y-1.5 text-left text-[10px] text-sand/88 sm:text-[11px] md:text-xs lg:text-sm">
-                      {lines.slice(0, 3).map((line) => (
-                        <li key={line} data-home-anim="item" className="flex items-start gap-2">
-                          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent/85" />
-                          <span>{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                    {lines.length > 0 && (
+                      <ul className="mx-auto mt-4 max-w-[32rem] space-y-1.5 text-left text-[10px] text-sand/88 sm:text-[11px] md:text-xs lg:text-sm">
+                        {lines.slice(0, 3).map((line) => (
+                          <li key={line} data-home-anim="item" className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent/85" />
+                            <span>{line}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                  <div data-home-anim="item" className="mt-7 flex items-center justify-center gap-3">
-                    <span className="rounded-full border border-sand/40 bg-sand/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-sand sm:px-5 sm:py-2.5 sm:text-xs">
-                      {ctaLabel || fallbackCTA}
-                    </span>
-                    <span className="text-xl text-sand/75 transition-transform duration-500 group-hover:translate-x-1">
-                      →
-                    </span>
+                    <div data-home-anim="item" className="mt-7 flex items-center justify-center gap-3">
+                      <span className="rounded-full border border-sand/40 bg-sand/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-sand sm:px-5 sm:py-2.5 sm:text-xs">
+                        {ctaLabel || fallbackCTA}
+                      </span>
+                      <span className="text-xl text-sand/75 transition-transform duration-500 group-hover:translate-x-1">
+                        →
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <span className="pointer-events-none absolute inset-0 ring-0 ring-inset transition group-hover:ring-1 group-hover:ring-white/25" />
-            </Link>
-          );
-        })}
-        <span className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-20 -translate-y-1/2 bg-gradient-to-b from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:hidden" />
+                <span className="pointer-events-none absolute inset-0 ring-0 ring-inset transition group-hover:ring-1 group-hover:ring-white/25" />
+              </Link>
+            );
+          })}
+          <span className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-20 -translate-y-1/2 bg-gradient-to-b from-transparent via-primary/10 to-transparent backdrop-blur-sm lg:hidden" />
+        </section>
+        <a
+          href="#home-continuation"
+          aria-label="Scroll to next section"
+          className="absolute bottom-5 left-1/2 z-30 flex h-11 w-11 -translate-x-1/2 items-center justify-center text-white drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        >
+          <ChevronDown className="h-9 w-9 animate-bounce" aria-hidden="true" strokeWidth={1.4} />
+        </a>
+      </div>
+
+      <section
+        id="home-continuation"
+        className="relative isolate overflow-hidden bg-[#062f40] py-20 text-sand sm:py-24 lg:py-28"
+        dir={whySectionDir}
+        aria-labelledby="why-sangehassan-title"
+      >
+        <span className="bg-quiet-grid pointer-events-none absolute inset-0 opacity-[0.12]" aria-hidden="true" />
+        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,30,41,0.98),rgba(8,58,79,0.94)_52%,rgba(3,27,37,0.98))]" aria-hidden="true" />
+        <span className="pointer-events-none absolute -left-[12%] top-[18%] h-[34rem] w-[34rem] rounded-full bg-sand/[0.08] blur-[120px]" aria-hidden="true" />
+        <span className="pointer-events-none absolute -right-[14%] top-[42%] h-[38rem] w-[38rem] rounded-full bg-white/[0.06] blur-[140px]" aria-hidden="true" />
+
+        <div className="section-shell relative z-10">
+          <header className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">{whyContent.eyebrow}</p>
+            <h2 id="why-sangehassan-title" className="mt-4 font-display text-3xl leading-tight text-sand sm:text-4xl lg:text-5xl">
+              {whyContent.title}
+            </h2>
+            <div className="mx-auto mt-5 max-w-2xl space-y-3 text-sm leading-8 text-sand/74 sm:text-base">
+              <p>{whyContent.intro}</p>
+              <p>{whyContent.support}</p>
+            </div>
+          </header>
+
+          <div className="mx-auto mt-14 max-w-6xl">
+            <div className="space-y-5">
+              {whyContent.cards.map((card, index) => {
+                const illustration = whySangehassanIllustrations[card.key];
+                const imageFirst = index % 2 === 0;
+
+                return (
+                  <article
+                    key={card.key}
+                    className="grid min-h-[18rem] w-full grid-cols-[minmax(0,0.46fr)_minmax(0,0.54fr)] items-center sm:min-h-[22rem]"
+                  >
+                    <div className={`relative flex h-full min-h-[18rem] items-center justify-center px-3 py-8 sm:min-h-[22rem] sm:px-8 ${imageFirst ? "order-1" : "order-2"}`}>
+                      <img
+                        src={illustration.src}
+                        alt=""
+                        width={illustration.width}
+                        height={illustration.height}
+                        loading="lazy"
+                        decoding="async"
+                        className={`h-auto w-full object-contain opacity-80 drop-shadow-[0_14px_28px_rgba(0,0,0,0.18)] [filter:brightness(0.88)_contrast(0.9)_saturate(0.9)] ${card.key === "network"
+                          ? "max-h-[18rem] max-w-[21rem] sm:max-h-[22rem] sm:max-w-[27rem]"
+                          : "max-h-[15rem] max-w-[17rem] sm:max-h-[18rem] sm:max-w-[22rem]"
+                          }`}
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div className={`relative flex h-full min-h-[18rem] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[22rem] sm:px-10 ${imageFirst ? "order-2" : "order-1"}`}>
+                      <h3 className="font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
+                      <p className="mt-4 max-w-[34rem] text-xs leading-7 text-sand/78 sm:text-base sm:leading-8">
+                        {card.summary}
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
       </section>
-    </div>
+
+      <section className="relative isolate overflow-hidden bg-[#041f2b] py-20 text-sand sm:py-24 lg:py-28" dir={whySectionDir} aria-labelledby="home-team-title">
+        <span className="bg-quiet-grid pointer-events-none absolute inset-0 opacity-[0.1]" aria-hidden="true" />
+        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,31,43,0.98),rgba(8,58,79,0.9)_48%,rgba(4,31,43,0.98))]" aria-hidden="true" />
+
+        <div className="section-shell relative z-10">
+          <header className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">{teamContent.eyebrow}</p>
+            <h2 id="home-team-title" className="mt-4 font-display text-3xl leading-tight text-sand sm:text-4xl lg:text-5xl">
+              {teamContent.title}
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-8 text-sand/74 sm:text-base">
+              {teamContent.intro}
+            </p>
+          </header>
+
+          <div className="mt-14 grid grid-cols-2 items-stretch gap-3 sm:gap-5 lg:grid-cols-4">
+            {teamCards.map((member) => (
+              <article
+                key={member.id || member.name}
+                className="group relative h-[24rem] overflow-hidden rounded-lg bg-white/[0.08] shadow-[0_28px_80px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:h-[30rem]"
+              >
+                {member.photo ? (
+                  <img src={member.photo} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+                ) : (
+                  <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(229,225,221,0.22),rgba(8,58,79,0.18)_36%,rgba(0,0,0,0.42))]" aria-hidden="true" />
+                )}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" aria-hidden="true" />
+                <div className="absolute inset-x-0 bottom-0 flex h-[40%] flex-col justify-center overflow-hidden bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))] px-3 py-4 text-center sm:px-6 sm:py-6">
+                  <h3 className="line-clamp-2 font-display text-base leading-6 text-white sm:text-xl sm:leading-8">{member.name}</h3>
+                  <p className="mt-1 line-clamp-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent/88 sm:text-[11px] sm:tracking-[0.2em]">{member.role}</p>
+                  <p className="mt-3 line-clamp-4 text-[11px] leading-5 text-white/72 sm:mt-4 sm:line-clamp-3 sm:text-sm sm:leading-7">{member.bio}</p>
+                  {member.linkedin ? (
+                    <a
+                      href={member.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center justify-center text-xs font-semibold text-white transition hover:text-accent sm:mt-4 sm:text-sm"
+                    >
+                      {teamContent.linkedinLabel} →
+                    </a>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

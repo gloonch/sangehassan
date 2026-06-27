@@ -43,6 +43,10 @@ func (h *UploadHandler) UploadContent(c *gin.Context) {
 	h.uploadFile(c, "content", false)
 }
 
+func (h *UploadHandler) UploadTeam(c *gin.Context) {
+	h.uploadFile(c, "team", false)
+}
+
 func (h *UploadHandler) UploadBlog(c *gin.Context) {
 	h.uploadFile(c, "blogs", false)
 }

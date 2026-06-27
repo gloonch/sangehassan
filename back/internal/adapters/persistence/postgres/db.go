@@ -38,8 +38,45 @@ func NewDB(cfg config.Config) (*sql.DB, error) {
 	if err := ensureBlogMetadata(db); err != nil {
 		return nil, err
 	}
+	if err := ensureTeamMembers(db); err != nil {
+		return nil, err
+	}
 
 	return db, nil
+}
+
+func ensureTeamMembers(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS team_members (
+			id BIGSERIAL PRIMARY KEY,
+			name_en VARCHAR(255) NOT NULL,
+			name_fa VARCHAR(255) NOT NULL,
+			name_ar VARCHAR(255) NOT NULL,
+			role_en VARCHAR(255) NOT NULL,
+			role_fa VARCHAR(255) NOT NULL,
+			role_ar VARCHAR(255) NOT NULL,
+			bio_en TEXT,
+			bio_fa TEXT,
+			bio_ar TEXT,
+			photo_url TEXT,
+			linkedin_url TEXT,
+			order_index INT NOT NULL DEFAULT 0,
+			is_active BOOLEAN NOT NULL DEFAULT TRUE,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMPTZ
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_team_members_public ON team_members (is_active, order_index, id)`,
+	}
+
+	for _, statement := range statements {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureBlogMetadata(db *sql.DB) error {

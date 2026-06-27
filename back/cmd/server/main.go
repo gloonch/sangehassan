@@ -31,6 +31,7 @@ func main() {
 	templateRepo := postgres.NewTemplateRepository(db)
 	blockRepo := postgres.NewBlockRepository(db)
 	contentSectionRepo := postgres.NewContentSectionRepository(db)
+	teamMemberRepo := postgres.NewTeamMemberRepository(db)
 	adminRepo := postgres.NewAdminRepository(db)
 	userRepo := postgres.NewUserRepository(db)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
@@ -47,6 +48,7 @@ func main() {
 	templateService := usecase.NewTemplateService(templateRepo)
 	blockService := usecase.NewBlockService(blockRepo)
 	contentSectionService := usecase.NewContentSectionService(contentSectionRepo)
+	teamMemberService := usecase.NewTeamMemberService(teamMemberRepo)
 	authService := usecase.NewAuthService(adminRepo, cfg.JWTSecret, cfg.JWTTTLHours)
 	userAuthService := usecase.NewUserAuthService(userRepo, refreshTokenRepo, dealRequestRepo, cfg.JWTSecret, cfg.AccessTokenMinutes, cfg.RefreshTokenDays)
 	dashboardService := usecase.NewDashboardService(dashboardRepo)
@@ -65,6 +67,7 @@ func main() {
 		templateService,
 		blockService,
 		contentSectionService,
+		teamMemberService,
 		authService,
 		userAuthService,
 		userRepo,
