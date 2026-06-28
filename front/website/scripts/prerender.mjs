@@ -448,12 +448,14 @@ function injectRouteHtml(template, route, appHtml) {
     ? `  <script>window.__SH_PRERENDER_DATA__=${safeScriptJson(route.prerenderData)};</script>\n`
     : "";
 
-  return template
+  const html = template
     .replace(/<html[^>]*>/i, `<html lang="${escapeAttr(route.lang || "en")}" dir="${route.lang === "fa" || route.lang === "ar" ? "rtl" : "ltr"}">`)
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace("</head>", `  ${buildHead(route)}\n</head>`)
     .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)
     .replace("</body>", `${prerenderDataScript}</body>`);
+
+  return stripRuntimeProductJsonLd(html);
 }
 
 async function loadAssetReplacements() {
@@ -473,6 +475,10 @@ async function loadAssetReplacements() {
 
 function replaceAssetUrls(html, replacements) {
   return replacements.reduce((output, [from, to]) => output.split(from).join(to), html);
+}
+
+function stripRuntimeProductJsonLd(html) {
+  return html.replace(/\s*<script\b[^>]*\bid=["']product-detail-jsonld["'][^>]*>[\s\S]*?<\/script>/gi, "");
 }
 
 function routeOutputPaths(routePath) {

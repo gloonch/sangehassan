@@ -3,6 +3,22 @@ import { useEffect, useLayoutEffect } from "react";
 const configuredSiteUrl = (import.meta.env.VITE_SITE_URL || "").replace(/\/+$/, "");
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+const jsonLdTypeMatches = (value, expectedType) => {
+  const values = Array.isArray(value) ? value : [value];
+  return values.some((item) => {
+    if (!item) return false;
+    const normalized = String(item).split("/").pop();
+    return normalized === expectedType;
+  });
+};
+
+const jsonLdContainsEntity = (value, entityId, entityType) => {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some((item) => jsonLdContainsEntity(item, entityId, entityType));
+  if (value["@id"] === entityId && (!entityType || jsonLdTypeMatches(value["@type"], entityType))) return true;
+  return Object.values(value).some((item) => jsonLdContainsEntity(item, entityId, entityType));
+};
+
 export const getSiteOrigin = () => {
   if (configuredSiteUrl) return configuredSiteUrl;
   if (typeof window === "undefined") return "";
@@ -124,8 +140,38 @@ export const usePageSeo = ({
       cleanups.push(...created);
     };
 
+    const removeJsonLd = (id) => {
+      const script = id ? document.getElementById(id) : null;
+      if (script) script.remove();
+    };
+
+    const documentHasJsonLdEntity = (entityId, entityType, excludeId) => {
+      if (!entityId) return false;
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const script of scripts) {
+        if (excludeId && script.id === excludeId) continue;
+        try {
+          const payload = JSON.parse(script.textContent || "null");
+          if (jsonLdContainsEntity(payload, entityId, entityType)) return true;
+        } catch (_) {
+          /* ignore invalid JSON-LD */
+        }
+      }
+      return false;
+    };
+
     const upsertJsonLd = (payload, id) => {
-      if (!payload || !id) return;
+      if (!id) return;
+      if (!payload) {
+        removeJsonLd(id);
+        return;
+      }
+
+      const payloadId = typeof payload["@id"] === "string" ? payload["@id"] : "";
+      if (payloadId && jsonLdTypeMatches(payload["@type"], "Product") && documentHasJsonLdEntity(payloadId, "Product", id)) {
+        removeJsonLd(id);
+        return;
+      }
 
       let script = document.getElementById(id);
       const created = !script;
