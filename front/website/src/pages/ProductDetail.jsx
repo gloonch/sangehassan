@@ -3,11 +3,12 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl, resolveProtectedImageUrl, resolveProtectedThumbnailUrl } from "../lib/assets";
-import { usePageSeo } from "../lib/seo";
+import { getAbsoluteUrl, getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
+import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -220,6 +221,49 @@ export default function ProductDetail() {
     "Detailed natural stone product page from SangeHassan with images, sourcing information, and project references.";
   const localizedProductPath = `/${lang}/products/${slug}`;
   const isLegacyProductPath = /^\/products\/[^/]+\/?$/.test(location.pathname);
+  const productOfferPrice = getProductOfferPrice(product);
+  const productJsonLd = useMemo(() => {
+    if (!product || !localizedTitle) return null;
+
+    const pageUrl = getCanonicalUrl(localizedProductPath);
+    const imageUrl = activeImage ? getAbsoluteUrl(resolveProtectedImageUrl(activeImage)) : undefined;
+    const offer = productOfferPrice > 0
+      ? {
+        "@type": "Offer",
+        url: pageUrl,
+        priceCurrency: "IRR",
+        price: String(productOfferPrice),
+        availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
+        seller: {
+          "@type": "Organization",
+          name: "SangeHassan"
+        },
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          name: t("productDetail.offerLabel"),
+          price: String(productOfferPrice),
+          priceCurrency: "IRR",
+          description: t("productDetail.offerSchemaNote")
+        }
+      }
+      : undefined;
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "@id": `${pageUrl}#product`,
+      name: localizedTitle,
+      description: seoDescription,
+      image: imageUrl,
+      url: pageUrl,
+      brand: {
+        "@type": "Brand",
+        name: "SangeHassan"
+      },
+      offers: offer
+    };
+  }, [activeImage, lang, localizedProductPath, localizedTitle, product, productOfferPrice, seoDescription, t]);
 
   usePageSeo({
     title: seoTitle,
@@ -230,7 +274,9 @@ export default function ProductDetail() {
     image: activeImage ? resolveProtectedImageUrl(activeImage) : "",
     type: "product",
     robots: isLegacyProductPath || (!loading && !product) ? "noindex,follow" : "index,follow",
-    alternates: catalogAlternates(`/${slug}`)
+    alternates: catalogAlternates(`/${slug}`),
+    jsonLd: productJsonLd,
+    jsonLdId: "product-detail-jsonld"
   });
 
   const terms = product?.terms || [];
@@ -533,6 +579,18 @@ export default function ProductDetail() {
                   </div>
                 )}
               </div>
+              {productOfferPrice > 0 && (
+                <div className={`mt-5 max-w-xl space-y-2 ${isRTL ? "text-right" : "text-left"}`}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-accent">{t("productDetail.offerLabel")}</p>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/55">{t("productDetail.offerFloorLabel")}</p>
+                    <p className="font-display text-3xl leading-tight text-primary md:text-4xl">
+                      {formatOfferPrice(productOfferPrice, lang)}
+                    </p>
+                  </div>
+                  <p className="max-w-lg text-xs leading-6 text-primary/60">{t("productDetail.offerDisclaimer")}</p>
+                </div>
+              )}
             </div>
           </div>
 

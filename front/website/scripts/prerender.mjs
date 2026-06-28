@@ -614,6 +614,47 @@ function productShareImage(product) {
   return protectedProductImagePath(firstImage(product)) || defaultShareImage;
 }
 
+function productOfferPrice(product) {
+  if (!product?.is_popular) return 0;
+  const value = typeof product.price === "number" ? product.price : Number(product.price);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+}
+
+function productOfferSchemaNote(lang = "en") {
+  if (lang === "fa") {
+    return "این قیمت کف قیمت پیشنهادی است و برای استعلام معتبر باید با سنگ حسن تماس گرفته شود.";
+  }
+  if (lang === "ar") {
+    return "هذا سعر ابتدائي، ويجب التواصل مع سانج حسن للحصول على السعر الحالي الموثوق.";
+  }
+  return "This is a starting floor price; contact SangeHassan for the current valid quote.";
+}
+
+function productOfferJsonLd(product, routePath, lang = "en") {
+  const price = productOfferPrice(product);
+  if (price <= 0) return undefined;
+  const url = absoluteUrl(routePath);
+  return {
+    "@type": "Offer",
+    url,
+    priceCurrency: "IRR",
+    price: String(price),
+    availability: "https://schema.org/InStock",
+    itemCondition: "https://schema.org/NewCondition",
+    seller: {
+      "@type": "Organization",
+      name: "SangeHassan"
+    },
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      name: "Offer",
+      price: String(price),
+      priceCurrency: "IRR",
+      description: productOfferSchemaNote(lang)
+    }
+  };
+}
+
 function protectProductPrerenderData(product) {
   if (!product || typeof product !== "object") return product;
 
@@ -686,7 +727,8 @@ function productRoute(product) {
         brand: {
           "@type": "Brand",
           name: "SangeHassan"
-        }
+        },
+        offers: productOfferJsonLd(product, routePath, locale)
       }
     };
   });

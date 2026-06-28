@@ -19,6 +19,7 @@ import {
   catalogLocaleConfig,
   localizedField
 } from "../lib/catalogLocale";
+import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
 
 const PAGE_SIZE = 24;
 const facetOrder = ["color", "application", "finish", "form", "origin", "pattern", "availability"];
@@ -67,6 +68,7 @@ function ProductCard({ product, lang, copy, returnPath, onRememberReturnState })
   const title = localizedField(product, "title", lang);
   const isRTL = lang === "fa" || lang === "ar";
   const gradientDirection = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
+  const offerPrice = getProductOfferPrice(product);
   const legacyDetails = [product.variants, product.mines];
   const fallbackTaxonomies = ["use_case_form", "mines"];
   const detailGroups = legacyDetails
@@ -102,6 +104,13 @@ function ProductCard({ product, lang, copy, returnPath, onRememberReturnState })
             <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]">
               {detailGroups.map((values) => <p key={values.join("-")} className="truncate">{values.join(" • ")}</p>)}
             </div>
+          ) : null}
+          {offerPrice > 0 ? (
+            <p className="mt-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
+              <span>{copy.offerLabel}</span>
+              <span aria-hidden="true">/</span>
+              <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
+            </p>
           ) : null}
         </div>
       </div>

@@ -13,7 +13,7 @@ export const catalogCopy = {
     searchLabel: "Search products", searchPlaceholder: "Product name or code", search: "Search", filters: "Filters",
     removeSearch: "Remove search", clearAll: "Clear all", emptyProducts: "No products match these filters.",
     loadMore: "Load more products", loadingMore: "Loading...", guide: "Selection guide", related: "Other stone categories", relatedProjects: "Related projects", project: "Project",
-    close: "Close", noImage: "No image", breadcrumb: "Breadcrumb", popularBadge: "Popular"
+    close: "Close", noImage: "No image", breadcrumb: "Breadcrumb", popularBadge: "Popular", offerLabel: "Offer"
   },
   fa: {
     home: "خانه", products: "محصولات", productCount: "محصول", emptyCategories: "دسته‌بندی فعالی برای نمایش وجود ندارد.",
@@ -21,7 +21,7 @@ export const catalogCopy = {
     searchLabel: "جستجوی محصول", searchPlaceholder: "نام یا کد محصول", search: "جستجو", filters: "فیلترها",
     removeSearch: "حذف جستجو", clearAll: "پاک کردن همه", emptyProducts: "محصولی مطابق این فیلترها پیدا نشد.",
     loadMore: "نمایش محصولات بیشتر", loadingMore: "در حال بارگذاری...", guide: "راهنمای انتخاب", related: "سایر دسته‌بندی‌های سنگ", relatedProjects: "پروژه‌های مرتبط", project: "پروژه",
-    close: "بستن", noImage: "بدون تصویر", breadcrumb: "مسیر صفحه", popularBadge: "محبوب"
+    close: "بستن", noImage: "بدون تصویر", breadcrumb: "مسیر صفحه", popularBadge: "محبوب", offerLabel: "Offer"
   },
   ar: {
     home: "الرئيسية", products: "المنتجات", productCount: "منتج", emptyCategories: "لا توجد فئات نشطة للعرض.",
@@ -29,7 +29,7 @@ export const catalogCopy = {
     searchLabel: "البحث عن منتج", searchPlaceholder: "اسم المنتج أو رمزه", search: "بحث", filters: "التصفية",
     removeSearch: "إزالة البحث", clearAll: "مسح الكل", emptyProducts: "لا توجد منتجات مطابقة لهذه التصفية.",
     loadMore: "عرض المزيد", loadingMore: "جار التحميل...", guide: "دليل الاختيار", related: "فئات حجر أخرى", relatedProjects: "مشاريع ذات صلة", project: "مشروع",
-    close: "إغلاق", noImage: "لا توجد صورة", breadcrumb: "مسار الصفحة", popularBadge: "شائع"
+    close: "إغلاق", noImage: "لا توجد صورة", breadcrumb: "مسار الصفحة", popularBadge: "شائع", offerLabel: "Offer"
   }
 };
 

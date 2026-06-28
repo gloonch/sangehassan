@@ -5,6 +5,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl } from "../lib/seo";
+import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
 
 const PRODUCTS_PAGE_SIZE = 20;
 const PRODUCT_GRID_SKELETON_COUNT = 6;
@@ -884,6 +885,7 @@ export default function Products() {
             {filtered.map((product) => {
               const isRTL = lang === "fa" || lang === "ar";
               const gradientDir = isRTL ? "bg-gradient-to-tl" : "bg-gradient-to-tr";
+              const offerPrice = getProductOfferPrice(product);
               return (
                 <Link
                   key={product.id}
@@ -925,6 +927,13 @@ export default function Products() {
                         )}
                         {Array.isArray(product.mines) && product.mines.length > 0 && (
                           <p className="truncate">{product.mines.join(" • ")}</p>
+                        )}
+                        {offerPrice > 0 && (
+                          <p className="mt-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
+                            <span>{t("productDetail.offerLabel")}</span>
+                            <span aria-hidden="true">/</span>
+                            <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
+                          </p>
                         )}
                       </div>
                     </div>
