@@ -5,6 +5,7 @@ import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import NotFound from "./NotFound";
 
 const projectDetailSeoContent = {
   fa: {
@@ -304,12 +305,12 @@ export default function ProjectDetail() {
     setActiveIndex((index) => (index + 1) % images.length);
   };
 
+  if (!loading && !project) return <NotFound />;
+
   return (
     <section className="section-shell pt-4 pb-12">
       {loading ? (
         <p className="text-sm text-primary/70">{t("messages.loading")}</p>
-      ) : !project ? (
-        <p className="text-sm text-primary/70">{t("projects.notFound")}</p>
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">

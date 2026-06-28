@@ -5,6 +5,7 @@ import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import NotFound from "./NotFound";
 
 const iconBaseProps = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -158,12 +159,12 @@ export default function BlockDetail() {
     setActiveIndex((idx) => (idx + 1) % images.length);
   };
 
+  if (!loading && !block) return <NotFound />;
+
   return (
     <section className="section-shell pt-4 pb-12">
       {loading ? (
         <p className="text-sm text-primary/70">{t("messages.loading")}</p>
-      ) : !block ? (
-        <p className="text-sm text-primary/70">{t("messages.empty")}</p>
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">

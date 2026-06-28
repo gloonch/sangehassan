@@ -148,6 +148,8 @@ export default function Footer() {
               <img
                 src={logoWhiteImage}
                 alt=""
+                width="1070"
+                height="710"
                 aria-hidden="true"
                 className="h-auto w-[120%] max-w-none opacity-[0.14] md:w-[200%] lg:w-[225%]"
               />

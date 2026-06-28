@@ -108,6 +108,29 @@ func (h *UserAuthHandler) Refresh(c *gin.Context) {
 	respondOK(c, user)
 }
 
+func (h *UserAuthHandler) Session(c *gin.Context) {
+	anonymous := gin.H{"authenticated": false, "user": nil}
+	token, err := c.Cookie(accessCookieName)
+	if err != nil || token == "" {
+		respondOK(c, anonymous)
+		return
+	}
+
+	userID, err := h.service.ParseAccess(token)
+	if err != nil || userID == "" {
+		respondOK(c, anonymous)
+		return
+	}
+
+	user, err := h.service.GetMe(c.Request.Context(), userID)
+	if err != nil {
+		respondOK(c, anonymous)
+		return
+	}
+
+	respondOK(c, gin.H{"authenticated": true, "user": user})
+}
+
 func (h *UserAuthHandler) Me(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	idStr, _ := userID.(string)

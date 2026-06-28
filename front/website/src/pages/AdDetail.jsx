@@ -6,6 +6,7 @@ import { PRICE_UNIT_VALUES, formatPriceUnit, formatPriceValue } from "../lib/lis
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import NotFound from "./NotFound";
 
 const inputClass =
   "w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none";
@@ -33,6 +34,7 @@ export default function AdDetail() {
 
   const [ad, setAd] = useState(initialAd);
   const [loading, setLoading] = useState(!initialAd);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const [requestType, setRequestType] = useState("INSPECTION");
@@ -76,7 +78,7 @@ export default function AdDetail() {
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
     image: imageUrls[0] ? resolveImageUrl(imageUrls[0]) : "",
     type: "article",
-    robots: !loading && !ad ? "noindex,follow" : "index,follow"
+    robots: !loading && (!ad || notFound) ? "noindex,follow" : "index,follow"
   });
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export default function AdDetail() {
     };
     const loadAd = async () => {
       const hasInitialAd = String(initialAd?.id || "") === String(id);
+      setNotFound(false);
       try {
         const res = await fetchJSON(`/api/ads/${id}`);
         const data = res?.data || res;
@@ -109,7 +112,15 @@ export default function AdDetail() {
         setAd(data);
         setFormState(adFormState(data));
       } catch (err) {
-        if (active && !hasInitialAd) setError(err?.message || t("messages.error"));
+        if (active && !hasInitialAd) {
+          if (err?.status === 404) {
+            setAd(null);
+            setNotFound(true);
+            setError("");
+          } else {
+            setError(err?.message || t("messages.error"));
+          }
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -196,8 +207,8 @@ export default function AdDetail() {
   };
 
   if (loading) return <section className="section-shell py-16">{t("messages.loading")}</section>;
+  if (notFound || (!ad && !error)) return <NotFound />;
   if (error) return <section className="section-shell py-16 text-red-600">{error}</section>;
-  if (!ad) return null;
 
   const extraEntries = Object.entries(ad.extra_props || {});
   const requestTypeKey = `ads.requestTypeOptions.${submittedRequestType}`;

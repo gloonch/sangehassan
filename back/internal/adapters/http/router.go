@@ -116,6 +116,7 @@ func NewRouter(
 			v1.POST("/auth/login", userAuthHandler.Login)
 			v1.POST("/auth/logout", userMiddleware.RequireUser, userAuthHandler.Logout)
 			v1.POST("/auth/refresh", userAuthHandler.Refresh)
+			v1.GET("/session", userAuthHandler.Session)
 
 			v1.GET("/me", userMiddleware.RequireUser, userAuthHandler.Me)
 			v1.PUT("/me", userMiddleware.RequireUser, userAuthHandler.UpdateMe)

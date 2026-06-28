@@ -19,6 +19,7 @@ import RequireUserAuth from "./components/RequireUserAuth";
 import ProductHub from "./pages/ProductHub";
 import ProductCatalog from "./pages/ProductCatalog";
 import LocalizedProductRoute from "./pages/LocalizedProductRoute";
+import NotFound from "./pages/NotFound";
 
 export default function AppRoutes() {
   return (
@@ -57,6 +58,8 @@ export default function AppRoutes() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/about" element={<About />} />
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

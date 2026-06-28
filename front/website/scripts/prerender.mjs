@@ -196,6 +196,15 @@ const staticRoutes = [
     image: defaultShareImage,
     changefreq: "daily",
     priority: 0.65
+  },
+  {
+    path: "/404",
+    title: "Page not found | SangeHassan",
+    description:
+      "The requested page was not found. Return to the SangeHassan homepage and continue from a verified route.",
+    schemaType: "WebPage",
+    robots: "noindex,follow,noarchive",
+    sitemap: false
   }
 ];
 
@@ -469,6 +478,10 @@ function replaceAssetUrls(html, replacements) {
 function routeOutputPaths(routePath) {
   if (routePath === "/") {
     return [path.join(distDir, "index.html")];
+  }
+
+  if (routePath === "/404") {
+    return [path.join(distDir, "404.html"), path.join(distDir, "404", "index.html")];
   }
 
   const cleanPath = routePath.replace(/^\/+|\/+$/g, "");

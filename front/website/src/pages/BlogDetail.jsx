@@ -6,6 +6,7 @@ import { appendImageVersion, resolveVersionedImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import { getLanguageFromPath } from "../lib/i18n";
+import NotFound from "./NotFound";
 
 const localeMeta = {
   fa: { locale: "fa_IR", articles: "مقالات", home: "خانه", updated: "به‌روزرسانی", min: "دقیقه مطالعه", toc: "در این مقاله", back: "بازگشت به مقالات" },
@@ -153,7 +154,7 @@ export default function BlogDetail() {
   }, [blog?.translations]);
 
   if (loading) return <div className="section-shell min-h-[55vh] py-16 text-sm text-primary/55">...</div>;
-  if (notFound || !blog) return <div className="section-shell min-h-[55vh] py-16" dir={isRTL ? "rtl" : "ltr"}><h1 className="font-display text-4xl">404</h1><Link to={basePath} className="mt-6 inline-block text-accent underline">{meta.back}</Link></div>;
+  if (notFound || !blog) return <NotFound />;
 
   return (
     <article dir={isRTL ? "rtl" : "ltr"} itemScope itemType="https://schema.org/BlogPosting">

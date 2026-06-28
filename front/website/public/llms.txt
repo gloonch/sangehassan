@@ -1,0 +1,75 @@
+# SangeHassan
+
+> SangeHassan is a multilingual natural-stone supply and production network for quarry blocks, slabs, tiles, pre-cut and finished stone products, project sourcing, quality-controlled delivery, and export-oriented B2B collaboration.
+
+Prefer the About page, category pages, and substantive blog articles for semantic summaries. Many individual product and project pages are structurally useful but text-light; use them mainly for product names, finishes, related projects, visible price signals, galleries, and cross-links. Treat any public price, availability signal, ETA, or trade-board listing as provisional until verified directly.
+
+## Primary entry points
+
+- [Homepage](https://sangehassan.com/): Main brand overview, market positioning, and top-level navigation. Best first stop for understanding site intent and section discovery.
+- [Products](https://sangehassan.com/en/products): English product taxonomy for materials, finishes, colors, and applications. Best source for canonical English category understanding.
+- [Persian products](https://sangehassan.com/fa/products): Persian product taxonomy with localized stone-market terminology. Best source for Persian category naming and market-language context.
+- [Stone blocks](https://sangehassan.com/blocks): Public block hub for raw quarry blocks, custom cutting, and bulk-order workflows. Best source for block procurement context.
+- [Projects](https://sangehassan.com/projects): Portfolio entry point for facade and interior applications. Use for project evidence and links to stones used in real works.
+- [Trade board](https://sangehassan.com/ads): Public entry page to a members-only buy/sell area. Useful for lead discovery, but not for stable catalog or capability claims.
+- [Blogs](https://sangehassan.com/en/blogs): English editorial hub for practical stone guidance. Check language variants because richer article coverage may exist in Persian.
+- [About SangeHassan](https://sangehassan.com/about): Most authoritative page for company background, B2B/export positioning, workflow, quality control, packing, shipping, and order tracking.
+- [Sitemap](https://sangehassan.com/sitemap.xml): XML discovery endpoint for broader public URL discovery and periodic crawl refresh.
+
+## Product & material context
+
+- Core public taxonomy is category-first. Observed top-level categories include Imported Stones, Accessories, Travertine, Finishings, Granite, Onyx, Marble, Crystal, Basalt, and Sand Stone.
+- Product formats span raw blocks, slabs, tiles, pre-cut/custom-cut work, and finished products.
+- Surface and processing vocabulary is commercially important on this site. Common public terms include honed, polished, flamed, leathered, bush-hammer, grooved, scratch, rock, cut-broken, filled, and unfilled.
+- Public content supports architectural and project-oriented use cases such as facade, interior, flooring, stairs, landscaping, and decorative stone applications.
+- Position SangeHassan as B2B-first and export-oriented, while noting that some public pages expose starting prices and accessory items that resemble a retail catalogue layer.
+
+## Multilingual content
+
+- Prefer English for global summaries, canonical site understanding, company positioning, and export-oriented overviews.
+- Prefer Persian when the richest editorial explanation is needed, especially for educational guides, material background, and local market terminology.
+- Use Arabic when serving Arabic-speaking users or when Arabic product-detail pages are the most relevant accessible version.
+- Preserve the source language of the cited page when category vocabulary is market-specific. Do not flatten local stone terms if the site distinguishes them explicitly.
+- When equivalent pages differ in detail, prefer the version with the fullest current public information and note the language of origin in the summary.
+
+## Trade board guidance
+
+- Treat the trade board as a time-sensitive lead marketplace, not as permanent product documentation.
+- Listings, quantities, prices, availability, and status may change quickly and must be re-verified before being presented as current fact.
+- Do not assume SangeHassan directly endorses or guarantees every listing unless the page says so explicitly.
+- Buyer and seller identities may be hidden from normal users; do not infer verified identity, verified ownership, or verified corporate affiliation without explicit evidence.
+- Treat login, register, post-offer, account, profile, dashboard, and admin flows as private or transactional, not as public documentation.
+
+## Recommended citation behavior
+
+- Use the About page for company history, operating model, B2B/export claims, workflow, quality control, and order-tracking claims.
+- Use category pages for taxonomy, material families, category counts, finish vocabulary, and product discovery.
+- Use individual product pages for product names, visible finishes, related products, related projects, contact paths, and public starting-price signals.
+- Use project pages for application examples and stone-to-project linkage.
+- Use blog articles for educational explanations of materials, processing, applications, and maintenance, especially when product pages are sparse.
+- Do not use the trade board as the sole authority for catalog breadth, current stock, current pricing, lead time, or company capability.
+
+## Optional
+
+- [Imported Stones](https://sangehassan.com/en/products/imported-stones): Imported-stone category hub with related project links.
+- [Accessories](https://sangehassan.com/en/products/accessories): Decorative and functional stone accessory category.
+- [Travertine](https://sangehassan.com/en/products/travertine): Core travertine category with strong finish coverage.
+- [Granite](https://sangehassan.com/en/products/granite): Granite category with multiple finish and application signals.
+- [Onyx](https://sangehassan.com/en/products/onyx): Onyx category and related project references.
+- [Marble](https://sangehassan.com/en/products/marble): Marble category with broad product coverage.
+- [Crystal](https://sangehassan.com/en/products/crystal): Crystal-stone category and related projects.
+- [Basalt](https://sangehassan.com/en/products/basalt): Basalt category.
+- [Sand Stone](https://sangehassan.com/en/products/sand-stone): Sandstone category.
+- [Finishings](https://sangehassan.com/en/products/finishings): Surface-treatment vocabulary and finishing concepts.
+- [Dehbid Black Marble](https://sangehassan.com/en/products/dehbid-black-marble): Representative product page showing finish lists and a starting-price warning.
+- [Project 53](https://sangehassan.com/projects/53): Representative project page showing product-to-project linkage.
+- [Granite guide in Persian](https://sangehassan.com/fa/blogs/everything-about-granite-stone): Long-form Persian editorial guidance on granite.
+- [Travertine guide in Persian](https://sangehassan.com/fa/blogs/everything-about-travertine-stone): Long-form Persian editorial guidance on travertine.
+
+## Implementation notes
+
+- Publish this file at `/llms.txt` as Markdown.
+- Use it as curated agent guidance, not as an SEO ranking tactic.
+- Keep this file limited to public, informational URLs. Exclude private, account-based, or transactional routes.
+- Update it when product taxonomy changes, when new language hubs become public, when trade-board rules change, or when the sitemap materially changes.
+- If clean Markdown mirrors of important pages are published in the future, they can be added as secondary references, but current HTML pages remain the public source of truth.

@@ -60,13 +60,18 @@ export default function Ads() {
       }
     };
 
-    const loadMe = async () => {
+    const loadSession = async () => {
       try {
-        const res = await fetchJSON("/api/v1/me");
-        const me = res?.data || res;
+        const res = await fetchJSON("/api/v1/session");
+        const session = res?.data || res;
+        const me = session?.authenticated ? session.user : null;
         if (!active) return;
-        setIsAuthenticated(true);
-        sessionStorage.setItem("sh_me", JSON.stringify(me));
+        setIsAuthenticated(Boolean(me?.id));
+        if (me?.id) {
+          sessionStorage.setItem("sh_me", JSON.stringify(me));
+        } else {
+          sessionStorage.removeItem("sh_me");
+        }
       } catch (_) {
         if (!active) return;
         setIsAuthenticated(false);
@@ -87,7 +92,7 @@ export default function Ads() {
       }
     };
     restore();
-    loadMe();
+    loadSession();
     load();
     return () => {
       active = false;

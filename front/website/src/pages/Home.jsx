@@ -7,9 +7,9 @@ import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
-import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.png";
-import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.png";
-import trustQualityIllustration from "@shared/assets/landing_icons/trust_quality_icon_transparent.png";
+import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.webp";
+import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.webp";
+import trustQualityIllustration from "@shared/assets/landing_icons/trust_quality_icon_transparent.webp";
 import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
 import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
 import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
@@ -118,6 +118,51 @@ const logSlideDebug = (event, payload = {}) => {
     at: Math.round(performance.now()),
     ...payload
   });
+};
+
+const getSlideDebugHandlers = (panel, role, slideIndex, image) => {
+  if (!isSlideDebugEnabled()) return {};
+  const asset = getSlideAssetName(image.src);
+  const readStyles = (target) => {
+    const styles = window.getComputedStyle(target);
+    return {
+      opacity: styles.opacity,
+      filter: styles.filter,
+      transitionDuration: styles.transitionDuration
+    };
+  };
+
+  return {
+    onLoad: (event) => {
+      logSlideDebug("image-load", {
+        panel,
+        role,
+        slideIndex,
+        asset,
+        ...readStyles(event.currentTarget)
+      });
+    },
+    onTransitionStart: (event) => {
+      if (event.propertyName !== "opacity") return;
+      logSlideDebug("transition-start", {
+        panel,
+        role,
+        slideIndex,
+        asset,
+        ...readStyles(event.currentTarget)
+      });
+    },
+    onTransitionEnd: (event) => {
+      if (event.propertyName !== "opacity") return;
+      logSlideDebug("transition-end", {
+        panel,
+        role,
+        slideIndex,
+        asset,
+        ...readStyles(event.currentTarget)
+      });
+    }
+  };
 };
 
 const homeSeoContent = {
@@ -793,6 +838,7 @@ export default function Home() {
                     const isPreviousSlide = slideIndex === previousSlide;
                     const role = isActiveSlide ? "active" : isPreviousSlide ? "previous" : "preload";
                     const panel = isBlocks ? "blocks" : "products";
+                    const shouldLoadEager = isActiveSlide;
 
                     return (
                       <img
@@ -810,46 +856,10 @@ export default function Home() {
                         data-slide-panel={panel}
                         data-slide-role={role}
                         data-slide-index={slideIndex}
-                        loading={isPreviousSlide ? "lazy" : "eager"}
+                        loading={shouldLoadEager ? "eager" : "lazy"}
                         decoding="async"
-                        fetchpriority={isActiveSlide ? "high" : "low"}
-                        onLoad={(event) => {
-                          const styles = window.getComputedStyle(event.currentTarget);
-                          logSlideDebug("image-load", {
-                            panel,
-                            role,
-                            slideIndex,
-                            asset: getSlideAssetName(image.src),
-                            opacity: styles.opacity,
-                            transitionDuration: styles.transitionDuration
-                          });
-                        }}
-                        onTransitionStart={(event) => {
-                          if (event.propertyName !== "opacity") return;
-                          const styles = window.getComputedStyle(event.currentTarget);
-                          logSlideDebug("transition-start", {
-                            panel,
-                            role,
-                            slideIndex,
-                            asset: getSlideAssetName(image.src),
-                            opacity: styles.opacity,
-                            filter: styles.filter,
-                            transitionDuration: styles.transitionDuration
-                          });
-                        }}
-                        onTransitionEnd={(event) => {
-                          if (event.propertyName !== "opacity") return;
-                          const styles = window.getComputedStyle(event.currentTarget);
-                          logSlideDebug("transition-end", {
-                            panel,
-                            role,
-                            slideIndex,
-                            asset: getSlideAssetName(image.src),
-                            opacity: styles.opacity,
-                            filter: styles.filter,
-                            transitionDuration: styles.transitionDuration
-                          });
-                        }}
+                        fetchpriority={shouldLoadEager ? "high" : "low"}
+                        {...getSlideDebugHandlers(panel, role, slideIndex, image)}
                       />
                     );
                   })}

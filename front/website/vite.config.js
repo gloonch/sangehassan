@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   build: {
     assetsInlineLimit: 0,
-    manifest: true
+    manifest: true,
+    sourcemap: true
   },
   server: {
     host: true,

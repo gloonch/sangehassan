@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build && node scripts/prerender.mjs",
     "build:client": "vite build",
+    "optimize:landing-icons": "node scripts/optimize-landing-icons.mjs",
     "prerender": "node scripts/prerender.mjs",
     "verify:sitemap-seo": "node scripts/verify-sitemap-seo.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173"
@@ -23,6 +24,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.33",
+    "sharp": "^0.33.5",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.0"
   }

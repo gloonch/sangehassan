@@ -84,13 +84,19 @@ export default function Navbar() {
       }
     };
 
-    const fetchMe = async () => {
+    const fetchSession = async () => {
       try {
-        const res = await fetchJSON("/api/v1/me");
-        const me = res?.data || res;
+        const res = await fetchJSON("/api/v1/session");
+        const session = res?.data || res;
+        const me = session?.authenticated ? session.user : null;
         if (!active) return;
-        setUser(me);
-        setSessionStorageValue("sh_me", JSON.stringify(me));
+        if (me?.id) {
+          setUser(me);
+          setSessionStorageValue("sh_me", JSON.stringify(me));
+          return;
+        }
+        setUser(null);
+        removeSessionStorageValue("sh_me");
       } catch (_) {
         if (!active) return;
         setUser(null);
@@ -99,7 +105,7 @@ export default function Navbar() {
     };
 
     restore();
-    fetchMe();
+    fetchSession();
 
     return () => {
       active = false;
@@ -267,7 +273,7 @@ export default function Navbar() {
           <div ref={mobileMenuPanelRef} className="h-full w-full">
             <div className="section-shell flex h-20 items-center justify-between gap-4">
               <Link to="/" onClick={() => setOpen(false)} className="inline-flex items-center" aria-label={t("brand")}>
-                <img src={logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
+                <img src={logoImage} alt={t("brand")} width="1070" height="710" className="h-12 w-auto object-contain" />
               </Link>
               <button
                 type="button"
@@ -341,7 +347,7 @@ export default function Navbar() {
     <header ref={headerRef} className={`fixed left-0 right-0 top-0 z-50 transition-colors duration-300 ${navHeaderClass}`}>
       <div className="section-shell flex h-20 items-center justify-between gap-4">
         <Link to="/" className="inline-flex items-center will-change-transform" aria-label={t("brand")} data-nav-block="left">
-          <img src={useLightHomeNav ? logoWhiteImage : logoImage} alt={t("brand")} className="h-12 w-auto object-contain" />
+          <img src={useLightHomeNav ? logoWhiteImage : logoImage} alt={t("brand")} width="1070" height="710" className="h-12 w-auto object-contain" />
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium lg:flex will-change-transform" data-nav-block="center">

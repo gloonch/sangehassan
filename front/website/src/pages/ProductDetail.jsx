@@ -9,6 +9,7 @@ import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
 import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
+import NotFound from "./NotFound";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
@@ -224,6 +225,7 @@ export default function ProductDetail() {
   const productOfferPrice = getProductOfferPrice(product);
   const productOfferPriceIRR = productOfferPrice > 0 ? productOfferPrice * 10 : 0;
   const productJsonLd = useMemo(() => {
+    if (initialProduct) return null;
     if (!product || !localizedTitle) return null;
 
     const pageUrl = getCanonicalUrl(localizedProductPath);
@@ -264,7 +266,7 @@ export default function ProductDetail() {
       },
       offers: offer
     };
-  }, [activeImage, localizedProductPath, localizedTitle, product, productOfferPriceIRR, seoDescription, t]);
+  }, [activeImage, initialProduct, localizedProductPath, localizedTitle, product, productOfferPriceIRR, seoDescription, t]);
 
   usePageSeo({
     title: seoTitle,
@@ -411,13 +413,13 @@ export default function ProductDetail() {
     setActiveIndex((idx) => (idx + 1) % images.length);
   };
 
+  if (!loading && !product) return <NotFound />;
+
   return (
     <section className="section-shell pt-4 pb-12">
 
       {loading ? (
         <p className="text-sm text-primary/70">{t("messages.loading")}</p>
-      ) : !product ? (
-        <p className="text-sm text-primary/70">{t("productDetail.notFound")}</p>
       ) : (
         <div className="space-y-8">
           <div className="space-y-4">

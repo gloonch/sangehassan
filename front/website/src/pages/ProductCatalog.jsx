@@ -20,6 +20,7 @@ import {
   localizedField
 } from "../lib/catalogLocale";
 import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
+import NotFound from "./NotFound";
 
 const PAGE_SIZE = 24;
 const facetOrder = ["color", "application", "finish", "form", "origin", "pattern", "availability"];
@@ -302,7 +303,7 @@ export default function ProductCatalog({ categorySlugOverride = "", initialPageO
   };
 
   if (loading && !page) return <div className="section-shell min-h-[55vh] py-20 text-center text-sm text-primary/60" dir={config.dir}>{copy.loading}</div>;
-  if (notFound || !page) return <div className="section-shell min-h-[55vh] py-20 text-center" dir={config.dir}><h1 className="font-display text-3xl">{copy.notFound}</h1><Link className="mt-6 inline-block text-sm text-accent" to={basePath}>{copy.back}</Link></div>;
+  if (notFound || !page) return <NotFound />;
 
   const hasMore = page.products.length < page.pagination.total;
   const selectedEntries = Object.entries(page.selected_filters || {});
