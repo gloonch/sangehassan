@@ -631,14 +631,15 @@ function productOfferSchemaNote(lang = "en") {
 }
 
 function productOfferJsonLd(product, routePath, lang = "en") {
-  const price = productOfferPrice(product);
-  if (price <= 0) return undefined;
+  const tomanPrice = productOfferPrice(product);
+  if (tomanPrice <= 0) return undefined;
+  const rialPrice = tomanPrice * 10;
   const url = absoluteUrl(routePath);
   return {
     "@type": "Offer",
     url,
     priceCurrency: "IRR",
-    price: String(price),
+    price: String(rialPrice),
     availability: "https://schema.org/InStock",
     itemCondition: "https://schema.org/NewCondition",
     seller: {
@@ -648,7 +649,7 @@ function productOfferJsonLd(product, routePath, lang = "en") {
     priceSpecification: {
       "@type": "UnitPriceSpecification",
       name: "Offer",
-      price: String(price),
+      price: String(rialPrice),
       priceCurrency: "IRR",
       description: productOfferSchemaNote(lang)
     }

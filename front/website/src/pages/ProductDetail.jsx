@@ -222,17 +222,18 @@ export default function ProductDetail() {
   const localizedProductPath = `/${lang}/products/${slug}`;
   const isLegacyProductPath = /^\/products\/[^/]+\/?$/.test(location.pathname);
   const productOfferPrice = getProductOfferPrice(product);
+  const productOfferPriceIRR = productOfferPrice > 0 ? productOfferPrice * 10 : 0;
   const productJsonLd = useMemo(() => {
     if (!product || !localizedTitle) return null;
 
     const pageUrl = getCanonicalUrl(localizedProductPath);
     const imageUrl = activeImage ? getAbsoluteUrl(resolveProtectedImageUrl(activeImage)) : undefined;
-    const offer = productOfferPrice > 0
+    const offer = productOfferPriceIRR > 0
       ? {
         "@type": "Offer",
         url: pageUrl,
         priceCurrency: "IRR",
-        price: String(productOfferPrice),
+        price: String(productOfferPriceIRR),
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
         seller: {
@@ -242,7 +243,7 @@ export default function ProductDetail() {
         priceSpecification: {
           "@type": "UnitPriceSpecification",
           name: t("productDetail.offerLabel"),
-          price: String(productOfferPrice),
+          price: String(productOfferPriceIRR),
           priceCurrency: "IRR",
           description: t("productDetail.offerSchemaNote")
         }
@@ -263,7 +264,7 @@ export default function ProductDetail() {
       },
       offers: offer
     };
-  }, [activeImage, lang, localizedProductPath, localizedTitle, product, productOfferPrice, seoDescription, t]);
+  }, [activeImage, localizedProductPath, localizedTitle, product, productOfferPriceIRR, seoDescription, t]);
 
   usePageSeo({
     title: seoTitle,
@@ -536,7 +537,7 @@ export default function ProductDetail() {
               )}
               <div className="flex flex-wrap items-start gap-3 md:gap-4">
                 <h1 className="font-display text-3xl leading-tight text-primary md:text-5xl">{localizedTitle}</h1>
-                {phoneItems.length > 0 && (
+                {phoneItems.length > 0 && productOfferPrice <= 0 && (
                   <div className={`flex w-full max-w-[18rem] flex-col items-stretch gap-1.5 ${isRTL ? "mr-auto" : "ml-auto"}`}>
                     {phoneItems.map((item) => (
                       <a
@@ -580,15 +581,55 @@ export default function ProductDetail() {
                 )}
               </div>
               {productOfferPrice > 0 && (
-                <div className={`mt-5 max-w-xl space-y-2 ${isRTL ? "text-right" : "text-left"}`}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-accent">{t("productDetail.offerLabel")}</p>
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/55">{t("productDetail.offerFloorLabel")}</p>
-                    <p className="font-display text-3xl leading-tight text-primary md:text-4xl">
-                      {formatOfferPrice(productOfferPrice, lang)}
-                    </p>
+                <div className={`mt-5 flex flex-col gap-4 border-y border-primary/10 py-5 md:flex-row md:items-center md:justify-between ${isRTL ? "text-right" : "text-left"}`}>
+                  <div className="max-w-xl space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-accent">{t("productDetail.offerLabel")}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/55">{t("productDetail.offerFloorLabel")}</p>
+                      <p className="font-display text-3xl leading-tight text-primary md:text-4xl">
+                        {formatOfferPrice(productOfferPrice, lang)}
+                      </p>
+                    </div>
+                    <p className="max-w-lg text-xs leading-6 text-primary/60">{t("productDetail.offerDisclaimer")}</p>
                   </div>
-                  <p className="max-w-lg text-xs leading-6 text-primary/60">{t("productDetail.offerDisclaimer")}</p>
+                  {phoneItems.length > 0 && (
+                    <div className="min-w-0 md:max-w-[34rem]">
+                      <div className={`flex flex-nowrap gap-2 overflow-x-auto pb-1 no-scrollbar ${isRTL ? "md:justify-end" : "md:justify-start"}`}>
+                        {phoneItems.map((item) => (
+                          <a
+                            key={item.normalized}
+                            href={`tel:${item.normalized}`}
+                            className="call-cta-shimmer inline-flex h-11 min-w-max items-center gap-2 rounded-full border border-primary/25 px-3.5 text-primary/85 transition hover:border-primary/55 hover:text-primary"
+                          >
+                            <PhoneIcon className="h-5 w-5 shrink-0" />
+                            <span className="text-xs font-semibold tabular-nums md:text-sm" dir="ltr">
+                              {item.value}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                      {showDomesticMessengerLinks && (
+                        <div className={`mt-1 flex flex-wrap gap-1.5 ${isRTL ? "justify-end" : "justify-start"}`}>
+                          <a
+                            href="https://bale.ir/sangehassan"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary/70 transition hover:border-primary/45 hover:text-primary"
+                          >
+                            bale
+                          </a>
+                          <a
+                            href="https://rubika.ir/sangehassan"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary/70 transition hover:border-primary/45 hover:text-primary"
+                          >
+                            rubika
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

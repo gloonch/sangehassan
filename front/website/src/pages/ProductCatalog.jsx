@@ -99,18 +99,18 @@ function ProductCard({ product, lang, copy, returnPath, onRememberReturnState })
           <div className="flex h-full items-center justify-center text-sm text-primary/50">{copy.noImage}</div>
         )}
         <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${gradientDirection} from-black/70 via-black/25 to-transparent p-4 pt-16`}>
+          {offerPrice > 0 ? (
+            <p className="mb-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
+              <span>{copy.offerLabel}</span>
+              <span aria-hidden="true">/</span>
+              <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
+            </p>
+          ) : null}
           <h2 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">{title}</h2>
           {detailGroups.length > 0 ? (
             <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.45)]">
               {detailGroups.map((values) => <p key={values.join("-")} className="truncate">{values.join(" • ")}</p>)}
             </div>
-          ) : null}
-          {offerPrice > 0 ? (
-            <p className="mt-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
-              <span>{copy.offerLabel}</span>
-              <span aria-hidden="true">/</span>
-              <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
-            </p>
           ) : null}
         </div>
       </div>

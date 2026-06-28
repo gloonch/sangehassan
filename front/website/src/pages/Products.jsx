@@ -915,6 +915,13 @@ export default function Products() {
                     )}
 
                     <div className={`pointer-events-none absolute inset-x-0 bottom-0 ${gradientDir} from-black/70 via-black/25 to-transparent p-4`}>
+                      {offerPrice > 0 && (
+                        <p className="mb-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
+                          <span>{t("productDetail.offerLabel")}</span>
+                          <span aria-hidden="true">/</span>
+                          <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
+                        </p>
+                      )}
                       <h3 className="font-display text-xl leading-tight text-white drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
                         {getLocalized(product, lang) || product.title_en}
                       </h3>
@@ -927,13 +934,6 @@ export default function Products() {
                         )}
                         {Array.isArray(product.mines) && product.mines.length > 0 && (
                           <p className="truncate">{product.mines.join(" • ")}</p>
-                        )}
-                        {offerPrice > 0 && (
-                          <p className="mt-2 inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white/95 backdrop-blur">
-                            <span>{t("productDetail.offerLabel")}</span>
-                            <span aria-hidden="true">/</span>
-                            <span className="min-w-0 truncate">{formatOfferPrice(offerPrice, lang)}</span>
-                          </p>
                         )}
                       </div>
                     </div>
