@@ -21,6 +21,7 @@ const protectedImageRev = process.env.VITE_PROTECTED_IMAGE_REV || "protected-202
 const sharedAssetUrl = (sourcePath) => `/@fs${path.resolve(rootDir, sourcePath).replace(/\\/g, "/")}`;
 const defaultShareImage = sharedAssetUrl("../shared/assets/landing_page/landingpage_blocks_overlay.webp");
 const fetchTimeoutMs = Number(process.env.VITE_PRERENDER_FETCH_TIMEOUT_MS || 10000);
+const strictBlogPrerender = Boolean(prerenderApiBase) && process.env.VITE_PRERENDER_STRICT_BLOGS !== "false";
 
 const catalogLocales = ["en", "fa", "ar"];
 const blogLocaleMeta = {
@@ -28,11 +29,6 @@ const blogLocaleMeta = {
   fa: { locale: "fa_IR", home: "خانه", articles: "مقالات", title: "مقالات سنگ طبیعی | سنگ حسن", description: "راهنماهای کاربردی برای انتخاب، فرآوری، اجرا و نگهداری سنگ طبیعی." },
   ar: { locale: "ar_SA", home: "الرئيسية", articles: "المقالات", title: "مقالات الحجر الطبيعي | سانج حسن", description: "أدلة عملية لاختيار الحجر الطبيعي ومعالجته وتركيبه وصيانته." }
 };
-
-const requiredFaBlogSlugs = [
-  "everything-about-granite-stone",
-  "everything-about-travertine-stone"
-];
 
 const faArticleSeoOverrides = {
   "everything-about-granite-stone": {
@@ -256,13 +252,80 @@ function safeScriptJson(payload) {
 }
 
 function stripHTML(value = "") {
-  return String(value).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return String(value)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function truncate(value = "", limit = 160) {
   const text = stripHTML(value);
   if (text.length <= limit) return text;
   return `${text.slice(0, limit - 1).trim()}…`;
+}
+
+function stripEmbeddedTocBlocks(value = "") {
+  return String(value).replace(
+    /<h([234])\b[^>]*>\s*(?:Table of Contents|In this article|FAQ Index|فهرست مطالب|فهرست|در این مقاله|جدول محتوا|في هذا المقال)\s*<\/h\1>\s*(?:(?:<ol\b[\s\S]*?<\/ol>|<ul\b[\s\S]*?<\/ul>)\s*)?(?:<hr\s*\/?>\s*)?/gi,
+    ""
+  );
+}
+
+function faqItemsFromHTML(value = "") {
+  const html = stripEmbeddedTocBlocks(value);
+  const h2Matches = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)];
+  const faqHeadings = /(faq|faqs|frequently asked questions|سوالات متداول|سؤالات متداول|پرسش‌های متداول|پرسش های متداول|الأسئلة الشائعة)/i;
+  const items = [];
+
+  for (let index = 0; index < h2Matches.length; index += 1) {
+    const heading = h2Matches[index];
+    if (!faqHeadings.test(stripHTML(heading[1]))) continue;
+
+    const sectionStart = heading.index + heading[0].length;
+    const sectionEnd = h2Matches[index + 1]?.index ?? html.length;
+    const section = html.slice(sectionStart, sectionEnd);
+    const questions = [...section.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/gi)];
+
+    for (let questionIndex = 0; questionIndex < questions.length; questionIndex += 1) {
+      const question = stripHTML(questions[questionIndex][1]);
+      const answerStart = questions[questionIndex].index + questions[questionIndex][0].length;
+      const answerEnd = questions[questionIndex + 1]?.index ?? section.length;
+      const answer = stripHTML(section.slice(answerStart, answerEnd));
+      if (question && answer) {
+        items.push({ question, answer });
+      }
+    }
+  }
+
+  return items.slice(0, 12);
+}
+
+function faqStructuredData(value = "", canonicalPath = "") {
+  const items = faqItemsFromHTML(value);
+  if (!items.length || !canonicalPath) return null;
+  const canonical = absoluteUrl(canonicalPath);
+  return {
+    "@type": "FAQPage",
+    "@id": `${canonical}#faq`,
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer
+      }
+    }))
+  };
+}
+
+function strictPrerenderError(message) {
+  const error = new Error(message);
+  error.strictPrerender = true;
+  return error;
 }
 
 function normalizeDate(value) {
@@ -365,6 +428,10 @@ function pageJsonLd(route) {
     page.headline = route.headline || route.title;
     page.author = {
       "@id": organizationId
+    };
+    page.reviewedBy = {
+      "@type": "Organization",
+      name: route.lang === "fa" ? "تیم فروش و تأمین سنگ حسن" : "SangeHassan sales and sourcing team"
     };
     page.publisher = {
       "@id": organizationId
@@ -1169,6 +1236,7 @@ function blogRoute(blog, locale) {
   const defaultAlternate = alternateItems.find((item) => item.lang === "en") || alternateItems[0];
   const canonical = seoOverride?.canonical || blog.canonical_url || routePath;
   const headline = seoOverride?.h1 || blog.title;
+  const faqSchema = faqStructuredData(blog.content_html, canonical);
   return {
     path: routePath,
     canonical,
@@ -1192,6 +1260,7 @@ function blogRoute(blog, locale) {
     datePublished: blog.published_at || blog.created_at,
     headline,
     schemaLanguage: locale === "fa" ? "fa-IR" : locale,
+    structuredData: faqSchema ? [faqSchema] : [],
     prerenderData: { blog }
   };
 }
@@ -1228,25 +1297,26 @@ async function loadBlogRoutes() {
         lastmod: blogs[0]?.updated_at || blogs[0]?.published_at,
         prerenderData: { blogs }
       });
+      const skipped = [];
       for (const summary of blogs) {
         try {
           const blog = (await fetchApi(`/api/blogs/${locale}/${summary.slug}`)) || summary;
           addBlogRoute(blog, locale);
         } catch (error) {
-          console.warn(`prerender: blog skipped for ${locale}/${summary.slug}: ${error.message}`);
+          const message = `prerender: blog skipped for ${locale}/${summary.slug}: ${error.message}`;
+          if (strictBlogPrerender) skipped.push(message);
+          console.warn(message);
         }
       }
+      if (skipped.length) {
+        throw strictPrerenderError(skipped.join("\n"));
+      }
     } catch (error) {
+      if (strictBlogPrerender && error.strictPrerender) throw error;
+      if (strictBlogPrerender) {
+        throw strictPrerenderError(`prerender: ${locale} blogs failed: ${error.message}`);
+      }
       console.warn(`prerender: ${locale} blogs skipped: ${error.message}`);
-    }
-  }
-
-  for (const slug of requiredFaBlogSlugs) {
-    try {
-      const blog = await fetchApi(`/api/blogs/fa/${slug}`);
-      addBlogRoute(blog, "fa");
-    } catch (error) {
-      console.warn(`prerender: required fa blog skipped for ${slug}: ${error.message}`);
     }
   }
 
@@ -1279,17 +1349,18 @@ async function loadDynamicRoutes() {
       })
     ]);
 
-    const [productRoutes, blockRoutes, projectRoutes, adRoutes, catalogRoutes, blogRoutes] = await Promise.all([
+    const blogRoutes = await loadBlogRoutes();
+    const [productRoutes, blockRoutes, projectRoutes, adRoutes, catalogRoutes] = await Promise.all([
       detailRoutes(products, productRoute, (product) => `/api/products/${product.slug}`, "product", "product"),
       detailRoutes(blocks, blockRoute, (block) => `/api/blocks/${block.slug}`, "block", "block"),
       detailRoutes(projects, projectRoute, (project) => `/api/projects/${project.id}`, "project", "project"),
       detailRoutes(ads, adRoute, (ad) => `/api/ads/${ad.id}`, "ad", "ad"),
-      loadCatalogRoutes(),
-      loadBlogRoutes()
+      loadCatalogRoutes()
     ]);
 
     return [...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes, ...catalogRoutes, ...blogRoutes];
   } catch (error) {
+    if (error.strictPrerender) throw error;
     console.warn(`prerender: dynamic detail pages skipped: ${error.message}`);
     return [];
   }

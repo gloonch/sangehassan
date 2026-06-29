@@ -171,6 +171,7 @@ export default function Blogs() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [uploadState, setUploadState] = useState(null);
+  const [notice, setNotice] = useState("");
 
   const translation = form.translations.find((item) => item.locale === activeLocale) || emptyTranslation(activeLocale);
   const stats = useMemo(() => contentStats(translation.content_html), [translation.content_html]);
@@ -213,6 +214,7 @@ export default function Blogs() {
   const updateForm = (patch) => {
     setForm((current) => ({ ...current, ...patch }));
     setDirty(true);
+    setNotice("");
   };
 
   const updateTranslation = (patch) => {
@@ -221,6 +223,7 @@ export default function Blogs() {
       translations: current.translations.map((item) => item.locale === activeLocale ? { ...item, ...patch } : item)
     }));
     setDirty(true);
+    setNotice("");
   };
 
   const uploadImage = async (file, target = "inline") => {
@@ -253,6 +256,7 @@ export default function Blogs() {
     setForm(createEmptyForm());
     setActiveLocale("fa");
     setDirty(false);
+    setNotice("");
     localStorage.removeItem("blog-editor-draft");
   };
 
@@ -276,8 +280,14 @@ export default function Blogs() {
       setForm(normalizeBlog(saved));
       setDirty(false);
       localStorage.removeItem("blog-editor-draft");
+      if (saved.status === "published" && (saved.translations || []).some((item) => item.translation_status === "published" && item.slug)) {
+        setNotice("SEO HTML refreshes automatically within a few minutes.");
+      } else {
+        setNotice("");
+      }
       await loadBlogs();
     } catch (err) {
+      setNotice("");
       setError(err?.message || "Could not save the article.");
     } finally {
       setSaving(false);
@@ -292,6 +302,7 @@ export default function Blogs() {
       setForm(normalizeBlog(response.data));
       setActiveLocale(response.data.translations?.[0]?.locale || "fa");
       setDirty(false);
+      setNotice("");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(err?.message || "Could not load the article.");
@@ -458,6 +469,7 @@ export default function Blogs() {
               <p className="mt-1 text-sm text-primary/65">{seoDescription}</p>
             </div>
           </div>
+          {notice && <p className="mt-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
           {error && <p className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         </section>
       </form>

@@ -1,0 +1,11 @@
+[Unit]
+Description=SangeHassan blog prerender refresh
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+Environment=PROJECT_ROOT=/opt/sangehassan
+Environment=SITE_URL=https://sangehassan.com
+ExecStart=/opt/sangehassan/deploy/scripts/refresh-blog-prerender.sh
+

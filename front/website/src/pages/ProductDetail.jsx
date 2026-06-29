@@ -286,7 +286,7 @@ export default function ProductDetail() {
   const categories = product?.categories?.length ? product.categories : product?.category ? [product.category] : [];
   const categoriesAdjusted = categories.map((cat) =>
     cat.title_fa === "چینی" || cat.title_fa === "چینی کریستال"
-      ? { ...cat, title_fa: "چینی کریستال", slug: "chinese-crystal" }
+      ? { ...cat, title_fa: "چینی کریستال", slug: "crystal" }
       : cat
   );
   const categoryLine = categoriesAdjusted.map((cat) => getLocalized(cat, lang)).filter(Boolean).join(" • ");

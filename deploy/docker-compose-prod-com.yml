@@ -28,6 +28,7 @@ services:
       - ../back/storage/images:/seed/images:ro
 
   website:
+    image: deploy-website:latest
     build:
       context: ../front
       dockerfile: website/Dockerfile

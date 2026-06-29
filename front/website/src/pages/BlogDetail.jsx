@@ -9,9 +9,9 @@ import { getLanguageFromPath } from "../lib/i18n";
 import NotFound from "./NotFound";
 
 const localeMeta = {
-  fa: { locale: "fa_IR", articles: "مقالات", home: "خانه", updated: "به‌روزرسانی", min: "دقیقه مطالعه", toc: "در این مقاله", back: "بازگشت به مقالات" },
-  en: { locale: "en_US", articles: "Articles", home: "Home", updated: "Updated", min: "min read", toc: "In this article", back: "Back to articles" },
-  ar: { locale: "ar_SA", articles: "المقالات", home: "الرئيسية", updated: "آخر تحديث", min: "دقيقة قراءة", toc: "في هذا المقال", back: "العودة إلى المقالات" }
+  fa: { locale: "fa_IR", articles: "مقالات", home: "خانه", updated: "به‌روزرسانی", min: "دقیقه مطالعه", toc: "در این مقاله", back: "بازگشت به مقالات", authorLabel: "نویسنده", reviewerLabel: "بررسی فنی", contentTeam: "تیم محتوای سنگ حسن", reviewTeam: "تیم فروش و تأمین سنگ حسن" },
+  en: { locale: "en_US", articles: "Articles", home: "Home", updated: "Updated", min: "min read", toc: "In this article", back: "Back to articles", authorLabel: "Author", reviewerLabel: "Technical review", contentTeam: "SangeHassan content team", reviewTeam: "SangeHassan sales and sourcing team" },
+  ar: { locale: "ar_SA", articles: "المقالات", home: "الرئيسية", updated: "آخر تحديث", min: "دقيقة قراءة", toc: "في هذا المقال", back: "العودة إلى المقالات", authorLabel: "الكاتب", reviewerLabel: "مراجعة فنية", contentTeam: "فريق محتوى سانج حسن", reviewTeam: "فريق المبيعات والتوريد في سانج حسن" }
 };
 
 const faArticleSeoOverrides = {
@@ -49,11 +49,83 @@ function versionBlogImages(value = "", version = "") {
   });
 }
 
+function stripHTML(value = "") {
+  return String(value)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripEmbeddedTocBlocks(value = "") {
+  return String(value).replace(
+    /<h([234])\b[^>]*>\s*(?:Table of Contents|In this article|FAQ Index|فهرست مطالب|فهرست|در این مقاله|جدول محتوا|في هذا المقال)\s*<\/h\1>\s*(?:(?:<ol\b[\s\S]*?<\/ol>|<ul\b[\s\S]*?<\/ul>)\s*)?(?:<hr\s*\/?>\s*)?/gi,
+    ""
+  );
+}
+
+function wrapTables(value = "") {
+  return String(value).replace(/<table\b([\s\S]*?)<\/table>/gi, (match) => {
+    if (/class=(["'])[^"']*\bblog-table-scroll\b/i.test(match)) return match;
+    return `<div class="blog-table-scroll">${match}</div>`;
+  });
+}
+
+function faqItemsFromHTML(value = "") {
+  const html = stripEmbeddedTocBlocks(value);
+  const h2Matches = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)];
+  const faqHeadings = /(faq|faqs|frequently asked questions|سوالات متداول|سؤالات متداول|پرسش‌های متداول|پرسش های متداول|الأسئلة الشائعة)/i;
+  const items = [];
+
+  for (let index = 0; index < h2Matches.length; index += 1) {
+    const heading = h2Matches[index];
+    if (!faqHeadings.test(stripHTML(heading[1]))) continue;
+    const sectionStart = heading.index + heading[0].length;
+    const sectionEnd = h2Matches[index + 1]?.index ?? html.length;
+    const section = html.slice(sectionStart, sectionEnd);
+    const questions = [...section.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/gi)];
+
+    for (let questionIndex = 0; questionIndex < questions.length; questionIndex += 1) {
+      const question = stripHTML(questions[questionIndex][1]);
+      const answerStart = questions[questionIndex].index + questions[questionIndex][0].length;
+      const answerEnd = questions[questionIndex + 1]?.index ?? section.length;
+      const answer = stripHTML(section.slice(answerStart, answerEnd));
+      if (question && answer) {
+        items.push({ question, answer });
+      }
+    }
+  }
+
+  return items.slice(0, 12);
+}
+
+function faqJsonLdFromHTML(value = "", canonical = "") {
+  const items = faqItemsFromHTML(value);
+  if (!items.length || !canonical) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `${canonical}#faq`,
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer
+      }
+    }))
+  };
+}
+
 function articleHTML(value = "", imageVersion = "") {
   const headings = [];
   let index = 0;
-  const html = versionBlogImages(value, imageVersion).replace(/<(h[234])([^>]*)>([\s\S]*?)<\/\1>/gi, (match, tag, attrs, inner) => {
-    const text = inner.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+  const cleanValue = stripEmbeddedTocBlocks(value);
+  const html = wrapTables(versionBlogImages(cleanValue, imageVersion)).replace(/<(h[234])([^>]*)>([\s\S]*?)<\/\1>/gi, (match, tag, attrs, inner) => {
+    const text = stripHTML(inner);
     const id = `section-${++index}`;
     headings.push({ id, level: Number(tag.slice(1)), text });
     const cleanAttrs = attrs.replace(/\sid=(['"]).*?\1/i, "");
@@ -140,9 +212,11 @@ export default function BlogDetail() {
   const resolvedImage = image ? resolveVersionedImageUrl(image, imageVersion) : "";
   const robots = notFound ? "noindex,follow" : blog?.robots || "index,follow";
   const canonical = getCanonicalUrl(path);
-  const jsonLd = blog ? [
-    { "@context": "https://schema.org", "@type": "BlogPosting", headline: headingTitle, description, image: resolvedImage || undefined, author: { "@type": "Organization", name: blog.author_name || "SangeHassan" }, publisher: { "@type": "Organization", name: locale === "fa" ? "سنگ حسن" : "SangeHassan", url: getCanonicalUrl("/") }, datePublished: published, dateModified: blog.updated_at, mainEntityOfPage: canonical, inLanguage: locale === "fa" ? "fa-IR" : locale },
-    { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: meta.home, item: getCanonicalUrl("/") }, { "@type": "ListItem", position: 2, name: meta.articles, item: getCanonicalUrl(basePath) }, { "@type": "ListItem", position: 3, name: blog.title, item: canonical }] }
+  const faqJsonLd = blog ? faqJsonLdFromHTML(prepared.html, canonical) : null;
+  const jsonLd = blog && !initialBlog ? [
+    { "@context": "https://schema.org", "@type": "BlogPosting", "@id": `${canonical}#webpage`, headline: headingTitle, description, image: resolvedImage || undefined, author: { "@type": "Organization", name: meta.contentTeam }, reviewedBy: { "@type": "Organization", name: meta.reviewTeam }, publisher: { "@type": "Organization", name: locale === "fa" ? "سنگ حسن" : "SangeHassan", url: getCanonicalUrl("/") }, datePublished: published, dateModified: blog.updated_at, mainEntityOfPage: canonical, inLanguage: locale === "fa" ? "fa-IR" : locale },
+    { "@context": "https://schema.org", "@type": "BreadcrumbList", "@id": `${canonical}#breadcrumb`, itemListElement: [{ "@type": "ListItem", position: 1, name: meta.home, item: getCanonicalUrl("/") }, { "@type": "ListItem", position: 2, name: meta.articles, item: getCanonicalUrl(basePath) }, { "@type": "ListItem", position: 3, name: blog.title, item: canonical }] },
+    ...(faqJsonLd ? [faqJsonLd] : [])
   ] : null;
 
   usePageSeo({ title, description, path, lang: locale, locale: meta.locale, image: resolvedImage, type: "article", robots, alternates, jsonLd, jsonLdId: "blog-article-jsonld" });
@@ -169,6 +243,10 @@ export default function BlogDetail() {
           <span itemProp="author" itemScope itemType="https://schema.org/Organization"><span itemProp="name">{blog.author_name}</span></span><time itemProp="datePublished" dateTime={published}>{new Date(published).toLocaleDateString(locale)}</time>
           {blog.reading_time_minutes > 0 && <span className="inline-flex items-center gap-1.5"><Clock3 size={15} />{blog.reading_time_minutes} {meta.min}</span>}
           {blog.updated_at && blog.updated_at !== blog.created_at && <span>{meta.updated}: <time itemProp="dateModified" dateTime={blog.updated_at}>{new Date(blog.updated_at).toLocaleDateString(locale)}</time></span>}
+        </div>
+        <div className="mt-6 grid max-w-3xl gap-2 border-y border-primary/10 py-4 text-sm leading-7 text-primary/60 sm:grid-cols-2">
+          <p><span className="font-semibold text-primary/75">{meta.authorLabel}: </span><span>{meta.contentTeam}</span></p>
+          <p itemProp="reviewedBy" itemScope itemType="https://schema.org/Organization"><span className="font-semibold text-primary/75">{meta.reviewerLabel}: </span><span itemProp="name">{meta.reviewTeam}</span></p>
         </div>
       </header>
       {blog.cover_image_url && <div className="section-shell"><img itemProp="image" src={resolveVersionedImageUrl(blog.cover_image_url, imageVersion)} alt={blog.featured_image_alt || blog.title} width="1200" height="675" className="aspect-[16/9] w-full object-cover" /></div>}

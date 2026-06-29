@@ -75,10 +75,9 @@ const normalizeCategory = (category) => {
 };
 
 const normalizeChiniSlug = (slug, titleFa) => {
-  // Normalize all older/short slugs to the proper spelling.
-  if (slug === "chinese-crystal") return "chinese-crystal";
-  if (slug === "chini-crystal" || slug === "chini" || slug === "chyny-krystal") return "chinese-crystal";
-  if (titleFa === "چینی" || titleFa === "چینی کریستال") return "chinese-crystal";
+  // Normalize all older/short slugs to the canonical catalog category.
+  if (slug === "chinese-crystal" || slug === "chini-crystal" || slug === "chini" || slug === "chyny-krystal") return "crystal";
+  if (titleFa === "چینی" || titleFa === "چینی کریستال") return "crystal";
   return slug;
 };
 
@@ -265,10 +264,7 @@ export default function Products() {
     return Array.from(map.values());
   }, [categories]);
 
-  const normalizedActiveCategory =
-    activeCategory === "chini" || activeCategory === "chini-crystal" || activeCategory === "chyny-krystal"
-      ? "chinese-crystal"
-      : activeCategory;
+  const normalizedActiveCategory = normalizeChiniSlug(activeCategory, "");
   const hasSelectedCategory = normalizedActiveCategory !== "";
   const queryPreset = useMemo(() => parseProductsQuery(location.search), [location.search]);
   const hasQueryPreset = Boolean(queryPreset.category || queryPreset.keyword);
