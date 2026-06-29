@@ -29,6 +29,19 @@ import {
 } from "lucide-react";
 import { fetchJSON } from "../lib/api";
 
+const CONTENT_FALLBACK_REV = "html-fallback-20260628";
+
+const isEmptyEditorDoc = (doc) => {
+  if (!doc || doc.type !== "doc" || !Array.isArray(doc.content)) return true;
+  if (doc.content.length === 0) return true;
+  return doc.content.length === 1 && doc.content[0]?.type === "paragraph" && !doc.content[0]?.content?.length;
+};
+
+const resolveEditorContent = (value) => {
+  if (CONTENT_FALLBACK_REV && value?.html && isEmptyEditorDoc(value?.json)) return value.html;
+  return value?.json || value?.html || "";
+};
+
 function ToolButton({ title, active = false, disabled = false, onClick, children }) {
   return (
     <button
@@ -64,10 +77,11 @@ export default function RichTextEditor({ value, locale, onChange, onUploadImage 
       TableHeader,
       TableCell
     ],
-    content: value?.json || value?.html || "",
+    content: resolveEditorContent(value),
     editorProps: {
       attributes: {
         class: "blog-editor-content",
+        "data-content-fallback-rev": CONTENT_FALLBACK_REV,
         dir: locale === "fa" || locale === "ar" ? "rtl" : "ltr"
       }
     },
@@ -82,6 +96,7 @@ export default function RichTextEditor({ value, locale, onChange, onUploadImage 
       editorProps: {
         attributes: {
           class: "blog-editor-content",
+          "data-content-fallback-rev": CONTENT_FALLBACK_REV,
           dir: locale === "fa" || locale === "ar" ? "rtl" : "ltr"
         }
       }
@@ -92,7 +107,7 @@ export default function RichTextEditor({ value, locale, onChange, onUploadImage 
     if (!editor) return;
     const nextHTML = value?.html || "";
     if (editor.getHTML() !== nextHTML) {
-      editor.commands.setContent(value?.json || nextHTML || "", false);
+      editor.commands.setContent(resolveEditorContent(value), false);
     }
   }, [editor, value?.html, value?.json]);
 

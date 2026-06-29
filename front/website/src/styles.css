@@ -54,9 +54,17 @@ html[lang="ar"] {
   box-shadow: 0 18px 45px rgba(8, 58, 79, 0.07);
 }
 .blog-article-content tbody {
+  display: block;
+  min-width: 680px;
+}
+.blog-article-content thead {
+  display: block;
+  min-width: 680px;
+}
+.blog-article-content tr {
   display: table;
   width: 100%;
-  min-width: 680px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 .blog-article-content th,
