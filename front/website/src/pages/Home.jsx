@@ -1043,19 +1043,26 @@ export default function Home() {
                   )}
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" aria-hidden="true" />
                   <div className="absolute inset-x-0 bottom-0 h-[32%] bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))]" aria-hidden="true" />
-                  <div className="absolute inset-x-0 bottom-0 flex h-[40%] flex-col justify-center overflow-hidden px-3 py-4 text-center sm:px-6 sm:py-6">
+                  <div className="absolute inset-x-0 bottom-0 flex h-[32%] flex-col justify-center overflow-hidden px-3 py-4 text-center sm:px-6 sm:py-6">
                     <h3 className="line-clamp-2 font-display text-base leading-6 text-white sm:text-xl sm:leading-8">{member.name}</h3>
                     {experience ? (
                       <p className="mt-1 line-clamp-1 text-[10px] font-semibold text-white/84 sm:text-xs">{experience}</p>
                     ) : null}
                     <p className="mt-1 line-clamp-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent/88 sm:text-[11px] sm:tracking-[0.2em]">{member.role}</p>
-                    <p className="mt-3 line-clamp-4 text-[11px] leading-5 text-white/72 sm:mt-4 sm:line-clamp-3 sm:text-sm sm:leading-7">{member.bio}</p>
+                  </div>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col justify-center bg-[linear-gradient(180deg,rgba(3,24,33,0.88),rgba(3,24,33,0.96))] px-4 py-6 text-center opacity-0 transition-opacity delay-[3000ms] duration-500 group-hover:opacity-100 group-hover:delay-0 group-focus-within:opacity-100 group-focus-within:delay-0 sm:px-7">
+                    <h3 className="font-display text-lg leading-7 text-white sm:text-2xl sm:leading-9">{member.name}</h3>
+                    {experience ? (
+                      <p className="mt-2 text-xs font-semibold text-white/86 sm:text-sm">{experience}</p>
+                    ) : null}
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent/90 sm:text-xs sm:tracking-[0.2em]">{member.role}</p>
+                    <p className="mx-auto mt-5 max-w-[16rem] text-xs leading-6 text-white/76 sm:text-sm sm:leading-7">{member.bio}</p>
                     {member.linkedin ? (
                       <a
                         href={member.linkedin}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 inline-flex items-center justify-center text-xs font-semibold text-white transition hover:text-accent sm:mt-4 sm:text-sm"
+                        className="pointer-events-auto mt-5 inline-flex items-center justify-center text-xs font-semibold text-white transition hover:text-accent sm:text-sm"
                       >
                         {teamContent.linkedinLabel} →
                       </a>

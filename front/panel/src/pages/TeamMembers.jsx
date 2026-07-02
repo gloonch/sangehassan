@@ -355,7 +355,7 @@ export default function TeamMembers() {
 
             <aside className="rounded-2xl bg-primary p-4 text-sand shadow-[0_24px_70px_rgba(8,58,79,0.28)]">
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-sand/65">{t("panelTeam.preview")}</p>
-              <div className="relative min-h-[28rem] overflow-hidden bg-white/[0.08]">
+              <div className="group relative min-h-[28rem] overflow-hidden bg-white/[0.08]">
                 {previewMember.photo ? (
                   <img src={previewMember.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
@@ -363,13 +363,20 @@ export default function TeamMembers() {
                 )}
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" />
                 <div className="absolute inset-x-0 bottom-0 h-[32%] bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))]" />
-                <div className="absolute inset-x-0 bottom-0 flex min-h-[40%] flex-col justify-end px-5 pb-6 pt-16 text-center">
+                <div className="absolute inset-x-0 bottom-0 flex h-[32%] flex-col justify-center px-5 py-5 text-center">
                   <h3 className="font-display text-xl leading-8 text-white">{previewMember.name}</h3>
                   {previewMember.experience ? (
                     <p className="mt-1 text-xs font-semibold text-white/84">{previewMember.experience}</p>
                   ) : null}
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent/88">{previewMember.role}</p>
-                  <p className="mt-4 text-sm leading-7 text-white/72">{previewMember.bio}</p>
+                </div>
+                <div className="pointer-events-none absolute inset-0 flex flex-col justify-center bg-[linear-gradient(180deg,rgba(3,24,33,0.88),rgba(3,24,33,0.96))] px-6 py-8 text-center opacity-0 transition-opacity delay-[3000ms] duration-500 group-hover:opacity-100 group-hover:delay-0 group-focus-within:opacity-100 group-focus-within:delay-0">
+                  <h3 className="font-display text-2xl leading-9 text-white">{previewMember.name}</h3>
+                  {previewMember.experience ? (
+                    <p className="mt-2 text-sm font-semibold text-white/86">{previewMember.experience}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent/90">{previewMember.role}</p>
+                  <p className="mx-auto mt-5 max-w-[17rem] text-sm leading-7 text-white/76">{previewMember.bio}</p>
                   {form.linkedin_url ? (
                     <span className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white">
                       <Linkedin className="h-4 w-4" />
