@@ -112,6 +112,23 @@ const isSlideDebugEnabled = () => {
 
 const getSlideAssetName = (src = "") => src.split("/").pop() || src;
 
+const numberLocales = {
+  en: "en-US",
+  fa: "fa-IR",
+  ar: "ar"
+};
+
+const formatLocalizedNumber = (value, lang) => {
+  return new Intl.NumberFormat(numberLocales[lang] || "en-US", { maximumFractionDigits: 0 }).format(value);
+};
+
+const formatTeamExperience = (years, lang, content) => {
+  const count = Number(years) || 0;
+  if (count <= 0) return "";
+  const label = count === 1 ? content.experienceYearSingular : content.experienceYearPlural;
+  return `+${formatLocalizedNumber(count, lang)} ${label || content.experienceYearsSuffix}`;
+};
+
 const logSlideDebug = (event, payload = {}) => {
   if (!isSlideDebugEnabled()) return;
   console.info("[home-slides]", event, {
@@ -367,6 +384,9 @@ const teamSectionContent = {
     intro:
       "برای ساخت یک شبکه قابل اعتماد در صنعت سنگ، فقط محصول کافی نیست. سنگ حسن با ترکیب تجربه بازار سنگ، فناوری، امور حقوقی و مشاوره طراحی تلاش می‌کند مسیر انتخاب و تأمین سنگ را شفاف‌تر و مطمئن‌تر کند.",
     linkedinLabel: "LinkedIn",
+    experienceYearsSuffix: "سال سابقه",
+    experienceYearSingular: "سال سابقه",
+    experienceYearPlural: "سال سابقه",
     cards: [
       {
         initials: "FS",
@@ -400,6 +420,9 @@ const teamSectionContent = {
     intro:
       "A reliable stone network needs more than products. SangeHassan combines stone-market experience, technology, legal coordination, and design consulting to make selection and supply clearer and more dependable.",
     linkedinLabel: "LinkedIn",
+    experienceYearsSuffix: "years of experience",
+    experienceYearSingular: "year of experience",
+    experienceYearPlural: "years of experience",
     cards: [
       {
         initials: "FS",
@@ -433,6 +456,9 @@ const teamSectionContent = {
     intro:
       "بناء شبكة موثوقة في صناعة الحجر يحتاج إلى أكثر من المنتجات. تجمع سانج حسن بين خبرة سوق الحجر والتكنولوجيا والتنسيق القانوني والاستشارات التصميمية لجعل الاختيار والتوريد أوضح وأكثر اطمئناناً.",
     linkedinLabel: "LinkedIn",
+    experienceYearsSuffix: "سنوات خبرة",
+    experienceYearSingular: "سنة خبرة",
+    experienceYearPlural: "سنوات خبرة",
     cards: [
       {
         initials: "FS",
@@ -738,6 +764,7 @@ export default function Home() {
         name: pickField(member, "name", lang),
         role: pickField(member, "role", lang),
         bio: pickField(member, "bio", lang),
+        experienceYears: member.experience_years || 0,
         photo: member.photo_url ? resolveImageUrl(member.photo_url) : "",
         linkedin: member.linkedin_url || ""
       })),
@@ -1001,34 +1028,42 @@ export default function Home() {
           </header>
 
           <div className="mt-14 grid grid-cols-2 items-stretch gap-3 sm:gap-5 lg:grid-cols-4">
-            {teamCards.map((member) => (
-              <article
-                key={member.id || member.name}
-                className="group relative h-[24rem] overflow-hidden rounded-lg bg-white/[0.08] shadow-[0_28px_80px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:h-[30rem]"
-              >
-                {member.photo ? (
-                  <img src={member.photo} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
-                ) : (
-                  <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(229,225,221,0.22),rgba(8,58,79,0.18)_36%,rgba(0,0,0,0.42))]" aria-hidden="true" />
-                )}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" aria-hidden="true" />
-                <div className="absolute inset-x-0 bottom-0 flex h-[40%] flex-col justify-center overflow-hidden bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))] px-3 py-4 text-center sm:px-6 sm:py-6">
-                  <h3 className="line-clamp-2 font-display text-base leading-6 text-white sm:text-xl sm:leading-8">{member.name}</h3>
-                  <p className="mt-1 line-clamp-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent/88 sm:text-[11px] sm:tracking-[0.2em]">{member.role}</p>
-                  <p className="mt-3 line-clamp-4 text-[11px] leading-5 text-white/72 sm:mt-4 sm:line-clamp-3 sm:text-sm sm:leading-7">{member.bio}</p>
-                  {member.linkedin ? (
-                    <a
-                      href={member.linkedin}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex items-center justify-center text-xs font-semibold text-white transition hover:text-accent sm:mt-4 sm:text-sm"
-                    >
-                      {teamContent.linkedinLabel} →
-                    </a>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+            {teamCards.map((member) => {
+              const experience = formatTeamExperience(member.experienceYears, lang, teamContent);
+
+              return (
+                <article
+                  key={member.id || member.name}
+                  className="group relative h-[24rem] overflow-hidden bg-white/[0.08] shadow-[0_28px_80px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:h-[30rem]"
+                >
+                  {member.photo ? (
+                    <img src={member.photo} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+                  ) : (
+                    <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(229,225,221,0.22),rgba(8,58,79,0.18)_36%,rgba(0,0,0,0.42))]" aria-hidden="true" />
+                  )}
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" aria-hidden="true" />
+                  <div className="absolute inset-x-0 bottom-0 h-[32%] bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))]" aria-hidden="true" />
+                  <div className="absolute inset-x-0 bottom-0 flex h-[40%] flex-col justify-center overflow-hidden px-3 py-4 text-center sm:px-6 sm:py-6">
+                    <h3 className="line-clamp-2 font-display text-base leading-6 text-white sm:text-xl sm:leading-8">{member.name}</h3>
+                    {experience ? (
+                      <p className="mt-1 line-clamp-1 text-[10px] font-semibold text-white/84 sm:text-xs">{experience}</p>
+                    ) : null}
+                    <p className="mt-1 line-clamp-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent/88 sm:text-[11px] sm:tracking-[0.2em]">{member.role}</p>
+                    <p className="mt-3 line-clamp-4 text-[11px] leading-5 text-white/72 sm:mt-4 sm:line-clamp-3 sm:text-sm sm:leading-7">{member.bio}</p>
+                    {member.linkedin ? (
+                      <a
+                        href={member.linkedin}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center justify-center text-xs font-semibold text-white transition hover:text-accent sm:mt-4 sm:text-sm"
+                      >
+                        {teamContent.linkedinLabel} →
+                      </a>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

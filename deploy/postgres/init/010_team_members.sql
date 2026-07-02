@@ -11,11 +11,15 @@ CREATE TABLE IF NOT EXISTS team_members (
   bio_ar TEXT,
   photo_url TEXT,
   linkedin_url TEXT,
+  experience_years INT NOT NULL DEFAULT 0,
   order_index INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ
 );
+
+ALTER TABLE team_members
+ADD COLUMN IF NOT EXISTS experience_years INT NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_team_members_public
   ON team_members (is_active, order_index, id);

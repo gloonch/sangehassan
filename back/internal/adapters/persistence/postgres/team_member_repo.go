@@ -22,6 +22,7 @@ func (r *TeamMemberRepository) List(ctx context.Context, activeOnly bool) ([]dom
 		       role_en, role_fa, role_ar,
 		       COALESCE(bio_en, ''), COALESCE(bio_fa, ''), COALESCE(bio_ar, ''),
 		       COALESCE(photo_url, ''), COALESCE(linkedin_url, ''),
+		       COALESCE(experience_years, 0),
 		       order_index, is_active,
 		       created_at, COALESCE(updated_at, created_at)
 		FROM team_members
@@ -49,6 +50,7 @@ func (r *TeamMemberRepository) List(ctx context.Context, activeOnly bool) ([]dom
 			&member.BioAR,
 			&member.PhotoURL,
 			&member.LinkedInURL,
+			&member.ExperienceYears,
 			&member.OrderIndex,
 			&member.IsActive,
 			&member.CreatedAt,
@@ -68,6 +70,7 @@ func (r *TeamMemberRepository) GetByID(ctx context.Context, id int64) (domain.Te
 		       role_en, role_fa, role_ar,
 		       COALESCE(bio_en, ''), COALESCE(bio_fa, ''), COALESCE(bio_ar, ''),
 		       COALESCE(photo_url, ''), COALESCE(linkedin_url, ''),
+		       COALESCE(experience_years, 0),
 		       order_index, is_active,
 		       created_at, COALESCE(updated_at, created_at)
 		FROM team_members
@@ -88,6 +91,7 @@ func (r *TeamMemberRepository) GetByID(ctx context.Context, id int64) (domain.Te
 		&member.BioAR,
 		&member.PhotoURL,
 		&member.LinkedInURL,
+		&member.ExperienceYears,
 		&member.OrderIndex,
 		&member.IsActive,
 		&member.CreatedAt,
@@ -105,9 +109,10 @@ func (r *TeamMemberRepository) Create(ctx context.Context, member domain.TeamMem
 			role_en, role_fa, role_ar,
 			bio_en, bio_fa, bio_ar,
 			photo_url, linkedin_url,
+			experience_years,
 			order_index, is_active
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
 	`,
 		member.NameEN,
@@ -121,6 +126,7 @@ func (r *TeamMemberRepository) Create(ctx context.Context, member domain.TeamMem
 		nullableString(member.BioAR),
 		nullableString(member.PhotoURL),
 		nullableString(member.LinkedInURL),
+		member.ExperienceYears,
 		member.OrderIndex,
 		member.IsActive,
 	)
@@ -144,10 +150,11 @@ func (r *TeamMemberRepository) Update(ctx context.Context, member domain.TeamMem
 		    bio_ar = $9,
 		    photo_url = $10,
 		    linkedin_url = $11,
-		    order_index = $12,
-		    is_active = $13,
+		    experience_years = $12,
+		    order_index = $13,
+		    is_active = $14,
 		    updated_at = NOW()
-		WHERE id = $14
+		WHERE id = $15
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		member.NameEN,
@@ -161,6 +168,7 @@ func (r *TeamMemberRepository) Update(ctx context.Context, member domain.TeamMem
 		nullableString(member.BioAR),
 		nullableString(member.PhotoURL),
 		nullableString(member.LinkedInURL),
+		member.ExperienceYears,
 		member.OrderIndex,
 		member.IsActive,
 		member.ID,

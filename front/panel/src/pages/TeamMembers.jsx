@@ -16,13 +16,33 @@ const emptyForm = {
   bio_ar: "",
   photo_url: "",
   linkedin_url: "",
+  experience_years: 0,
   order_index: 0,
   is_active: true
+};
+
+const numberLocales = {
+  en: "en-US",
+  fa: "fa-IR",
+  ar: "ar"
 };
 
 const pickLocalized = (item, field, lang) => {
   if (!item) return "";
   return item[`${field}_${lang}`] || item[`${field}_en`] || item[`${field}_fa`] || item[`${field}_ar`] || "";
+};
+
+const formatLocalizedNumber = (value, lang) => {
+  return new Intl.NumberFormat(numberLocales[lang] || "en-US", { maximumFractionDigits: 0 }).format(value);
+};
+
+const formatExperienceLabel = (years, lang, t) => {
+  const count = Number(years) || 0;
+  if (count <= 0) return "";
+  if (lang === "en") {
+    return `+${formatLocalizedNumber(count, lang)} ${count === 1 ? t("panelTeam.experienceYearSingular") : t("panelTeam.experienceYearPlural")}`;
+  }
+  return `+${formatLocalizedNumber(count, lang)} ${t("panelTeam.experienceYearsSuffix")}`;
 };
 
 export default function TeamMembers() {
@@ -57,6 +77,7 @@ export default function TeamMembers() {
       name: pickLocalized(form, "name", lang) || t("panelTeam.previewName"),
       role: pickLocalized(form, "role", lang) || t("panelTeam.previewRole"),
       bio: pickLocalized(form, "bio", lang) || t("panelTeam.previewBio"),
+      experience: formatExperienceLabel(form.experience_years, lang, t),
       photo: form.photo_url ? resolveImageUrl(form.photo_url) : ""
     }),
     [form, lang, t]
@@ -106,6 +127,7 @@ export default function TeamMembers() {
 
     const payload = {
       ...form,
+      experience_years: Math.max(0, Number(form.experience_years) || 0),
       order_index: Number(form.order_index) || 0
     };
 
@@ -149,6 +171,7 @@ export default function TeamMembers() {
         bio_ar: item.bio_ar || "",
         photo_url: item.photo_url || "",
         linkedin_url: item.linkedin_url || "",
+        experience_years: item.experience_years || 0,
         order_index: item.order_index || 0,
         is_active: Boolean(item.is_active)
       });
@@ -237,7 +260,7 @@ export default function TeamMembers() {
                 ))}
               </div>
 
-              <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.7fr)]">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.65fr)]">
                 <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
                   {t("panelTeam.photo")}
                   <input
@@ -261,6 +284,17 @@ export default function TeamMembers() {
                     value={form.linkedin_url}
                     onChange={(event) => setForm((prev) => ({ ...prev, linkedin_url: event.target.value }))}
                     placeholder="https://linkedin.com/in/..."
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
+                  {t("panelTeam.experienceYears")}
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
+                    value={form.experience_years}
+                    onChange={(event) => setForm((prev) => ({ ...prev, experience_years: event.target.value }))}
                   />
                 </label>
 
@@ -321,15 +355,19 @@ export default function TeamMembers() {
 
             <aside className="rounded-2xl bg-primary p-4 text-sand shadow-[0_24px_70px_rgba(8,58,79,0.28)]">
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-sand/65">{t("panelTeam.preview")}</p>
-              <div className="relative min-h-[28rem] overflow-hidden rounded-lg bg-white/[0.08]">
+              <div className="relative min-h-[28rem] overflow-hidden bg-white/[0.08]">
                 {previewMember.photo ? (
                   <img src={previewMember.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
                   <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(229,225,221,0.24),rgba(8,58,79,0.2)_36%,rgba(0,0,0,0.42))]" />
                 )}
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.72))]" />
-                <div className="absolute inset-x-0 bottom-0 flex min-h-[40%] flex-col justify-end bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))] px-5 pb-6 pt-16 text-center">
+                <div className="absolute inset-x-0 bottom-0 h-[32%] bg-[linear-gradient(180deg,rgba(3,24,33,0),rgba(3,24,33,0.72)_18%,rgba(3,24,33,0.95))]" />
+                <div className="absolute inset-x-0 bottom-0 flex min-h-[40%] flex-col justify-end px-5 pb-6 pt-16 text-center">
                   <h3 className="font-display text-xl leading-8 text-white">{previewMember.name}</h3>
+                  {previewMember.experience ? (
+                    <p className="mt-1 text-xs font-semibold text-white/84">{previewMember.experience}</p>
+                  ) : null}
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent/88">{previewMember.role}</p>
                   <p className="mt-4 text-sm leading-7 text-white/72">{previewMember.bio}</p>
                   {form.linkedin_url ? (
@@ -353,6 +391,7 @@ export default function TeamMembers() {
           {members.map((member) => {
             const name = pickLocalized(member, "name", lang);
             const role = pickLocalized(member, "role", lang);
+            const experience = formatExperienceLabel(member.experience_years, lang, t);
             return (
               <div key={member.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-white px-5 py-4">
                 <div className="flex min-w-0 items-center gap-4">
@@ -365,6 +404,7 @@ export default function TeamMembers() {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-primary">{name}</p>
+                    {experience ? <p className="truncate text-xs text-primary/65">{experience}</p> : null}
                     <p className="truncate text-xs text-primary/55">{role}</p>
                   </div>
                 </div>

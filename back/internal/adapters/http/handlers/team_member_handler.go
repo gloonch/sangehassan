@@ -21,19 +21,20 @@ func NewTeamMemberHandler(service *usecase.TeamMemberService) *TeamMemberHandler
 }
 
 type teamMemberPayload struct {
-	NameEN      string `json:"name_en"`
-	NameFA      string `json:"name_fa"`
-	NameAR      string `json:"name_ar"`
-	RoleEN      string `json:"role_en"`
-	RoleFA      string `json:"role_fa"`
-	RoleAR      string `json:"role_ar"`
-	BioEN       string `json:"bio_en"`
-	BioFA       string `json:"bio_fa"`
-	BioAR       string `json:"bio_ar"`
-	PhotoURL    string `json:"photo_url"`
-	LinkedInURL string `json:"linkedin_url"`
-	OrderIndex  int    `json:"order_index"`
-	IsActive    bool   `json:"is_active"`
+	NameEN          string `json:"name_en"`
+	NameFA          string `json:"name_fa"`
+	NameAR          string `json:"name_ar"`
+	RoleEN          string `json:"role_en"`
+	RoleFA          string `json:"role_fa"`
+	RoleAR          string `json:"role_ar"`
+	BioEN           string `json:"bio_en"`
+	BioFA           string `json:"bio_fa"`
+	BioAR           string `json:"bio_ar"`
+	PhotoURL        string `json:"photo_url"`
+	LinkedInURL     string `json:"linkedin_url"`
+	ExperienceYears int    `json:"experience_years"`
+	OrderIndex      int    `json:"order_index"`
+	IsActive        bool   `json:"is_active"`
 }
 
 func (h *TeamMemberHandler) ListPublic(c *gin.Context) {
@@ -85,19 +86,20 @@ func (h *TeamMemberHandler) Create(c *gin.Context) {
 	}
 
 	member, err := h.service.Create(c.Request.Context(), domain.TeamMember{
-		NameEN:      payload.NameEN,
-		NameFA:      payload.NameFA,
-		NameAR:      payload.NameAR,
-		RoleEN:      payload.RoleEN,
-		RoleFA:      payload.RoleFA,
-		RoleAR:      payload.RoleAR,
-		BioEN:       payload.BioEN,
-		BioFA:       payload.BioFA,
-		BioAR:       payload.BioAR,
-		PhotoURL:    normalizeImageRef(payload.PhotoURL),
-		LinkedInURL: payload.LinkedInURL,
-		OrderIndex:  payload.OrderIndex,
-		IsActive:    payload.IsActive,
+		NameEN:          payload.NameEN,
+		NameFA:          payload.NameFA,
+		NameAR:          payload.NameAR,
+		RoleEN:          payload.RoleEN,
+		RoleFA:          payload.RoleFA,
+		RoleAR:          payload.RoleAR,
+		BioEN:           payload.BioEN,
+		BioFA:           payload.BioFA,
+		BioAR:           payload.BioAR,
+		PhotoURL:        normalizeImageRef(payload.PhotoURL),
+		LinkedInURL:     payload.LinkedInURL,
+		ExperienceYears: payload.ExperienceYears,
+		OrderIndex:      payload.OrderIndex,
+		IsActive:        payload.IsActive,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to create team member")
@@ -124,20 +126,21 @@ func (h *TeamMemberHandler) Update(c *gin.Context) {
 	}
 
 	member, err := h.service.Update(c.Request.Context(), domain.TeamMember{
-		ID:          id,
-		NameEN:      payload.NameEN,
-		NameFA:      payload.NameFA,
-		NameAR:      payload.NameAR,
-		RoleEN:      payload.RoleEN,
-		RoleFA:      payload.RoleFA,
-		RoleAR:      payload.RoleAR,
-		BioEN:       payload.BioEN,
-		BioFA:       payload.BioFA,
-		BioAR:       payload.BioAR,
-		PhotoURL:    normalizeImageRef(payload.PhotoURL),
-		LinkedInURL: payload.LinkedInURL,
-		OrderIndex:  payload.OrderIndex,
-		IsActive:    payload.IsActive,
+		ID:              id,
+		NameEN:          payload.NameEN,
+		NameFA:          payload.NameFA,
+		NameAR:          payload.NameAR,
+		RoleEN:          payload.RoleEN,
+		RoleFA:          payload.RoleFA,
+		RoleAR:          payload.RoleAR,
+		BioEN:           payload.BioEN,
+		BioFA:           payload.BioFA,
+		BioAR:           payload.BioAR,
+		PhotoURL:        normalizeImageRef(payload.PhotoURL),
+		LinkedInURL:     payload.LinkedInURL,
+		ExperienceYears: payload.ExperienceYears,
+		OrderIndex:      payload.OrderIndex,
+		IsActive:        payload.IsActive,
 	})
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to update team member")

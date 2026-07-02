@@ -54,6 +54,9 @@ func normalizeTeamMember(member domain.TeamMember) domain.TeamMember {
 	member.BioAR = strings.TrimSpace(member.BioAR)
 	member.PhotoURL = strings.TrimSpace(member.PhotoURL)
 	member.LinkedInURL = strings.TrimSpace(member.LinkedInURL)
+	if member.ExperienceYears < 0 {
+		member.ExperienceYears = 0
+	}
 
 	if member.NameEN == "" {
 		if member.NameFA != "" {
