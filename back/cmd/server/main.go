@@ -38,6 +38,7 @@ func main() {
 	dashboardRepo := postgres.NewDashboardRepository(db)
 	listingRepo := postgres.NewListingRepository(db)
 	dealRequestRepo := postgres.NewDealRequestRepository(db)
+	stoneSampleRequestRepo := postgres.NewStoneSampleRequestRepository(db)
 
 	categoryService := usecase.NewCategoryService(categoryRepo)
 	productService := usecase.NewProductService(productRepo)
@@ -54,6 +55,7 @@ func main() {
 	dashboardService := usecase.NewDashboardService(dashboardRepo)
 	listingService := usecase.NewListingService(listingRepo)
 	dealRequestService := usecase.NewDealRequestService(dealRequestRepo, listingRepo)
+	stoneSampleRequestService := usecase.NewStoneSampleRequestService(stoneSampleRequestRepo, userRepo)
 
 	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir)
 	router := httpapi.NewRouter(
@@ -75,6 +77,7 @@ func main() {
 		uploadHandler,
 		listingService,
 		dealRequestService,
+		stoneSampleRequestService,
 	)
 
 	if err := router.Run(":" + cfg.Port); err != nil {

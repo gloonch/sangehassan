@@ -8,6 +8,7 @@
   "nav": {
     "home": "Home",
     "products": "Products",
+    "sampleRequest": "Samples",
     "blocks": "Blocks",
     "projects": "Projects",
     "blogs": "Blogs",
@@ -77,6 +78,94 @@
       "extraInvalidRow": "Each extra specification row must include both label and value.",
       "images": "Images",
       "imagesHint": "Upload one or more images (png, jpg, jpeg, webp)."
+    }
+  },
+  "sampleRequest": {
+    "eyebrow": "Stone sample request",
+    "title": "Request stone samples",
+    "subtitle": "Choose physical stone samples in complete boxes of four. Your request stays pending until an operator contacts you to confirm delivery.",
+    "infoButtonLabel": "How stone sample requests work",
+    "toman": "Toman",
+    "box": "Box",
+    "pickStone": "Pick Stone Sample",
+    "emptySlot": "Empty slot",
+    "replace": "Replace stone",
+    "remove": "Remove stone",
+    "maxReached": "You can request up to 4 sample boxes per order. For more samples, place another request.",
+    "builderKicker": "Sample box",
+    "builderTitle": "Build your sample boxes",
+    "deliveryKicker": "Delivery",
+    "deliveryTitle": "Contact and delivery information",
+    "summaryKicker": "Summary",
+    "summaryTitle": "Request summary",
+    "modalKicker": "Catalog",
+    "modalTitle": "Select a stone sample",
+    "categories": "Categories",
+    "chooseCategory": "Choose a category to view sample-ready stones.",
+    "emptyProducts": "No sample-ready stones found in this category.",
+    "alreadySelected": "Already selected",
+    "products": "products",
+    "searchPlaceholder": "Search stones",
+    "address": "Address",
+    "addressPlaceholder": "Enter the delivery address",
+    "addNewAddress": "Add new address",
+    "phone": "Phone number",
+    "phonePlaceholder": "Enter a phone number",
+    "addNewPhone": "Add new phone number",
+    "shippingMethod": "Shipping method",
+    "shippingPending": "To be confirmed by operator",
+    "submit": "Confirm sample request",
+    "validation": "Complete one or more full 4-stone boxes and fill delivery information before submitting.",
+    "successTitle": "Sample request submitted",
+    "successMessage": "Your request is pending. Please wait for our operator to contact you for confirmation.",
+    "viewInProfile": "View in profile",
+    "info": {
+      "samples": "Box size",
+      "samplesValue": "4 samples",
+      "limit": "Limit",
+      "limitValue": "4 boxes",
+      "price": "Price per box",
+      "status": "Status",
+      "statusValue": "Pending"
+    },
+    "infoPanel": {
+      "kicker": "Request guide",
+      "title": "How sample requests are confirmed",
+      "body": "Select complete boxes of four stone samples and submit your contact and delivery details. The request is not final until an operator reviews it, contacts you, confirms delivery details and updates the request status.",
+      "statusTitle": "Possible request statuses",
+      "statusDescriptions": {
+        "PENDING": "Submitted and waiting for operator review.",
+        "CONFIRMED": "Reviewed by the operator and approved for delivery coordination.",
+        "SHIPPED": "Packed and sent through the selected delivery method.",
+        "DELIVERED": "Delivered to the selected address.",
+        "REJECTED": "Rejected by the operator when the request cannot be fulfilled.",
+        "CANCELED": "Canceled before completion."
+      }
+    },
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "REJECTED": "Rejected",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELED": "Canceled"
+    },
+    "summary": {
+      "boxes": "Boxes",
+      "stones": "Stones",
+      "pricePerBox": "Price per box",
+      "shipping": "Shipping",
+      "total": "Total"
+    },
+    "shipping": {
+      "COURIER": "Courier",
+      "FREIGHT": "Freight",
+      "OPERATOR_COORDINATION": "Operator coordination"
+    },
+    "profile": {
+      "type": "Stone Sample Request",
+      "pendingNote": "Please wait for our operator to contact you for confirmation.",
+      "viewDetails": "View selected stones"
     }
   },
   "hero": {
@@ -518,6 +607,30 @@
     "authorContact": "Author contact",
     "createdAt": "Created at"
   },
+  "panelSampleRequests": {
+    "title": "Sample requests",
+    "empty": "No sample requests yet.",
+    "countLabel": "requests",
+    "detailKicker": "Sample request",
+    "detailTitle": "Request details",
+    "customer": "Customer",
+    "phone": "Phone",
+    "address": "Address",
+    "shipping": "Shipping",
+    "boxes": "Boxes",
+    "total": "Total",
+    "statusLabel": "Status",
+    "adminNote": "Admin note",
+    "updateStatus": "Update status",
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "REJECTED": "Rejected",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELED": "Canceled"
+    }
+  },
   "panelUsers": {
     "title": "Users",
     "empty": "No users found.",
@@ -574,6 +687,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "indexable": "Indexable",
+    "sampleAvailable": "Available for samples",
     "noindex": "Noindex",
     "introFa": "Persian introduction",
     "seoTitleFa": "Persian SEO title",
@@ -624,7 +738,9 @@
     "signup": "Sign up",
     "loginRegister": "Login | Register",
     "menu": "Menu",
-    "play": "Play"
+    "play": "Play",
+    "prev": "Previous",
+    "next": "Next"
   },
   "messages": {
     "loading": "Loading...",

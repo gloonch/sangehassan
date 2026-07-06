@@ -19,6 +19,7 @@ import RequireUserAuth from "./components/RequireUserAuth";
 import ProductHub from "./pages/ProductHub";
 import ProductCatalog from "./pages/ProductCatalog";
 import LocalizedProductRoute from "./pages/LocalizedProductRoute";
+import StoneSampleRequest from "./pages/StoneSampleRequest";
 import NotFound from "./pages/NotFound";
 
 export default function AppRoutes() {
@@ -43,6 +44,7 @@ export default function AppRoutes() {
       <Route path="/ads/:id" element={<AdDetail />} />
       <Route element={<RequireUserAuth />}>
         <Route path="/ads/new" element={<NewAd />} />
+        <Route path="/stone-sample-request" element={<StoneSampleRequest />} />
       </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/fa/blogs" element={<Blogs />} />

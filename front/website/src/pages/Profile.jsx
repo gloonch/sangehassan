@@ -22,6 +22,7 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [myAds, setMyAds] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [sampleRequests, setSampleRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("ads");
@@ -81,13 +82,15 @@ export default function Profile() {
     let active = true;
     const load = async () => {
       try {
-        const [meRes, reqRes, adsRes] = await Promise.all([
+        const [meRes, reqRes, sampleReqRes, adsRes] = await Promise.all([
           fetchJSON("/api/v1/me"),
           fetchJSON("/api/v1/me/requests"),
+          fetchJSON("/api/v1/sample-requests"),
           fetchJSON("/api/v1/me/listings")
         ]);
         const me = meRes?.data || meRes;
         const reqs = reqRes?.data || reqRes;
+        const sampleReqs = sampleReqRes?.data || sampleReqRes;
         const ads = adsRes?.data || adsRes;
         if (!active) return;
         setUser(me);
@@ -95,6 +98,7 @@ export default function Profile() {
         setEmail(isPhoneAliasEmail(me?.email) ? "" : me?.email || "");
         setPhone(me?.phone || "");
         setRequests(Array.isArray(reqs) ? reqs : []);
+        setSampleRequests(Array.isArray(sampleReqs) ? sampleReqs : []);
         setMyAds(Array.isArray(ads) ? ads : []);
       } catch (err) {
         if (err?.status === 401) {
@@ -305,10 +309,66 @@ export default function Profile() {
                       {t("profile.requestsTitle")}
                     </p>
                   </div>
-                  {requests.length === 0 ? (
+                  {requests.length === 0 && sampleRequests.length === 0 ? (
                     <p className="text-sm text-primary/70">{t("profile.requestsEmpty")}</p>
                   ) : (
                     <div className="space-y-3">
+                      {sampleRequests.map((item) => (
+                        <article key={`sample-${item.id}`} className="rounded-xl border border-primary/10 bg-white/70 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs uppercase tracking-[0.2em] text-primary/60">
+                              {t("sampleRequest.profile.type")} #{formatValue(item.id)}
+                            </p>
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary/80">
+                              {formatValue(item.status)}
+                            </span>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                            <MetaRow label={t("sampleRequest.summary.boxes")} value={formatValue(item.box_count)} />
+                            <MetaRow label={t("sampleRequest.summary.stones")} value={formatValue(item.stone_count)} />
+                            <MetaRow label={t("sampleRequest.summary.total")} value={`${formatLocalizedPrice(item.total_price_toman, lang)} ${t("sampleRequest.toman")}`} />
+                            <MetaRow label={t("profile.meta.meetingAt")} value={formatDate(item.created_at)} />
+                          </div>
+                          {item.status === "PENDING" ? (
+                            <p className="mt-3 rounded-lg border border-primary/10 bg-primary/5 p-2 text-xs text-primary/80">
+                              {t("sampleRequest.profile.pendingNote")}
+                            </p>
+                          ) : null}
+                          <details className="mt-3">
+                            <summary className="cursor-pointer text-xs font-semibold text-primary/70">
+                              {t("sampleRequest.profile.viewDetails")}
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              {groupSampleItems(item.items).map(([boxIndex, stones]) => (
+                                <div key={boxIndex} className="rounded-xl border border-primary/10 bg-white/75 p-3">
+                                  <p className="text-xs font-semibold text-primary/65">{t("sampleRequest.box")} {boxIndex}</p>
+                                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {stones.map((stone) => (
+                                      <div key={stone.id} className="overflow-hidden rounded-xl border border-primary/10 bg-primary/5">
+                                        {stone.product_image_url ? (
+                                          <img
+                                            src={resolveImageUrl(stone.product_image_url)}
+                                            alt={getSampleItemTitle(stone, lang)}
+                                            className="h-20 w-full object-cover"
+                                            loading="lazy"
+                                          />
+                                        ) : (
+                                          <div className="flex h-20 items-center justify-center text-[11px] text-primary/50">
+                                            {t("productDetail.noImages")}
+                                          </div>
+                                        )}
+                                        <p className="truncate px-2 py-1.5 text-[11px] font-semibold text-primary/80">
+                                          {getSampleItemTitle(stone, lang)}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        </article>
+                      ))}
                       {requests.map((item) => (
                         <article key={item.id || JSON.stringify(item)} className="rounded-xl border border-primary/10 p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -412,6 +472,31 @@ function MetaRow({ label, value }) {
       <p className="text-xs font-semibold text-primary/90 break-words">{value}</p>
     </div>
   );
+}
+
+function formatLocalizedPrice(value, lang) {
+  const locale = lang === "fa" ? "fa-IR" : lang === "ar" ? "ar-SA" : "en-US";
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Number(value) || 0);
+}
+
+function groupSampleItems(items = []) {
+  const grouped = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const boxIndex = item.box_index || 1;
+    if (!grouped.has(boxIndex)) grouped.set(boxIndex, []);
+    grouped.get(boxIndex).push(item);
+  }
+  return [...grouped.entries()].map(([boxIndex, stones]) => [
+    boxIndex,
+    stones.sort((a, b) => (a.slot_index || 0) - (b.slot_index || 0))
+  ]);
+}
+
+function getSampleItemTitle(item, lang) {
+  if (!item) return "";
+  if (lang === "fa") return item.product_title_fa || item.product_title_en || item.product_title_ar || "";
+  if (lang === "ar") return item.product_title_ar || item.product_title_en || item.product_title_fa || "";
+  return item.product_title_en || item.product_title_fa || item.product_title_ar || "";
 }
 
 function isPhoneAliasEmail(email) {

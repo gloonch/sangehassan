@@ -31,6 +31,7 @@ type Product struct {
 	IsPopular              bool                `json:"is_popular"`
 	IsActive               bool                `json:"is_active"`
 	IsIndexable            bool                `json:"is_indexable"`
+	SampleAvailable        bool                `json:"sample_available"`
 	TermIDs                []int64             `json:"term_ids,omitempty"`
 	CreatedAt              time.Time           `json:"created_at"`
 	UpdatedAt              time.Time           `json:"updated_at,omitempty"`

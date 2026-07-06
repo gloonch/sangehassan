@@ -13,6 +13,7 @@ import Templates from "./pages/Templates";
 import ContentSections from "./pages/ContentSections";
 import TeamMembers from "./pages/TeamMembers";
 import Ads from "./pages/Ads";
+import SampleRequests from "./pages/SampleRequests";
 import Users from "./pages/Users";
 import PanelLayout from "./components/PanelLayout";
 import { useTranslation } from "./lib/i18n";
@@ -58,6 +59,7 @@ export default function AppRoutes() {
         <Route path="content" element={<ContentSections />} />
         <Route path="team" element={<TeamMembers />} />
         <Route path="ads" element={<Ads />} />
+        <Route path="sample-requests" element={<SampleRequests />} />
         <Route path="users" element={<Users />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

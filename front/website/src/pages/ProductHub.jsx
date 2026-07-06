@@ -126,6 +126,12 @@ export default function ProductHub() {
       <header className="mx-auto max-w-3xl text-center">
         <h1 className="font-display text-3xl leading-tight md:text-5xl">{seo.h1}</h1>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-8 text-primary/70 md:text-base">{seo.intro}</p>
+        <Link
+          to="/stone-sample-request"
+          className="mt-6 inline-flex rounded-full bg-primary px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-sand transition hover:bg-primary/90"
+        >
+          {copy.sampleRequestCta || "Request stone samples"}
+        </Link>
       </header>
 
       {loading ? (

@@ -32,6 +32,7 @@ func NewRouter(
 	uploadHandler *handlers.UploadHandler,
 	listingService *usecase.ListingService,
 	dealRequestService *usecase.DealRequestService,
+	stoneSampleRequestService *usecase.StoneSampleRequestService,
 ) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
@@ -74,6 +75,7 @@ func NewRouter(
 	authMiddleware := middleware.NewAuthMiddleware(adminAuthService)
 	userMiddleware := middleware.NewUserAuthMiddleware(userAuthService)
 	listingHandler := handlers.NewListingHandler(listingService, dealRequestService, userRepo)
+	stoneSampleRequestHandler := handlers.NewStoneSampleRequestHandler(stoneSampleRequestService)
 
 	api := router.Group("/api")
 	{
@@ -85,6 +87,8 @@ func NewRouter(
 		api.GET("/catalog/categories/:categorySlug", catalogHandler.Page)
 		api.GET("/catalog/categories/:categorySlug/:facet/:value", catalogHandler.Page)
 		api.GET("/catalog/routes", catalogHandler.Routes)
+		api.GET("/sample-categories", stoneSampleRequestHandler.SampleCategories)
+		api.GET("/sample-products", stoneSampleRequestHandler.SampleProducts)
 		api.GET("/ads", listingHandler.List)
 		api.GET("/ads/:id", listingHandler.Get)
 
@@ -122,6 +126,10 @@ func NewRouter(
 			v1.PUT("/me", userMiddleware.RequireUser, userAuthHandler.UpdateMe)
 			v1.GET("/me/requests", userMiddleware.RequireUser, userAuthHandler.Requests)
 			v1.GET("/me/listings", userMiddleware.RequireUser, listingHandler.MyListings)
+			v1.GET("/sample-request-options", userMiddleware.RequireUser, stoneSampleRequestHandler.Options)
+			v1.POST("/sample-requests", userMiddleware.RequireUser, stoneSampleRequestHandler.Create)
+			v1.GET("/sample-requests", userMiddleware.RequireUser, stoneSampleRequestHandler.ListMine)
+			v1.GET("/sample-requests/:id", userMiddleware.RequireUser, stoneSampleRequestHandler.GetMine)
 		}
 
 		admin := api.Group("/admin")
@@ -196,6 +204,9 @@ func NewRouter(
 			admin.GET("/requests", listingHandler.AdminListRequests)
 			admin.GET("/requests/:id", listingHandler.AdminGetRequest)
 			admin.PUT("/requests/:id/status", listingHandler.AdminUpdateRequestStatus)
+			admin.GET("/sample-requests", stoneSampleRequestHandler.AdminList)
+			admin.GET("/sample-requests/:id", stoneSampleRequestHandler.AdminGet)
+			admin.PUT("/sample-requests/:id/status", stoneSampleRequestHandler.AdminUpdateStatus)
 			admin.GET("/ads", listingHandler.AdminListListings)
 			admin.DELETE("/ads/:id", listingHandler.AdminDeleteListing)
 			admin.GET("/users", listingHandler.AdminListUsers)

@@ -33,7 +33,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -113,6 +113,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 			&product.IsPopular,
 			&product.IsActive,
 			&product.IsIndexable,
+			&product.SampleAvailable,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -185,7 +186,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -252,6 +253,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&product.IsPopular,
 			&product.IsActive,
 			&product.IsIndexable,
+			&product.SampleAvailable,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -324,7 +326,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -385,6 +387,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&product.IsPopular,
 		&product.IsActive,
 		&product.IsIndexable,
+		&product.SampleAvailable,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -453,7 +456,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -514,6 +517,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&product.IsPopular,
 		&product.IsActive,
 		&product.IsIndexable,
+		&product.SampleAvailable,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -584,9 +588,9 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  description_html, short_description_html,
 		  description_html_en, description_html_fa, description_html_ar,
 		  short_description_html_en, short_description_html_fa, short_description_html_ar,
-		  price, price_html, image_url, video_url, main_category_id, is_popular, is_active, is_indexable
+		  price, price_html, image_url, video_url, main_category_id, is_popular, is_active, is_indexable, sample_available
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
 		ON CONFLICT (slug) DO UPDATE SET
 		  title_en = EXCLUDED.title_en,
 		  title_fa = EXCLUDED.title_fa,
@@ -611,6 +615,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  is_popular = EXCLUDED.is_popular,
 		  is_active = EXCLUDED.is_active,
 		  is_indexable = EXCLUDED.is_indexable,
+		  sample_available = EXCLUDED.sample_available,
 		  updated_at = NOW()
 		RETURNING id, created_at, COALESCE(updated_at, created_at)
 	`,
@@ -638,6 +643,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		product.IsPopular,
 		product.IsActive,
 		product.IsIndexable,
+		product.SampleAvailable,
 	)
 
 	if err := row.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt); err != nil {
@@ -675,8 +681,9 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		    is_popular = $22,
 		    is_active = $23,
 		    is_indexable = $24,
+		    sample_available = $25,
 		    updated_at = NOW()
-		WHERE id = $25
+		WHERE id = $26
 		RETURNING created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
@@ -703,6 +710,7 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 		product.IsPopular,
 		product.IsActive,
 		product.IsIndexable,
+		product.SampleAvailable,
 		product.ID,
 	)
 

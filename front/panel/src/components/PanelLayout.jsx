@@ -16,6 +16,7 @@ const navItems = [
   { key: "content", path: "/dashboard/content", label: "panelContent.title" },
   { key: "team", path: "/dashboard/team", label: "panelTeam.title" },
   { key: "ads", path: "/dashboard/ads", label: "panelAds.title" },
+  { key: "sampleRequests", path: "/dashboard/sample-requests", label: "panelSampleRequests.title" },
   { key: "users", path: "/dashboard/users", label: "panelUsers.title" }
 ];
 

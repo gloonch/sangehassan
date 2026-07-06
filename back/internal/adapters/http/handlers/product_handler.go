@@ -45,6 +45,7 @@ type productPayload struct {
 	IsPopular              bool     `json:"is_popular"`
 	IsActive               *bool    `json:"is_active"`
 	IsIndexable            *bool    `json:"is_indexable"`
+	SampleAvailable        *bool    `json:"sample_available"`
 	TermIDs                []int64  `json:"term_ids"`
 }
 
@@ -139,7 +140,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
-	isActive, isIndexable := productVisibility(payload.IsActive, payload.IsIndexable)
+	isActive, isIndexable, sampleAvailable := productVisibility(payload.IsActive, payload.IsIndexable, payload.SampleAvailable)
 	product, err := h.service.Create(c.Request.Context(), domain.Product{
 		TitleEN:                payload.TitleEN,
 		TitleFA:                payload.TitleFA,
@@ -167,6 +168,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		IsPopular:              payload.IsPopular,
 		IsActive:               isActive,
 		IsIndexable:            isIndexable,
+		SampleAvailable:        sampleAvailable,
 		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
@@ -208,7 +210,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	}
 
 	mainCategoryID := buildCategoryID(payload.CategoryID)
-	isActive, isIndexable := productVisibility(payload.IsActive, payload.IsIndexable)
+	isActive, isIndexable, sampleAvailable := productVisibility(payload.IsActive, payload.IsIndexable, payload.SampleAvailable)
 	product, err := h.service.Update(c.Request.Context(), domain.Product{
 		ID:                     id,
 		TitleEN:                payload.TitleEN,
@@ -237,6 +239,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		IsPopular:              payload.IsPopular,
 		IsActive:               isActive,
 		IsIndexable:            isIndexable,
+		SampleAvailable:        sampleAvailable,
 		TermIDs:                payload.TermIDs,
 	})
 	if err != nil {
@@ -269,14 +272,18 @@ func buildCategoryID(value int64) *int64 {
 	return &value
 }
 
-func productVisibility(active, indexable *bool) (bool, bool) {
+func productVisibility(active, indexable, sampleAvailableValue *bool) (bool, bool, bool) {
 	isActive := true
 	isIndexable := true
+	sampleAvailable := true
 	if active != nil {
 		isActive = *active
 	}
 	if indexable != nil {
 		isIndexable = *indexable
 	}
-	return isActive, isIndexable
+	if sampleAvailableValue != nil {
+		sampleAvailable = *sampleAvailableValue
+	}
+	return isActive, isIndexable, sampleAvailable
 }

@@ -194,6 +194,14 @@ const staticRoutes = [
     priority: 0.65
   },
   {
+    path: "/stone-sample-request",
+    title: "Stone Sample Request | SangeHassan",
+    description: "Request natural stone samples for material review before a project order.",
+    schemaType: "WebPage",
+    robots: "noindex,nofollow",
+    sitemap: false
+  },
+  {
     path: "/404",
     title: "Page not found | SangeHassan",
     description:

@@ -21,6 +21,7 @@ const emptyForm = {
   is_popular: false,
   is_active: true,
   is_indexable: true,
+  sample_available: true,
   aliases: [],
   variants: [],
   mines: [],
@@ -272,6 +273,7 @@ export default function Products() {
       is_popular: Boolean(form.is_popular),
       is_active: form.is_active !== false,
       is_indexable: form.is_indexable !== false,
+      sample_available: form.sample_available !== false,
       image_url: images[0] || form.image_url || "",
       image_urls: images,
       video_url: form.video_url || ""
@@ -327,6 +329,7 @@ export default function Products() {
         is_popular: Boolean(item.is_popular),
         is_active: item.is_active !== false,
         is_indexable: item.is_indexable !== false,
+        sample_available: item.sample_available !== false,
         aliases: item.aliases || [],
         variants: getValuesFromTerms(item, "variants"),
         mines: getValuesFromTerms(item, "mines"),
@@ -693,6 +696,10 @@ export default function Products() {
               <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
                 <input type="checkbox" checked={form.is_indexable} onChange={(event) => setForm({ ...form, is_indexable: event.target.checked })} className="h-4 w-4 rounded border-primary/20" />
                 {t("form.indexable")}
+              </label>
+              <label className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-primary/70">
+                <input type="checkbox" checked={form.sample_available} onChange={(event) => setForm({ ...form, sample_available: event.target.checked })} className="h-4 w-4 rounded border-primary/20" />
+                {t("form.sampleAvailable")}
               </label>
             </div>
 

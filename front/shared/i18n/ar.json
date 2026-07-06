@@ -8,6 +8,7 @@
   "nav": {
     "home": "الرئيسية",
     "products": "المنتجات",
+    "sampleRequest": "عينات الحجر",
     "blocks": "كتل الحجر",
     "projects": "المشاريع",
     "blogs": "المقالات",
@@ -215,6 +216,94 @@
       "extraInvalidRow": "يجب أن يحتوي كل صف من المواصفات الإضافية على عنوان وقيمة.",
       "images": "الصور",
       "imagesHint": "ارفع صورة واحدة أو أكثر (png, jpg, jpeg, webp)."
+    }
+  },
+  "sampleRequest": {
+    "eyebrow": "طلب عينات حجر",
+    "title": "طلب عينات حجر",
+    "subtitle": "اختر عينات حجر فعلية ضمن صناديق مكتملة من أربع عينات. يبقى الطلب في حالة pending حتى يتواصل معك المشغل لتأكيد التسليم.",
+    "infoButtonLabel": "كيف تعمل طلبات عينات الحجر",
+    "toman": "تومان",
+    "box": "صندوق",
+    "pickStone": "اختر عينة حجر",
+    "emptySlot": "خانة فارغة",
+    "replace": "استبدال الحجر",
+    "remove": "حذف الحجر",
+    "maxReached": "يمكنك طلب حتى 4 صناديق عينات في الطلب الواحد. للعينات الإضافية، أنشئ طلباً آخر.",
+    "builderKicker": "صندوق العينات",
+    "builderTitle": "أنشئ صناديق العينات",
+    "deliveryKicker": "التسليم",
+    "deliveryTitle": "معلومات الاتصال والتسليم",
+    "summaryKicker": "الملخص",
+    "summaryTitle": "ملخص الطلب",
+    "modalKicker": "الكتالوج",
+    "modalTitle": "اختر عينة حجر",
+    "categories": "الفئات",
+    "chooseCategory": "اختر فئة لعرض الأحجار المتاحة كعينات.",
+    "emptyProducts": "لا توجد أحجار متاحة كعينات في هذه الفئة.",
+    "alreadySelected": "تم اختياره سابقاً",
+    "products": "منتج",
+    "searchPlaceholder": "ابحث عن حجر",
+    "address": "العنوان",
+    "addressPlaceholder": "أدخل عنوان التسليم",
+    "addNewAddress": "إضافة عنوان جديد",
+    "phone": "رقم الهاتف",
+    "phonePlaceholder": "أدخل رقم الهاتف",
+    "addNewPhone": "إضافة رقم جديد",
+    "shippingMethod": "طريقة التسليم",
+    "shippingPending": "يتم التأكيد من قبل المشغل",
+    "submit": "تأكيد طلب العينات",
+    "validation": "أكمل صندوقاً واحداً على الأقل من 4 أحجار واملأ معلومات التسليم قبل الإرسال.",
+    "successTitle": "تم إرسال طلب العينات",
+    "successMessage": "طلبك في حالة pending. يرجى انتظار تواصل المشغل معك للتأكيد.",
+    "viewInProfile": "عرض في الملف الشخصي",
+    "info": {
+      "samples": "حجم الصندوق",
+      "samplesValue": "4 عينات",
+      "limit": "الحد",
+      "limitValue": "4 صناديق",
+      "price": "سعر الصندوق",
+      "status": "الحالة",
+      "statusValue": "Pending"
+    },
+    "infoPanel": {
+      "kicker": "دليل الطلب",
+      "title": "كيف يتم تأكيد طلب العينات",
+      "body": "اختر صناديق مكتملة من أربع عينات حجر، ثم أرسل معلومات الاتصال والتسليم. لا يصبح الطلب نهائياً حتى يراجعه المشغل، ويتواصل معك، ويؤكد تفاصيل التسليم، ثم يحدّث حالة الطلب.",
+      "statusTitle": "حالات الطلب الممكنة",
+      "statusDescriptions": {
+        "PENDING": "تم الإرسال وينتظر مراجعة المشغل.",
+        "CONFIRMED": "تمت مراجعته والموافقة عليه لتنسيق التسليم.",
+        "SHIPPED": "تم تجهيزه وإرساله عبر طريقة التسليم المختارة.",
+        "DELIVERED": "تم تسليمه إلى العنوان المختار.",
+        "REJECTED": "يرفضه المشغل عندما يتعذر تنفيذ الطلب.",
+        "CANCELED": "تم إلغاؤه قبل اكتمال العملية."
+      }
+    },
+    "status": {
+      "PENDING": "قيد الانتظار",
+      "CONFIRMED": "مؤكد",
+      "REJECTED": "مرفوض",
+      "SHIPPED": "تم الشحن",
+      "DELIVERED": "تم التسليم",
+      "CANCELED": "ملغى"
+    },
+    "summary": {
+      "boxes": "الصناديق",
+      "stones": "الأحجار",
+      "pricePerBox": "سعر الصندوق",
+      "shipping": "التسليم",
+      "total": "الإجمالي"
+    },
+    "shipping": {
+      "COURIER": "مندوب",
+      "FREIGHT": "شحن",
+      "OPERATOR_COORDINATION": "تنسيق مع المشغل"
+    },
+    "profile": {
+      "type": "طلب عينات حجر",
+      "pendingNote": "يرجى انتظار تواصل المشغل معك لتأكيد الطلب.",
+      "viewDetails": "عرض الأحجار المختارة"
     }
   },
   "auth": {
@@ -518,6 +607,30 @@
     "authorContact": "بيانات تواصل الكاتب",
     "createdAt": "تاريخ الإنشاء"
   },
+  "panelSampleRequests": {
+    "title": "طلبات العينات",
+    "empty": "لا توجد طلبات عينات حالياً.",
+    "countLabel": "طلب",
+    "detailKicker": "طلب عينة",
+    "detailTitle": "تفاصيل الطلب",
+    "customer": "العميل",
+    "phone": "الهاتف",
+    "address": "العنوان",
+    "shipping": "التسليم",
+    "boxes": "الصناديق",
+    "total": "الإجمالي",
+    "statusLabel": "الحالة",
+    "adminNote": "ملاحظة المشرف",
+    "updateStatus": "تحديث الحالة",
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "تم التأكيد",
+      "REJECTED": "مرفوض",
+      "SHIPPED": "تم الشحن",
+      "DELIVERED": "تم التسليم",
+      "CANCELED": "ملغى"
+    }
+  },
   "panelUsers": {
     "title": "المستخدمون",
     "empty": "لا يوجد مستخدمون.",
@@ -574,6 +687,7 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "indexable": "قابل للفهرسة",
+    "sampleAvailable": "متاح كعينة",
     "noindex": "غير قابل للفهرسة",
     "introFa": "المقدمة الفارسية",
     "seoTitleFa": "عنوان SEO الفارسي",
@@ -624,7 +738,9 @@
     "signup": "إنشاء حساب",
     "loginRegister": "تسجيل الدخول | إنشاء حساب",
     "menu": "القائمة",
-    "play": "تشغيل"
+    "play": "تشغيل",
+    "prev": "السابق",
+    "next": "التالي"
   },
   "messages": {
     "loading": "جاري التحميل...",
