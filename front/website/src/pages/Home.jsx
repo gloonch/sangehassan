@@ -10,6 +10,9 @@ import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_o
 import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.webp";
 import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.webp";
 import trustQualityIllustration from "@shared/assets/landing_icons/trust_quality_icon_transparent.webp";
+import tradeboardBrowseListingsIllustration from "@shared/assets/tradeboard/tradeboard-browse-listings.webp";
+import tradeboardPostListingIllustration from "@shared/assets/tradeboard/tradeboard-post-listing.webp";
+import tradeboardSecureReviewIllustration from "@shared/assets/tradeboard/tradeboard-secure-review.webp";
 import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
 import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
 import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
@@ -372,6 +375,129 @@ const whySangehassanContent = {
           "نحن ننافس في الجودة والخدمة والثقة؛ لا في كسر الأسعار.",
           "تعمل سانج حسن على تحويل شراء الحجر من قرار متشتت ومحفوف بالمخاطر إلى عملية أكثر وضوحاً وقابلية للمراجعة واطمئناناً."
         ]
+      }
+    ]
+  }
+};
+
+const tradeboardIllustrations = {
+  browse: {
+    src: tradeboardBrowseListingsIllustration,
+    width: 768,
+    height: 768
+  },
+  post: {
+    src: tradeboardPostListingIllustration,
+    width: 768,
+    height: 768
+  },
+  review: {
+    src: tradeboardSecureReviewIllustration,
+    width: 768,
+    height: 768
+  }
+};
+
+const tradeboardContent = {
+  fa: {
+    eyebrow: "Trade Board",
+    title: "اتاق معاملاتی سنگ برای اتصال مطمئن خریدار و تأمین‌کننده",
+    intro:
+      "در Trade Board سنگ حسن، آگهی‌های فروش سنگ را می‌بینید یا آگهی خودتان را ثبت می‌کنید. ثبت‌کنندگان آگهی برای سنگ حسن شناخته‌شده‌اند و مدارک لازم از آن‌ها دریافت می‌شود تا مسیر بررسی و ارتباط شفاف‌تر باشد.",
+    support:
+      "برای خریداران خارج از ایران، این بخش راهی ساده‌تر برای دسترسی به سنگ‌ها و تأمین‌کننده‌های ایرانی معتبر است؛ بدون شروع از تماس‌های پراکنده و منابع نامطمئن.",
+    cta: "مشاهده آگهی‌ها",
+    trustLine:
+      "در صورت نیاز و درخواست طرفین، هماهنگی جلسه حضوری و پیگیری توافق نیز از طریق سنگ حسن انجام می‌شود.",
+    cards: [
+      {
+        key: "browse",
+        title: "مشاهده آگهی‌ها",
+        imageAlt: "مشاهده آگهی‌های فروش سنگ",
+        summary:
+          "آگهی‌های فروش سنگ را بر اساس نوع سنگ، فرم، تناژ، موقعیت، تصاویر و توضیحات اولیه بررسی کنید و گزینه مناسب پروژه را دنبال کنید."
+      },
+      {
+        key: "post",
+        title: "ثبت آگهی فروش",
+        imageAlt: "ثبت آگهی فروش سنگ",
+        summary:
+          "تأمین‌کننده‌ها می‌توانند پیشنهاد فروش خود را با تصویر و مشخصات ثبت کنند تا خریداران داخل و خارج از ایران آن را ببینند."
+      },
+      {
+        key: "review",
+        title: "درخواست کارشناسی یا خرید",
+        imageAlt: "درخواست کارشناسی و خرید مطمئن سنگ",
+        summary:
+          "برای هر آگهی امکان ارسال درخواست کارشناسی، خرید یا هر دو وجود دارد؛ تیم سنگ حسن درخواست را بررسی و ارتباط مطمئن را در صورت نیاز هماهنگ می‌کند."
+      }
+    ]
+  },
+  en: {
+    eyebrow: "Trade Board",
+    title: "A stone trading room for safer buyer-supplier connections",
+    intro:
+      "In SangeHassan Trade Board, buyers can browse stone sale listings and suppliers can post their own offers. Listing owners are known to SangeHassan and required documents are collected, making the review and connection path clearer.",
+    support:
+      "For buyers outside Iran, this creates a simpler path to Iranian stones and validated Iranian suppliers without starting from scattered calls and uncertain sources.",
+    cta: "View listings",
+    trustLine:
+      "When both sides request it, SangeHassan can also coordinate an in-person meeting and follow-up on the agreement.",
+    cards: [
+      {
+        key: "browse",
+        title: "Browse listings",
+        imageAlt: "Browse stone sale listings",
+        summary:
+          "Review stone sale offers by stone type, form, tonnage, location, images, and initial notes, then follow the option that fits your project."
+      },
+      {
+        key: "post",
+        title: "Post a sale offer",
+        imageAlt: "Post a stone sale offer",
+        summary:
+          "Suppliers can publish sale offers with images and specifications so buyers inside and outside Iran can discover them."
+      },
+      {
+        key: "review",
+        title: "Request inspection or purchase",
+        imageAlt: "Request stone inspection or purchase support",
+        summary:
+          "Each listing supports an inspection request, a purchase request, or both; SangeHassan reviews the request and coordinates a safer connection when needed."
+      }
+    ]
+  },
+  ar: {
+    eyebrow: "Trade Board",
+    title: "غرفة تداول الحجر لاتصال أكثر أماناً بين المشتري والمورّد",
+    intro:
+      "في Trade Board من سانج حسن، يمكن للمستخدمين مشاهدة عروض بيع الحجر أو نشر عروضهم. أصحاب العروض معروفون لدى سانج حسن ويتم استلام المستندات اللازمة منهم، ليصبح مسار المراجعة والتواصل أوضح.",
+    support:
+      "للمشترين خارج إيران، يفتح هذا القسم طريقاً أبسط للوصول إلى الأحجار الإيرانية والمورّدين الإيرانيين المعتمدين، من دون البدء باتصالات متفرقة ومصادر غير واضحة.",
+    cta: "عرض العروض",
+    trustLine:
+      "عند الحاجة وبطلب الطرفين، يمكن لسانج حسن أيضاً تنسيق اجتماع حضوري ومتابعة الاتفاق.",
+    cards: [
+      {
+        key: "browse",
+        title: "مشاهدة العروض",
+        imageAlt: "مشاهدة عروض بيع الحجر",
+        summary:
+          "راجع عروض بيع الحجر حسب نوع الحجر والشكل والحمولة والموقع والصور والملاحظات الأولية، ثم تابع الخيار الأنسب لمشروعك."
+      },
+      {
+        key: "post",
+        title: "نشر عرض بيع",
+        imageAlt: "نشر عرض بيع الحجر",
+        summary:
+          "يمكن للمورّدين نشر عروض البيع مع الصور والمواصفات حتى يتمكن المشترون داخل إيران وخارجها من اكتشافها."
+      },
+      {
+        key: "review",
+        title: "طلب فحص أو شراء",
+        imageAlt: "طلب فحص أو شراء الحجر بأمان",
+        summary:
+          "يدعم كل عرض طلب الفحص أو الشراء أو كليهما؛ يراجع فريق سانج حسن الطلب وينسق اتصالاً أكثر أماناً عند الحاجة."
       }
     ]
   }
@@ -756,6 +882,7 @@ export default function Home() {
   const blocksSection = sectionsByKey.blocks || fallbackSections.blocks;
   const finishedSection = sectionsByKey.finished || fallbackSections.finished;
   const whyContent = whySangehassanContent[lang] || whySangehassanContent.fa;
+  const tradeboardSection = tradeboardContent[lang] || tradeboardContent.fa;
   const teamContent = teamSectionContent[lang] || teamSectionContent.fa;
   const dynamicTeamCards = useMemo(
     () =>
@@ -950,7 +1077,7 @@ export default function Home() {
 
       <section
         id="home-continuation"
-        className="relative isolate overflow-hidden bg-[#062f40] py-20 text-sand sm:py-24 lg:py-28"
+        className="relative isolate overflow-hidden bg-[#062f40] py-16 text-sand sm:py-20 lg:py-20"
         dir={whySectionDir}
         aria-labelledby="why-sangehassan-title"
       >
@@ -965,24 +1092,24 @@ export default function Home() {
             <h2 id="why-sangehassan-title" className="mt-4 font-display text-3xl leading-tight text-sand sm:text-4xl lg:text-5xl">
               {whyContent.title}
             </h2>
-            <div className="mx-auto mt-5 max-w-2xl space-y-3 text-sm leading-8 text-sand/74 sm:text-base">
+            <div className="mx-auto mt-4 max-w-2xl space-y-2 text-sm leading-7 text-sand/74 sm:text-base">
               <p>{whyContent.intro}</p>
               <p>{whyContent.support}</p>
             </div>
           </header>
 
-          <div className="mx-auto mt-14 max-w-6xl">
-            <div className="space-y-5">
-              {whyContent.cards.map((card, index) => {
+          <div className="mx-auto mt-12 max-w-6xl">
+            <div className="grid gap-10 md:grid-cols-3 md:gap-6 lg:gap-8">
+              {whyContent.cards.map((card) => {
                 const illustration = whySangehassanIllustrations[card.key];
-                const imageFirst = index % 2 === 0;
 
                 return (
                   <article
                     key={card.key}
-                    className="grid min-h-[18rem] w-full grid-cols-[minmax(0,0.46fr)_minmax(0,0.54fr)] items-center sm:min-h-[22rem]"
+                    className="flex h-full flex-col items-center p-2 text-center sm:p-4"
                   >
-                    <div className={`relative flex h-full min-h-[18rem] items-center justify-center px-3 py-8 sm:min-h-[22rem] sm:px-8 ${imageFirst ? "order-1" : "order-2"}`}>
+                    <div className="relative flex h-36 items-center justify-center sm:h-40">
+                      <span className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.07] blur-[42px]" aria-hidden="true" />
                       <img
                         src={illustration.src}
                         alt=""
@@ -990,25 +1117,89 @@ export default function Home() {
                         height={illustration.height}
                         loading="lazy"
                         decoding="async"
-                        className={`h-auto w-full object-contain opacity-80 drop-shadow-[0_14px_28px_rgba(0,0,0,0.18)] [filter:brightness(0.88)_contrast(0.9)_saturate(0.9)] ${card.key === "network"
-                          ? "max-h-[18rem] max-w-[21rem] sm:max-h-[22rem] sm:max-w-[27rem]"
-                          : "max-h-[15rem] max-w-[17rem] sm:max-h-[18rem] sm:max-w-[22rem]"
+                        className={`relative h-auto w-full object-contain opacity-82 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)] [filter:brightness(0.9)_contrast(0.9)_saturate(0.9)] ${card.key === "network"
+                          ? "max-h-[13rem] max-w-[17rem] sm:max-h-[16rem] sm:max-w-[21rem]"
+                          : "max-h-[11rem] max-w-[14rem] sm:max-h-[14rem] sm:max-w-[17rem]"
                           }`}
                         aria-hidden="true"
                       />
                     </div>
-                    <div className={`relative flex h-full min-h-[18rem] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[22rem] sm:px-10 ${imageFirst ? "order-2" : "order-1"}`}>
-                      <h3 className="font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
-                      <p className="mt-4 max-w-[34rem] text-xs leading-7 text-sand/78 sm:text-base sm:leading-8">
-                        {card.summary}
-                      </p>
-                    </div>
+                    <h3 className="mt-6 font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
+                    <p className="mx-auto mt-3 max-w-[22rem] text-sm leading-7 text-sand/74">{card.summary}</p>
                   </article>
                 );
               })}
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <section
+        className="relative isolate overflow-hidden bg-[#062f40] py-20 text-sand sm:py-24 lg:py-28"
+        dir={whySectionDir}
+        aria-labelledby="tradeboard-title"
+      >
+        <span className="bg-quiet-grid pointer-events-none absolute inset-0 opacity-[0.12]" aria-hidden="true" />
+        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(3,27,37,0.98),rgba(9,66,88,0.94)_48%,rgba(4,31,43,0.98))]" aria-hidden="true" />
+        <span className="pointer-events-none absolute left-1/2 top-0 h-[30rem] w-[54rem] -translate-x-1/2 rounded-full bg-white/[0.13] blur-[120px]" aria-hidden="true" />
+        <span className="pointer-events-none absolute -left-[18%] top-[28%] h-[34rem] w-[34rem] rounded-full bg-sand/[0.16] blur-[130px]" aria-hidden="true" />
+        <span className="pointer-events-none absolute -right-[16%] bottom-[8%] h-[36rem] w-[36rem] rounded-full bg-accent/[0.16] blur-[140px]" aria-hidden="true" />
+
+        <div className="section-shell relative z-10">
+          <header className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">{tradeboardSection.eyebrow}</p>
+            <h2 id="tradeboard-title" className="mt-4 font-display text-3xl leading-tight text-sand sm:text-4xl lg:text-5xl">
+              {tradeboardSection.title}
+            </h2>
+            <div className="mx-auto mt-5 max-w-2xl space-y-3 text-sm leading-8 text-sand/74 sm:text-base">
+              <p>{tradeboardSection.intro}</p>
+              <p>{tradeboardSection.support}</p>
+            </div>
+          </header>
+
+          <div className="mt-12 grid items-stretch gap-4 md:grid-cols-3">
+            {tradeboardSection.cards.map((card) => {
+              const illustration = tradeboardIllustrations[card.key];
+
+              return (
+                <article
+                  key={card.key}
+                  className="flex h-full flex-col p-2 text-center sm:p-4"
+                >
+                  <div className="relative flex h-36 items-center justify-center sm:h-40">
+                    <span className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.1] blur-[42px]" aria-hidden="true" />
+                    <img
+                      src={illustration.src}
+                      alt={card.imageAlt}
+                      width={illustration.width}
+                      height={illustration.height}
+                      loading="lazy"
+                      decoding="async"
+                      className="relative h-full w-full scale-[1.55] object-contain opacity-90 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)]"
+                    />
+                  </div>
+                  <h3 className="mt-6 font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
+                  <p className="mx-auto mt-3 max-w-[22rem] text-sm leading-7 text-sand/74">{card.summary}</p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-5 text-center">
+            <Link
+              to="/ads"
+              className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-sand/30 bg-sand/12 px-5 py-3 text-xs font-semibold text-sand shadow-[0_20px_48px_rgba(0,0,0,0.22)] backdrop-blur-sm transition hover:bg-sand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sand/45 sm:text-sm"
+            >
+              <span>{tradeboardSection.cta}</span>
+              <span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                →
+              </span>
+            </Link>
+            <p className="text-sm leading-7 text-sand/72 sm:text-base sm:leading-8">
+              {tradeboardSection.trustLine}
+            </p>
+          </div>
         </div>
       </section>
 
