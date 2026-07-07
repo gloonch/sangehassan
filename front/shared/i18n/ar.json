@@ -199,6 +199,14 @@
     },
     "form": {
       "title": "العنوان",
+      "product": "منتج الحجر",
+      "productSearchPlaceholder": "اكتب الأحرف الأولى من اسم منتج الحجر",
+      "productRequired": "اختر منتج حجر من الكتالوج.",
+      "productNoResults": "لم يتم العثور على منتج مطابق في الكتالوج.",
+      "requestNewProduct": "طلب إضافة منتج جديد",
+      "productRequestNeedsQuery": "اكتب اسم الحجر أولاً.",
+      "productRequestToast": "تم إرسال طلبك إلى الدعم. لإضافة منتج حجر جديد، يرجى الاتصال بالدعم على {phone}.",
+      "productCoverHint": "يستخدم هذا العرض صورة غلاف المنتج المحدد.",
       "stoneType": "نوع الحجر",
       "form": "الشكل",
       "tonnage": "الحمولة (طن)",
@@ -214,6 +222,7 @@
       "addRow": "إضافة صف",
       "removeRow": "حذف",
       "extraInvalidRow": "يجب أن يحتوي كل صف من المواصفات الإضافية على عنوان وقيمة.",
+      "recommendedUseUnsupported": "لم يعد recommended_use مدعوماً في مواصفات العرض.",
       "images": "الصور",
       "imagesHint": "ارفع صورة واحدة أو أكثر (png, jpg, jpeg, webp)."
     }
@@ -371,8 +380,9 @@
     },
     "meta": {
       "id": "المعرّف",
-      "status": "الحالة",
-      "stoneType": "نوع الحجر",
+    "status": "الحالة",
+    "product": "المنتج",
+    "stoneType": "نوع الحجر",
       "form": "الشكل",
       "tonnage": "الحمولة",
       "location": "الموقع",
@@ -605,7 +615,10 @@
     "countLabel": "إعلان",
     "author": "الكاتب",
     "authorContact": "بيانات تواصل الكاتب",
-    "createdAt": "تاريخ الإنشاء"
+    "createdAt": "تاريخ الإنشاء",
+    "productRequests": "طلبات منتجات جديدة",
+    "productRequestsEmpty": "لا توجد طلبات منتجات جديدة حالياً.",
+    "requestedProduct": "المنتج المطلوب"
   },
   "panelSampleRequests": {
     "title": "طلبات العينات",

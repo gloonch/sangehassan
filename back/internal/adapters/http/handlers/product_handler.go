@@ -73,10 +73,11 @@ func (h *ProductHandler) List(c *gin.Context) {
 		products []domain.Product
 		err      error
 	)
+	query := strings.TrimSpace(c.Query("q"))
 	if popularOnly {
 		products, err = h.service.ListPopular(c.Request.Context())
 	} else {
-		products, err = h.service.List(c.Request.Context(), limit, offset)
+		products, err = h.service.List(c.Request.Context(), limit, offset, query)
 	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "failed to load products")

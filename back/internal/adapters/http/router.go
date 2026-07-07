@@ -96,7 +96,7 @@ func NewRouter(
 		adsAuth.Use(userMiddleware.RequireUser)
 		{
 			adsAuth.POST("", listingHandler.Create)
-			adsAuth.POST("/upload-image", uploadHandler.UploadListing)
+			adsAuth.POST("/product-requests", listingHandler.CreateProductRequest)
 			adsAuth.PUT("/:id", listingHandler.Update)
 			adsAuth.POST("/:id/requests", listingHandler.CreateDealRequest)
 			adsAuth.DELETE("/:id", listingHandler.Delete)
@@ -209,6 +209,7 @@ func NewRouter(
 			admin.PUT("/sample-requests/:id/status", stoneSampleRequestHandler.AdminUpdateStatus)
 			admin.GET("/ads", listingHandler.AdminListListings)
 			admin.DELETE("/ads/:id", listingHandler.AdminDeleteListing)
+			admin.GET("/product-requests", listingHandler.AdminListProductRequests)
 			admin.GET("/users", listingHandler.AdminListUsers)
 		}
 	}

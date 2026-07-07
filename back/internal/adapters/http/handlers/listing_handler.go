@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,6 +31,7 @@ func NewListingHandler(listingService *usecase.ListingService, dealService *usec
 
 type listingPayload struct {
 	Title       string         `json:"title"`
+	ProductID   int64          `json:"product_id"`
 	StoneType   string         `json:"stone_type"`
 	Form        string         `json:"form"`
 	Tonnage     *float64       `json:"tonnage"`
@@ -99,6 +101,10 @@ func (h *ListingHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if len(payload.Images) > 0 {
+		respondError(c, http.StatusBadRequest, "listing images are not allowed for user-submitted offers")
+		return
+	}
 
 	listing := buildListingFromPayload(payload)
 	if userID, ok := c.Get("user_id"); ok {
@@ -108,6 +114,10 @@ func (h *ListingHandler) Create(c *gin.Context) {
 	}
 	created, err := h.listings.Create(c.Request.Context(), listing)
 	if err != nil {
+		if errors.Is(err, usecase.ErrListingProductRequired) || err == sql.ErrNoRows {
+			respondError(c, http.StatusBadRequest, "product_id is required")
+			return
+		}
 		respondError(c, http.StatusInternalServerError, "failed to create listing")
 		return
 	}
@@ -140,6 +150,10 @@ func (h *ListingHandler) Update(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
+	if len(payload.Images) > 0 {
+		respondError(c, http.StatusBadRequest, "listing images are not allowed for user-submitted offers")
+		return
+	}
 
 	listing := buildListingFromPayload(payload)
 	listing.ID = id
@@ -148,6 +162,10 @@ func (h *ListingHandler) Update(c *gin.Context) {
 	}
 	updated, err := h.listings.Update(c.Request.Context(), listing)
 	if err != nil {
+		if errors.Is(err, usecase.ErrListingProductRequired) || err == sql.ErrNoRows {
+			respondError(c, http.StatusBadRequest, "product_id is required")
+			return
+		}
 		respondError(c, http.StatusInternalServerError, "failed to update listing")
 		return
 	}
@@ -157,6 +175,10 @@ func (h *ListingHandler) Update(c *gin.Context) {
 type dealRequestPayload struct {
 	RequestType string `json:"request_type"`
 	BuyerNote   string `json:"buyer_note"`
+}
+
+type listingProductRequestPayload struct {
+	Query string `json:"query"`
 }
 
 func (h *ListingHandler) CreateDealRequest(c *gin.Context) {
@@ -223,6 +245,32 @@ func (h *ListingHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *ListingHandler) CreateProductRequest(c *gin.Context) {
+	var payload listingProductRequestPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid payload")
+		return
+	}
+
+	req := domain.ListingProductRequest{Query: payload.Query}
+	if userID, ok := c.Get("user_id"); ok {
+		if idStr, ok := userID.(string); ok && idStr != "" {
+			req.UserID = &idStr
+		}
+	}
+
+	created, err := h.listings.CreateProductRequest(c.Request.Context(), req)
+	if err != nil {
+		if errors.Is(err, usecase.ErrListingProductRequestRequired) {
+			respondError(c, http.StatusBadRequest, "query is required")
+			return
+		}
+		respondError(c, http.StatusInternalServerError, "failed to create product request")
+		return
+	}
+	respondCreated(c, created)
+}
+
 // Admin endpoints
 
 func (h *ListingHandler) AdminListRequests(c *gin.Context) {
@@ -273,6 +321,18 @@ func (h *ListingHandler) AdminListListings(c *gin.Context) {
 		items[i].Author = &info
 	}
 
+	respondOK(c, items)
+}
+
+func (h *ListingHandler) AdminListProductRequests(c *gin.Context) {
+	limit := parseIntDefault(c.Query("limit"), 50)
+	offset := parseIntDefault(c.Query("offset"), 0)
+
+	items, err := h.listings.ListProductRequests(c.Request.Context(), limit, offset)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load product requests")
+		return
+	}
 	respondOK(c, items)
 }
 
@@ -420,6 +480,7 @@ func buildListingFilter(c *gin.Context) ports.ListingFilter {
 func buildListingFromPayload(p listingPayload) domain.Listing {
 	listing := domain.Listing{
 		Title:       p.Title,
+		ProductID:   p.ProductID,
 		StoneType:   p.StoneType,
 		Form:        p.Form,
 		Tonnage:     p.Tonnage,

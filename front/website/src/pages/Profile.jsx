@@ -2,19 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { formatPriceValue, formatPriceUnit } from "../lib/listings";
+import { formatPriceValue, formatPriceUnit, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 
 const PHONE_ALIAS_EMAIL_SUFFIX = "@phone.sangehassan.local";
-const getLatestImageUrl = (ad) => {
-  const images = Array.isArray(ad?.images) ? ad.images : [];
-  for (let i = images.length - 1; i >= 0; i -= 1) {
-    const imageUrl = images[i]?.image_url;
-    if (imageUrl) return imageUrl;
-  }
-  return "";
-};
 
 export default function Profile() {
   const { t, lang } = useTranslation();
@@ -222,9 +214,10 @@ export default function Profile() {
                   ) : (
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       {myAds.map((ad) => {
-                        const extraEntries = Object.entries(ad.extra_props || {});
+                        const extraEntries = Object.entries(ad.extra_props || {}).filter(([key]) => key !== "recommended_use");
                         const location = [ad.province, ad.city].filter(Boolean).join(" / ");
-                        const latestImageUrl = getLatestImageUrl(ad);
+                        const latestImageUrl = getListingCoverImageUrl(ad);
+                        const productTitle = getListingProductTitle(ad, lang);
                         return (
                           <article
                             key={ad.id}
@@ -234,7 +227,7 @@ export default function Profile() {
                               {latestImageUrl ? (
                                 <img
                                   src={resolveImageUrl(latestImageUrl)}
-                                  alt={ad.title || ad.stone_type || t("ads.title")}
+                                  alt={ad.title || productTitle || t("ads.title")}
                                   loading="lazy"
                                   className="h-40 w-full object-cover"
                                 />
@@ -246,14 +239,14 @@ export default function Profile() {
                             </div>
                             <div>
                               <h3 className="mt-1 text-lg font-semibold text-primary">
-                                {ad.title || ad.stone_type || t("ads.title")}
+                                {ad.title || productTitle || t("ads.title")}
                               </h3>
                             </div>
 
                             <p className="mt-2 text-sm text-primary/70 line-clamp-2">{ad.description || " "}</p>
 
                             <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2">
-                              <MetaRow label={t("profile.meta.stoneType")} value={formatValue(ad.stone_type)} />
+                              <MetaRow label={t("profile.meta.product")} value={formatValue(productTitle || ad.stone_type)} />
                               <MetaRow label={t("profile.meta.form")} value={formatValue(ad.form)} />
                               <MetaRow
                                 label={t("profile.meta.tonnage")}

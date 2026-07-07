@@ -30,4 +30,6 @@ type ListingRepository interface {
 	Update(ctx context.Context, listing domain.Listing, ownerID *string) (domain.Listing, error)
 	ReplaceImages(ctx context.Context, listingID int64, images []domain.ListingImage) error
 	Delete(ctx context.Context, id int64, ownerID *string) error
+	CreateProductRequest(ctx context.Context, request domain.ListingProductRequest) (domain.ListingProductRequest, error)
+	ListProductRequests(ctx context.Context, limit, offset int) ([]domain.ListingProductRequest, error)
 }

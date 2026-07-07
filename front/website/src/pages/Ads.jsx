@@ -2,18 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { formatPriceValue } from "../lib/listings";
+import { formatPriceValue, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
-
-const getLatestImageUrl = (ad) => {
-  const images = Array.isArray(ad?.images) ? ad.images : [];
-  for (let i = images.length - 1; i >= 0; i -= 1) {
-    const imageUrl = images[i]?.image_url;
-    if (imageUrl) return imageUrl;
-  }
-  return "";
-};
 
 export default function Ads() {
   const { t, lang } = useTranslation();
@@ -22,7 +13,7 @@ export default function Ads() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const latestImage = useMemo(() => items.map(getLatestImageUrl).find(Boolean) || "", [items]);
+  const latestImage = useMemo(() => items.map(getListingCoverImageUrl).find(Boolean) || "", [items]);
   const jsonLd = useMemo(
     () => ({
       "@context": "https://schema.org",
@@ -137,7 +128,8 @@ export default function Ads() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((ad) => {
-              const latestImageUrl = getLatestImageUrl(ad);
+              const latestImageUrl = getListingCoverImageUrl(ad);
+              const productTitle = getListingProductTitle(ad, lang);
               return (
                 <Link
                   to={`/ads/${ad.id}`}
@@ -148,7 +140,7 @@ export default function Ads() {
                     {latestImageUrl ? (
                       <img
                         src={resolveImageUrl(latestImageUrl)}
-                        alt={ad.title || ad.stone_type || t("ads.title")}
+                        alt={ad.title || productTitle || t("ads.title")}
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                       />
@@ -164,7 +156,7 @@ export default function Ads() {
                       <span>{ad.city || ad.province || "—"}</span>
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-primary group-hover:text-accent">
-                      {ad.title || ad.stone_type || t("ads.title")}
+                      {ad.title || productTitle || t("ads.title")}
                     </h3>
                     <p className="mt-1 text-sm text-primary/70 line-clamp-2">{ad.description || " "}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-primary">

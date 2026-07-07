@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { PRICE_UNIT_VALUES, formatPriceUnit, formatPriceValue } from "../lib/listings";
+import {
+  PRICE_UNIT_VALUES,
+  formatPriceUnit,
+  formatPriceValue,
+  getListingCoverImageUrl,
+  getListingProductPath,
+  getListingProductTitle
+} from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
@@ -13,7 +20,7 @@ const inputClass =
 
 const adFormState = (ad) => ({
   title: ad?.title || "",
-  stone_type: ad?.stone_type || "",
+  product_id: ad?.product_id || ad?.product?.id || "",
   form: ad?.form || "",
   tonnage: ad?.tonnage || "",
   province: ad?.province || "",
@@ -21,8 +28,7 @@ const adFormState = (ad) => ({
   price_amount: ad?.price_amount || "",
   price_unit: ad?.price_unit || "per_ton",
   description: ad?.description || "",
-  extra_props: JSON.stringify(ad?.extra_props || {}, null, 2),
-  images: (ad?.images || []).map((i) => i.image_url).join(", ")
+  extra_props: JSON.stringify(ad?.extra_props || {}, null, 2)
 });
 
 export default function AdDetail() {
@@ -53,14 +59,15 @@ export default function AdDetail() {
 
   const imageUrls = useMemo(() => {
     if (!ad) return [];
-    return (ad.images || []).map((img) => img?.image_url).filter(Boolean);
+    const cover = getListingCoverImageUrl(ad);
+    return cover ? [cover] : [];
   }, [ad]);
-  const seoTitle = ad ? `${ad.title || ad.stone_type || t("ads.title")} | ${t("ads.title")} | SangeHassan` : `${t("ads.title")} | SangeHassan`;
+  const seoTitle = ad ? `${ad.title || getListingProductTitle(ad, lang) || t("ads.title")} | ${t("ads.title")} | SangeHassan` : `${t("ads.title")} | SangeHassan`;
   const seoDescription =
     ad
       ? [
           ad.form,
-          ad.stone_type,
+          getListingProductTitle(ad, lang),
           ad.tonnage ? `${ad.tonnage} t` : "",
           [ad.province, ad.city].filter(Boolean).join(" / "),
           ad.description
@@ -168,7 +175,7 @@ export default function AdDetail() {
       }
       const payload = {
         title: formState.title || null,
-        stone_type: formState.stone_type || null,
+        product_id: Number(formState.product_id || ad?.product_id || ad?.product?.id || 0),
         form: formState.form || null,
         tonnage: formState.tonnage ? Number(formState.tonnage) : null,
         province: formState.province || null,
@@ -176,13 +183,7 @@ export default function AdDetail() {
         price_amount: formState.price_amount ? Number(formState.price_amount) : null,
         price_unit: formState.price_unit || null,
         description: formState.description || null,
-        extra_props: extra,
-        images: formState.images
-          ? formState.images
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : []
+        extra_props: extra
       };
       await fetchJSON(`/api/ads/${id}`, { method: "PUT", body: JSON.stringify(payload) });
       setSaveMsg(t("ads.saved"));
@@ -210,12 +211,14 @@ export default function AdDetail() {
   if (notFound || (!ad && !error)) return <NotFound />;
   if (error) return <section className="section-shell py-16 text-red-600">{error}</section>;
 
-  const extraEntries = Object.entries(ad.extra_props || {});
+  const extraEntries = Object.entries(ad.extra_props || {}).filter(([key]) => key !== "recommended_use");
   const requestTypeKey = `ads.requestTypeOptions.${submittedRequestType}`;
   const submittedRequestTypeLabel =
     t(requestTypeKey) === requestTypeKey ? submittedRequestType : t(requestTypeKey);
   const requestModalMessage = t("ads.requestSubmitted.message").replace("{type}", submittedRequestTypeLabel);
   const activeImageUrl = imageUrls[activeImageIndex] || "";
+  const productTitle = getListingProductTitle(ad, lang);
+  const productPath = getListingProductPath(ad.product, lang);
 
   return (
     <section className="section-shell py-16">
@@ -228,21 +231,21 @@ export default function AdDetail() {
           {t("nav.ads")}
         </Link>
         <span>/</span>
-        <span className="text-primary/75">{ad.title || ad.stone_type || t("ads.title")}</span>
+        <span className="text-primary/75">{ad.title || productTitle || t("ads.title")}</span>
       </nav>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-3xl border border-primary/10 bg-white/80 p-6 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-primary/60">
             {ad.form || "—"} · {ad.city || ad.province || "—"}
           </p>
-          <h1 className="mt-2 font-display text-3xl">{ad.title || ad.stone_type || t("ads.title")}</h1>
+          <h1 className="mt-2 font-display text-3xl">{ad.title || productTitle || t("ads.title")}</h1>
           <div className="mt-4">
             {activeImageUrl ? (
               <>
                 <div className="overflow-hidden rounded-2xl border border-primary/10 bg-primary/5">
                   <img
                     src={resolveImageUrl(activeImageUrl)}
-                    alt={ad.title || ad.stone_type || t("ads.title")}
+                    alt={ad.title || productTitle || t("ads.title")}
                     className="h-72 w-full object-cover"
                   />
                 </div>
@@ -259,7 +262,7 @@ export default function AdDetail() {
                       >
                         <img
                           src={resolveImageUrl(imageUrl)}
-                          alt={`${ad.title || ad.stone_type || t("ads.title")} ${index + 1}`}
+                          alt={`${ad.title || productTitle || t("ads.title")} ${index + 1}`}
                           className="h-16 w-full object-cover"
                           loading="lazy"
                         />
@@ -275,7 +278,15 @@ export default function AdDetail() {
             )}
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-primary/80">
-            <Info label="Stone">{ad.stone_type || "—"}</Info>
+            <Info label={t("ads.form.product")}>
+              {productPath ? (
+                <Link to={productPath} state={{ catalogRouteKind: "product" }} className="text-accent underline-offset-4 hover:underline">
+                  {productTitle || ad.stone_type || "—"}
+                </Link>
+              ) : (
+                productTitle || ad.stone_type || "—"
+              )}
+            </Info>
             <Info label="Form">{ad.form || "—"}</Info>
             <Info label="Tonnage">{ad.tonnage ? `${ad.tonnage} t` : "—"}</Info>
             <Info label="Price">
@@ -312,7 +323,16 @@ export default function AdDetail() {
               </p>
               <div className="mt-3 space-y-3">
                 {renderInput("title")}
-                {renderInput("stone_type")}
+                <div className="rounded-xl border border-primary/10 bg-primary/5 px-3 py-2 text-xs text-primary/75">
+                  <span className="font-semibold">{t("ads.form.product")}: </span>
+                  {productPath ? (
+                    <Link to={productPath} state={{ catalogRouteKind: "product" }} className="text-accent hover:underline">
+                      {productTitle || "—"}
+                    </Link>
+                  ) : (
+                    productTitle || "—"
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <select
                     value={formState.form || ""}

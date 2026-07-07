@@ -25,7 +25,7 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]domain.Product, error) {
+func (r *ProductRepository) List(ctx context.Context, limit, offset int, searchQuery string) ([]domain.Product, error) {
 	query := `
 			SELECT p.id, p.title_en, p.title_fa, p.title_ar, p.slug,
 			       p.aliases, p.variants, p.mines, p.finishes,
@@ -39,9 +39,38 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int) ([]doma
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
-		ORDER BY p.is_popular DESC, p.id
 	`
 	args := make([]any, 0, 2)
+	cleanQuery := strings.TrimSpace(searchQuery)
+	if cleanQuery != "" {
+		args = append(args, cleanQuery+"%")
+		query += fmt.Sprintf(`
+		WHERE (
+			p.title_en ILIKE $%[1]d
+			OR p.title_fa ILIKE $%[1]d
+			OR p.title_ar ILIKE $%[1]d
+			OR p.slug ILIKE $%[1]d
+			OR EXISTS (
+				SELECT 1
+				FROM UNNEST(COALESCE(p.aliases, '{}'::text[])) AS alias_value(value)
+				WHERE alias_value.value ILIKE $%[1]d
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM UNNEST(COALESCE(p.variants, '{}'::text[])) AS variant_value(value)
+				WHERE variant_value.value ILIKE $%[1]d
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM UNNEST(COALESCE(p.mines, '{}'::text[])) AS mine_value(value)
+				WHERE mine_value.value ILIKE $%[1]d
+			)
+		)
+	`, len(args))
+	}
+	query += `
+		ORDER BY p.is_popular DESC, p.id
+	`
 	if limit > 0 {
 		args = append(args, limit)
 		query = fmt.Sprintf("%s LIMIT $%d", query, len(args))

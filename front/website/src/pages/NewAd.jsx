@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { PRICE_UNIT_VALUES, formatPriceUnit } from "../lib/listings";
+import { resolveImageUrl } from "../lib/assets";
+import { PRICE_UNIT_VALUES, formatPriceUnit, getLocalizedProductTitle } from "../lib/listings";
 import { usePageSeo } from "../lib/seo";
 
 let extraRowId = 0;
@@ -17,7 +18,7 @@ export default function NewAd() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
-    stone_type: "",
+    product_id: "",
     form: "",
     tonnage: "",
     province: "",
@@ -27,11 +28,14 @@ export default function NewAd() {
     description: ""
   });
   const [extraRows, setExtraRows] = useState([createExtraRow()]);
-  const [images, setImages] = useState([]);
+  const [productQuery, setProductQuery] = useState("");
+  const [productOptions, setProductOptions] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productToast, setProductToast] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   usePageSeo({
     title: `${t("ads.create")} | SangeHassan`,
@@ -45,14 +49,38 @@ export default function NewAd() {
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   useEffect(() => {
+    const query = productQuery.trim();
+    if (query.length < 2) {
+      setProductOptions([]);
+      setProductLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    setProductLoading(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetchJSON(`/api/products?limit=12&q=${encodeURIComponent(query)}`);
+        const data = res?.data || res;
+        if (active) setProductOptions(Array.isArray(data) ? data : []);
+      } catch (_) {
+        if (active) setProductOptions([]);
+      } finally {
+        if (active) setProductLoading(false);
+      }
+    }, 220);
+
     return () => {
-      images.forEach((item) => {
-        if (item?.preview) {
-          URL.revokeObjectURL(item.preview);
-        }
-      });
+      active = false;
+      window.clearTimeout(timer);
     };
-  }, [images]);
+  }, [productQuery]);
+
+  useEffect(() => {
+    if (!productToast) return undefined;
+    const timer = window.setTimeout(() => setProductToast(""), 10000);
+    return () => window.clearTimeout(timer);
+  }, [productToast]);
 
   const updateExtraRow = (id, key, value) => {
     setExtraRows((prev) => prev.map((row) => (row.id === id ? { ...row, [key]: value } : row)));
@@ -76,36 +104,37 @@ export default function NewAd() {
       if (!key || !value) {
         return { error: t("ads.form.extraInvalidRow") };
       }
+      if (key.toLowerCase() === "recommended_use") {
+        return { error: t("ads.form.recommendedUseUnsupported") };
+      }
       extra[key] = value;
     }
     return { extra };
   };
 
-  const handleImageChange = (e) => {
-    const selected = Array.from(e.target.files || []).map((file, index) => ({
-      id: `${file.name}-${file.size}-${file.lastModified}-${index}`,
-      file,
-      preview: URL.createObjectURL(file)
-    }));
-    setImages(selected);
+  const selectProduct = (product) => {
+    setSelectedProduct(product);
+    update("product_id", product?.id ? String(product.id) : "");
+    setProductQuery(getLocalizedProductTitle(product, lang));
+    setProductOptions([]);
+    setProductToast("");
   };
 
-  const uploadImages = async () => {
-    if (!images.length) return [];
-    setUploading(true);
-    const uploaded = [];
-    for (const item of images) {
-      const body = new FormData();
-      body.append("file", item.file);
-      const res = await fetchJSON("/api/ads/upload-image", {
-        method: "POST",
-        body
-      });
-      const data = res?.data || res;
-      if (data?.image_url) uploaded.push(data.image_url);
+  const requestNewProduct = async () => {
+    const query = productQuery.trim();
+    if (!query) {
+      setProductToast(t("ads.form.productRequestNeedsQuery"));
+      return;
     }
-    setUploading(false);
-    return uploaded;
+    try {
+      await fetchJSON("/api/ads/product-requests", {
+        method: "POST",
+        body: JSON.stringify({ query })
+      });
+    } catch (_) {
+      // The user-facing next step is still the same: call support.
+    }
+    setProductToast(t("ads.form.productRequestToast").replace("{phone}", t("footer.phoneValue")));
   };
 
   const handleSubmit = async (e) => {
@@ -120,10 +149,15 @@ export default function NewAd() {
         setSaving(false);
         return;
       }
-      const uploadedImages = await uploadImages();
+      const productID = Number(form.product_id || selectedProduct?.id || 0);
+      if (!productID) {
+        setError(t("ads.form.productRequired"));
+        setSaving(false);
+        return;
+      }
       const payload = {
         title: form.title || null,
-        stone_type: form.stone_type || null,
+        product_id: productID,
         form: form.form || null,
         tonnage: form.tonnage ? Number(form.tonnage) : null,
         province: form.province || null,
@@ -131,8 +165,7 @@ export default function NewAd() {
         price_amount: form.price_amount ? Number(form.price_amount) : null,
         price_unit: form.price_unit || null,
         description: form.description || null,
-        extra_props: extra,
-        images: uploadedImages
+        extra_props: extra
       };
       const res = await fetchJSON("/api/ads", {
         method: "POST",
@@ -150,7 +183,6 @@ export default function NewAd() {
         setError(err?.message || t("messages.error"));
       }
     } finally {
-      setUploading(false);
       setSaving(false);
     }
   };
@@ -168,8 +200,90 @@ export default function NewAd() {
           <Field label={t("ads.form.title")}>
             <input value={form.title} onChange={(e) => update("title", e.target.value)} className={inputClass} />
           </Field>
-          <Field label={t("ads.form.stoneType")}>
-            <input value={form.stone_type} onChange={(e) => update("stone_type", e.target.value)} className={inputClass} />
+          <Field label={t("ads.form.product")} full>
+            <div className="relative normal-case tracking-normal">
+              <input
+                value={productQuery}
+                onChange={(e) => {
+                  setProductQuery(e.target.value);
+                  setSelectedProduct(null);
+                  update("product_id", "");
+                }}
+                placeholder={t("ads.form.productSearchPlaceholder")}
+                className={inputClass}
+                autoComplete="off"
+              />
+              {productLoading && (
+                <span className="absolute right-3 top-5 h-3 w-3 animate-spin rounded-full border border-primary/40 border-t-transparent" />
+              )}
+              {productQuery.trim().length >= 2 && productOptions.length > 0 && !selectedProduct && (
+                <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-primary/15 bg-white p-2 shadow-xl">
+                  {productOptions.map((product) => {
+                    const title = getLocalizedProductTitle(product, lang);
+                    return (
+                      <button
+                        type="button"
+                        key={product.id}
+                        onClick={() => selectProduct(product)}
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-start hover:bg-primary/5"
+                      >
+                        <span className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-primary/10">
+                          {product.image_url ? (
+                            <img
+                              src={resolveImageUrl(product.image_url)}
+                              alt={title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : null}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-primary">{title}</span>
+                          <span className="block truncate text-xs text-primary/55">{product.slug}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {productQuery.trim().length >= 2 && !productLoading && productOptions.length === 0 && !selectedProduct && (
+                <div className="mt-2 rounded-xl border border-primary/10 bg-primary/5 px-3 py-3 text-xs text-primary/70">
+                  <p>{t("ads.form.productNoResults")}</p>
+                  <button
+                    type="button"
+                    onClick={requestNewProduct}
+                    className="mt-2 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-sand hover:bg-primary/90"
+                  >
+                    {t("ads.form.requestNewProduct")}
+                  </button>
+                </div>
+              )}
+              {selectedProduct && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-primary/10 bg-white/80 p-3">
+                  <span className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-primary/10">
+                    {selectedProduct.image_url ? (
+                      <img
+                        src={resolveImageUrl(selectedProduct.image_url)}
+                        alt={getLocalizedProductTitle(selectedProduct, lang)}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-primary">
+                      {getLocalizedProductTitle(selectedProduct, lang)}
+                    </span>
+                    <span className="block text-xs text-primary/55">{t("ads.form.productCoverHint")}</span>
+                  </span>
+                </div>
+              )}
+              {productToast && (
+                <div className="mt-3 rounded-xl border border-accent/20 bg-accent/10 px-3 py-2 text-xs font-semibold text-primary">
+                  {productToast}
+                </div>
+              )}
+            </div>
           </Field>
           <Field label={t("ads.form.form")}>
             <select value={form.form} onChange={(e) => update("form", e.target.value)} className={inputClass}>
@@ -256,40 +370,14 @@ export default function NewAd() {
               {t("ads.form.extraHint")}
             </p>
           </Field>
-          <Field label={t("ads.form.images")} full>
-            <input
-              type="file"
-              multiple
-              accept=".png,.jpg,.jpeg,.webp"
-              onChange={handleImageChange}
-              className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-sand`}
-            />
-            <p className="text-[11px] font-medium text-primary/60">{t("ads.form.imagesHint")}</p>
-            {images.length > 0 && (
-              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {images.map((item) => (
-                  <figure key={item.id} className="rounded-xl border border-primary/10 bg-white/80 p-2">
-                    <img
-                      src={item.preview}
-                      alt={item.file.name}
-                      className="h-20 w-full rounded-lg object-cover"
-                    />
-                    <figcaption className="mt-1 truncate text-[11px] normal-case tracking-normal text-primary/75">
-                      {item.file.name}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            )}
-          </Field>
 
           <div className="md:col-span-2 flex items-center gap-3">
             <button
               type="submit"
-              disabled={saving || uploading}
+              disabled={saving}
               className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-sand hover:bg-primary/90 disabled:opacity-60"
             >
-              {saving || uploading ? t("messages.loading") : t("ads.create")}
+              {saving ? t("messages.loading") : t("ads.create")}
             </button>
             {success && <span className="text-xs font-semibold text-green-700">{success}</span>}
             {error && <span className="text-xs font-semibold text-red-600">{error}</span>}

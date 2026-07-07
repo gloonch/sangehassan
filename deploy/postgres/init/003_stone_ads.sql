@@ -1,10 +1,11 @@
 -- Stone ads / deal requests schema
 -- Idempotent: all objects created with IF NOT EXISTS and seeds guarded by NOT EXISTS
 
--- Listings: generic stone ads. All fields optional except status.
+-- Listings: stone sale offers tied to a real catalog product.
 CREATE TABLE IF NOT EXISTS listings (
   id BIGSERIAL PRIMARY KEY,
   created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  product_id INT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
   title TEXT,
   stone_type TEXT,
   form TEXT,
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS listings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_listings_status_created ON listings (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listings_product ON listings (product_id);
 CREATE INDEX IF NOT EXISTS idx_listings_stone_type ON listings (stone_type);
 CREATE INDEX IF NOT EXISTS idx_listings_form ON listings (form);
 CREATE INDEX IF NOT EXISTS idx_listings_tonnage ON listings (tonnage);
@@ -28,6 +30,8 @@ CREATE INDEX IF NOT EXISTS idx_listings_location ON listings (province, city);
 CREATE INDEX IF NOT EXISTS idx_listings_price ON listings (price_amount);
 
 -- Listing media (gallery)
+-- Reserved for future listing-specific/admin media; user-submitted offers
+-- currently render the selected product cover instead of uploaded images.
 CREATE TABLE IF NOT EXISTS listing_images (
   id BIGSERIAL PRIMARY KEY,
   listing_id BIGINT NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
@@ -83,35 +87,13 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications (user_id, read_at);
 
--- Seed a few sample listings (idempotent)
-INSERT INTO listings (title, stone_type, form, tonnage, province, city, price_amount, price_unit, description, extra_props, status)
-SELECT
-  'Sample Marble Block',
-  'marble',
-  'block',
-  22.5,
-  'Tehran',
-  'Tehran',
-  180000000,
-  'total',
-  'Sample marble block for demo purposes',
-  '{"color":"white","grade":"A"}',
-  'ACTIVE'
-WHERE NOT EXISTS (SELECT 1 FROM listings);
-
-INSERT INTO listings (title, stone_type, form, tonnage, province, city, price_amount, price_unit, description, extra_props, status)
-SELECT
-  'Sample Granite Slab',
-  'granite',
-  'finished',
-  12.0,
-  'Isfahan',
-  'Najafabad',
-  8500000,
-  'per_ton',
-  'Finished granite slabs ready for delivery',
-  '{"finish":"polished","thickness_cm":2}',
-  'ACTIVE'
-WHERE NOT EXISTS (
-  SELECT 1 FROM listings l WHERE l.title = 'Sample Granite Slab'
+CREATE TABLE IF NOT EXISTS listing_product_requests (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  query TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'NEW',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_listing_product_requests_created ON listing_product_requests (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listing_product_requests_status ON listing_product_requests (status, created_at DESC);

@@ -44,8 +44,99 @@ func NewDB(cfg config.Config) (*sql.DB, error) {
 	if err := ensureStoneSampleRequests(db); err != nil {
 		return nil, err
 	}
+	if err := ensureListingProductLinks(db); err != nil {
+		return nil, err
+	}
 
 	return db, nil
+}
+
+func ensureListingProductLinks(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	statements := []string{
+		`ALTER TABLE IF EXISTS listings
+		ADD COLUMN IF NOT EXISTS product_id INT`,
+		`DO $$
+		BEGIN
+			IF EXISTS (
+				SELECT 1 FROM information_schema.tables
+				WHERE table_schema = 'public' AND table_name = 'listings'
+			) AND NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'listings_product_id_fkey'
+			) THEN
+				ALTER TABLE listings
+				ADD CONSTRAINT listings_product_id_fkey
+				FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT;
+			END IF;
+		END $$`,
+		`CREATE INDEX IF NOT EXISTS idx_listings_product ON listings (product_id)`,
+		`WITH source_slug AS (
+			SELECT l.id, l.extra_props->>'source_product_slug' AS slug
+			FROM listings l
+			WHERE l.product_id IS NULL
+			  AND COALESCE(l.extra_props->>'source_product_slug', '') <> ''
+		)
+		UPDATE listings l
+		SET product_id = p.id
+		FROM source_slug s
+		JOIN products p ON p.slug = s.slug
+		WHERE l.id = s.id`,
+		`WITH title_map(pattern, slug) AS (
+			VALUES
+				('Hassan Travertine%', 'hassan-travertine'),
+				('Takab Travertine%', 'takab-travertine'),
+				('Chocolate Aqamohammadi Travertine%', 'chocolate-aqamohammadi-travertine'),
+				('Chocolate Aqamohammadi%', 'chocolate-aqamohammadi-travertine'),
+				('Azna Crystal%', 'azna-crystal')
+		)
+		UPDATE listings l
+		SET product_id = p.id
+		FROM title_map m
+		JOIN products p ON p.slug = m.slug
+		WHERE l.product_id IS NULL
+		  AND l.title ILIKE m.pattern`,
+		`UPDATE listings l
+		SET stone_type = COALESCE(NULLIF(l.stone_type, ''), c.slug, l.stone_type)
+		FROM products p
+		LEFT JOIN categories c ON c.id = p.main_category_id
+		WHERE l.product_id = p.id
+		  AND COALESCE(l.stone_type, '') = ''
+		  AND COALESCE(c.slug, '') <> ''`,
+		`UPDATE listings
+		SET extra_props = extra_props - 'recommended_use'
+		WHERE extra_props ? 'recommended_use'`,
+		`CREATE TABLE IF NOT EXISTS listing_product_requests (
+			id BIGSERIAL PRIMARY KEY,
+			user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+			query TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'NEW',
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_listing_product_requests_created
+		ON listing_product_requests (created_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_listing_product_requests_status
+		ON listing_product_requests (status, created_at DESC)`,
+		`DO $$
+		BEGIN
+			IF EXISTS (
+				SELECT 1 FROM information_schema.columns
+				WHERE table_schema = 'public' AND table_name = 'listings' AND column_name = 'product_id'
+			) AND NOT EXISTS (
+				SELECT 1 FROM listings WHERE product_id IS NULL
+			) THEN
+				ALTER TABLE listings ALTER COLUMN product_id SET NOT NULL;
+			END IF;
+		END $$`,
+	}
+
+	for _, statement := range statements {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureStoneSampleRequests(db *sql.DB) error {

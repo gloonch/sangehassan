@@ -61,6 +61,14 @@
     },
     "form": {
       "title": "Title",
+      "product": "Stone product",
+      "productSearchPlaceholder": "Type the first letters of the stone product",
+      "productRequired": "Select a stone product from the catalog.",
+      "productNoResults": "No matching product was found in the catalog.",
+      "requestNewProduct": "Request new product",
+      "productRequestNeedsQuery": "Type the stone name first.",
+      "productRequestToast": "Your request was sent to support. For adding a new stone product, please call support at {phone}.",
+      "productCoverHint": "This offer uses the selected product cover image.",
       "stoneType": "Stone type",
       "form": "Form",
       "tonnage": "Tonnage (ton)",
@@ -76,6 +84,7 @@
       "addRow": "Add row",
       "removeRow": "Remove",
       "extraInvalidRow": "Each extra specification row must include both label and value.",
+      "recommendedUseUnsupported": "Recommended use is no longer supported for offer specifications.",
       "images": "Images",
       "imagesHint": "Upload one or more images (png, jpg, jpeg, webp)."
     }
@@ -371,8 +380,9 @@
     },
     "meta": {
       "id": "ID",
-      "status": "Status",
-      "stoneType": "Stone type",
+    "status": "Status",
+    "product": "Product",
+    "stoneType": "Stone type",
       "form": "Form",
       "tonnage": "Tonnage",
       "location": "Location",
@@ -605,7 +615,10 @@
     "countLabel": "ads",
     "author": "Author",
     "authorContact": "Author contact",
-    "createdAt": "Created at"
+    "createdAt": "Created at",
+    "productRequests": "New product requests",
+    "productRequestsEmpty": "No product requests yet.",
+    "requestedProduct": "Requested product"
   },
   "panelSampleRequests": {
     "title": "Sample requests",

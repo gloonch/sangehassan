@@ -199,6 +199,14 @@
     },
     "form": {
       "title": "عنوان",
+      "product": "محصول سنگ",
+      "productSearchPlaceholder": "چند حرف اول نام سنگ را وارد کنید",
+      "productRequired": "یک محصول سنگ از کاتالوگ انتخاب کنید.",
+      "productNoResults": "محصولی با این نام در کاتالوگ پیدا نشد.",
+      "requestNewProduct": "درخواست اضافه شدن محصول",
+      "productRequestNeedsQuery": "ابتدا نام سنگ را وارد کنید.",
+      "productRequestToast": "درخواست شما به پشتیبانی ارسال شد. برای اضافه شدن سنگ جدید به محصولات، لطفا با پشتیبانی به شماره {phone} تماس بگیرید.",
+      "productCoverHint": "تصویر این پیشنهاد از کاور محصول انتخاب‌شده نمایش داده می‌شود.",
       "stoneType": "نوع سنگ",
       "form": "فرم",
       "tonnage": "تناژ (تن)",
@@ -214,6 +222,7 @@
       "addRow": "افزودن ردیف",
       "removeRow": "حذف",
       "extraInvalidRow": "در هر ردیف مشخصات اضافه، وارد کردن عنوان و مقدار الزامی است.",
+      "recommendedUseUnsupported": "recommended_use دیگر در مشخصات پیشنهاد پشتیبانی نمی‌شود.",
       "images": "تصاویر",
       "imagesHint": "یک یا چند تصویر آپلود کنید (png, jpg, jpeg, webp)."
     }
@@ -371,8 +380,9 @@
     },
     "meta": {
       "id": "شناسه",
-      "status": "وضعیت",
-      "stoneType": "نوع سنگ",
+    "status": "وضعیت",
+    "product": "محصول",
+    "stoneType": "نوع سنگ",
       "form": "فرم",
       "tonnage": "تناژ",
       "location": "موقعیت",
@@ -605,7 +615,10 @@
     "countLabel": "آگهی",
     "author": "نویسنده",
     "authorContact": "اطلاعات تماس نویسنده",
-    "createdAt": "تاریخ ایجاد"
+    "createdAt": "تاریخ ایجاد",
+    "productRequests": "درخواست‌های محصول جدید",
+    "productRequestsEmpty": "فعلا درخواستی برای محصول جدید ثبت نشده است.",
+    "requestedProduct": "محصول درخواستی"
   },
   "panelSampleRequests": {
     "title": "درخواست‌های نمونه",
