@@ -133,6 +133,9 @@ func (s *BlogService) prepare(blog *domain.Blog, existing *domain.Blog) error {
 		if blog.ScheduledAt.Before(time.Now().Add(-time.Minute)) {
 			return fmt.Errorf("%w: scheduled_at must be in the future", ErrInvalidBlog)
 		}
+		blog.PublishedAt = nil
+	} else {
+		blog.ScheduledAt = nil
 	}
 	if blog.Status == "published" && blog.PublishedAt == nil {
 		now := time.Now().UTC()

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import ReorderableImageGrid from "../components/ReorderableImageGrid";
+import { moveImage, selectedIndexAfterImageMove } from "../lib/imageOrderDraft";
 import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
-import { resolveImageUrl } from "../lib/assets";
+import { useImageOrderDraft } from "../lib/useImageOrderDraft";
 
 const emptyForm = {
   page: "",
@@ -33,6 +35,7 @@ export default function ContentSections() {
   const [error, setError] = useState("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [formOpen, setFormOpen] = useState(true);
+  const { imageOrderDraft, stageImageOrder, resetImageOrderDraft } = useImageOrderDraft();
 
   const loadData = async () => {
     try {
@@ -70,13 +73,15 @@ export default function ContentSections() {
           return data?.data?.image_url || "";
         })
       );
-      setForm((prev) => {
-        const nextImages = [...(prev.image_urls || []), ...uploads].filter(Boolean);
-        return {
-          ...prev,
-          image_urls: nextImages
-        };
-      });
+      const currentImages = form.image_urls || [];
+      const nextImages = [...currentImages, ...uploads].filter(Boolean);
+      if (imageOrderDraft) {
+        stageImageOrder(currentImages, nextImages);
+      }
+      setForm((prev) => ({
+        ...prev,
+        image_urls: nextImages
+      }));
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -85,16 +90,30 @@ export default function ContentSections() {
   };
 
   const handleRemoveImage = (index) => {
-    setForm((prev) => {
-      const nextImages = (prev.image_urls || []).filter((_, idx) => idx !== index);
-      return {
-        ...prev,
-        image_urls: nextImages
-      };
-    });
+    const currentImages = form.image_urls || [];
+    const nextImages = currentImages.filter((_, idx) => idx !== index);
+    if (imageOrderDraft) {
+      stageImageOrder(currentImages, nextImages);
+    }
+    setForm((prev) => ({
+      ...prev,
+      image_urls: nextImages
+    }));
     if (selectedImageIndex === index) {
       setSelectedImageIndex(0);
     }
+  };
+
+  const handleMoveImage = (index, direction) => {
+    const currentImages = form.image_urls || [];
+    const nextImages = moveImage(currentImages, index, direction);
+    if (nextImages === currentImages) return;
+    stageImageOrder(currentImages, nextImages);
+    setForm((prev) => ({
+      ...prev,
+      image_urls: nextImages
+    }));
+    setSelectedImageIndex((current) => selectedIndexAfterImageMove(current, index, direction));
   };
 
   const handleSubmit = async (event) => {
@@ -120,6 +139,7 @@ export default function ContentSections() {
       setForm(emptyForm);
       setEditingId(null);
       setSelectedImageIndex(0);
+      resetImageOrderDraft();
       loadData();
     } catch (err) {
       setError(t("messages.error"));
@@ -153,6 +173,7 @@ export default function ContentSections() {
         image_urls: item.images || []
       });
       setSelectedImageIndex(0);
+      resetImageOrderDraft(item.images || []);
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -380,48 +401,24 @@ export default function ContentSections() {
               <p className="text-xs font-semibold uppercase tracking-wide text-primary/60">
                 {t("panelContent.title")}
               </p>
-              {form.image_urls.length ? (
-                <div className="mt-4">
-                  <img
-                    src={resolveImageUrl(form.image_urls[selectedImageIndex])}
-                    alt=""
-                    className="h-40 w-full rounded-xl object-cover"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {form.image_urls.map((url, index) => (
-                      <button
-                        key={`${url}-${index}`}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={`relative h-14 w-14 overflow-hidden rounded-lg border ${
-                          selectedImageIndex === index ? "border-accent" : "border-primary/10"
-                        }`}
-                      >
-                        <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleRemoveImage(index);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.stopPropagation();
-                              handleRemoveImage(index);
-                            }
-                          }}
-                          className="absolute right-1 top-1 rounded-full bg-white/90 px-1 text-[10px]"
-                        >
-                          ✕
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-primary/60">{t("messages.empty")}</p>
-              )}
+              <div className="mt-4">
+                <ReorderableImageGrid
+                  images={form.image_urls}
+                  selectedIndex={selectedImageIndex}
+                  onSelect={setSelectedImageIndex}
+                  onRemove={handleRemoveImage}
+                  onMove={handleMoveImage}
+                  previewClassName="h-40"
+                  thumbnailClassName="h-14"
+                  gridClassName="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+                  labels={{
+                    empty: t("messages.empty"),
+                    remove: t("actions.delete"),
+                    moveLeft: t("actions.moveLeft"),
+                    moveRight: t("actions.moveRight")
+                  }}
+                />
+              </div>
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -441,6 +438,7 @@ export default function ContentSections() {
                     setEditingId(null);
                     setForm(emptyForm);
                     setSelectedImageIndex(0);
+                    resetImageOrderDraft();
                   }}
                 >
                   {t("actions.cancel")}

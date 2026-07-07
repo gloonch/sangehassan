@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import ReorderableImageGrid from "../components/ReorderableImageGrid";
+import { moveImage, selectedIndexAfterImageMove } from "../lib/imageOrderDraft";
 import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { useImageOrderDraft } from "../lib/useImageOrderDraft";
 
 const emptyForm = {
   title_en: "",
@@ -62,6 +65,7 @@ export default function Products() {
   const [selectedListInputs, setSelectedListInputs] = useState(emptySelectedListInputs);
   const [productTerms, setProductTerms] = useState([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const { imageOrderDraft, stageImageOrder, resetImageOrderDraft } = useImageOrderDraft();
 
   const metaListFields = useMemo(() => ([
     { key: "variants", label: t("panelProductMeta.variants") },
@@ -179,14 +183,16 @@ export default function Products() {
           return data?.data?.image_url || "";
         })
       );
-      setForm((prev) => {
-        const nextImages = [...(prev.image_urls || []), ...uploads].filter(Boolean);
-        return {
-          ...prev,
-          image_urls: nextImages,
-          image_url: nextImages[0] || prev.image_url
-        };
-      });
+      const currentImages = form.image_urls || [];
+      const nextImages = [...currentImages, ...uploads].filter(Boolean);
+      if (imageOrderDraft) {
+        stageImageOrder(currentImages, nextImages);
+      }
+      setForm((prev) => ({
+        ...prev,
+        image_urls: nextImages,
+        image_url: nextImages[0] || prev.image_url
+      }));
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -219,17 +225,32 @@ export default function Products() {
   };
 
   const handleRemoveImage = (index) => {
-    setForm((prev) => {
-      const nextImages = (prev.image_urls || []).filter((_, idx) => idx !== index);
-      return {
-        ...prev,
-        image_urls: nextImages,
-        image_url: nextImages[0] || ""
-      };
-    });
+    const currentImages = form.image_urls || [];
+    const nextImages = currentImages.filter((_, idx) => idx !== index);
+    if (imageOrderDraft) {
+      stageImageOrder(currentImages, nextImages);
+    }
+    setForm((prev) => ({
+      ...prev,
+      image_urls: nextImages,
+      image_url: nextImages[0] || ""
+    }));
     if (selectedImageIndex === index) {
       setSelectedImageIndex(0);
     }
+  };
+
+  const handleMoveImage = (index, direction) => {
+    const currentImages = form.image_urls || [];
+    const nextImages = moveImage(currentImages, index, direction);
+    if (nextImages === currentImages) return;
+    stageImageOrder(currentImages, nextImages);
+    setForm((prev) => ({
+      ...prev,
+      image_urls: nextImages,
+      image_url: nextImages[0] || ""
+    }));
+    setSelectedImageIndex((current) => selectedIndexAfterImageMove(current, index, direction));
   };
 
   const addListItem = (field) => {
@@ -298,6 +319,7 @@ export default function Products() {
       setDescriptionLang("en");
       setNewListInputs({ aliases: "" });
       setSelectedListInputs(emptySelectedListInputs);
+      resetImageOrderDraft();
       loadData();
     } catch (err) {
       setError(t("messages.error"));
@@ -345,6 +367,7 @@ export default function Products() {
       setSelectedImageIndex(0);
       setDescriptionLang("en");
       setSelectedListInputs(emptySelectedListInputs);
+      resetImageOrderDraft(images);
     } catch (err) {
       setError(t("messages.error"));
     } finally {
@@ -585,57 +608,35 @@ export default function Products() {
                   </div>
                 </div>
               </div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
-                {t("form.images")}
+              <div className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
+                <label htmlFor="product-images-upload">{t("form.images")}</label>
                 <div className="mt-2 space-y-3">
                   <input
+                    id="product-images-upload"
                     type="file"
                     multiple
                     accept="image/*"
                     className="w-full text-sm text-primary/70 file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
                     onChange={(e) => handleImageUpload(e.target.files)}
                   />
-                  {form.image_urls?.length ? (
-                    <div className="space-y-3">
-                      <div className="overflow-hidden rounded-2xl border border-primary/15 bg-primary/5">
-                        <img
-                          src={resolveImageUrl(form.image_urls[selectedImageIndex] || form.image_urls[0])}
-                          alt="Preview"
-                          className="h-64 w-full object-cover"
-                        />
-                      </div>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {form.image_urls.map((url, index) => (
-                          <div key={`${url}-${index}`} className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedImageIndex(index)}
-                              className={`h-16 w-20 overflow-hidden rounded-xl border ${
-                                selectedImageIndex === index ? "border-accent" : "border-primary/20"
-                              }`}
-                            >
-                              <img
-                                src={resolveImageUrl(url)}
-                                alt={`Preview-${index}`}
-                                className="h-full w-full object-cover"
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index)}
-                              className="absolute -right-2 -top-2 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-primary shadow"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-primary/50">{t("messages.empty")}</p>
-                  )}
+                  <ReorderableImageGrid
+                    images={form.image_urls}
+                    selectedIndex={selectedImageIndex}
+                    onSelect={setSelectedImageIndex}
+                    onRemove={handleRemoveImage}
+                    onMove={handleMoveImage}
+                    previewClassName="h-64"
+                    thumbnailClassName="h-16"
+                    gridClassName="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+                    labels={{
+                      empty: t("messages.empty"),
+                      remove: t("actions.delete"),
+                      moveLeft: t("actions.moveLeft"),
+                      moveRight: t("actions.moveRight")
+                    }}
+                  />
                 </div>
-              </label>
+              </div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70 md:col-span-2">
                 {t("form.video")}
                 <div className="mt-2 space-y-3">
@@ -723,6 +724,7 @@ export default function Products() {
                   setDescriptionLang("en");
                   setNewListInputs({ aliases: "" });
                   setSelectedListInputs(emptySelectedListInputs);
+                  resetImageOrderDraft();
                 }}
               >
                 {t("actions.cancel")}

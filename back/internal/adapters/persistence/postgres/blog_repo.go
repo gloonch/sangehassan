@@ -49,8 +49,8 @@ func scanPublicBlog(scanner rowScanner) (domain.Blog, error) {
 
 func publicPublicationWhere() string {
 	return `t.translation_status = 'published'
-		AND (b.status = 'published' OR (b.status = 'scheduled' AND b.scheduled_at IS NOT NULL AND b.scheduled_at <= NOW()))
-		AND COALESCE(b.published_at, b.scheduled_at, b.created_at) <= NOW()`
+		AND b.status = 'published'
+		AND COALESCE(b.published_at, b.created_at) <= NOW()`
 }
 
 func (r *BlogRepository) ListPublic(ctx context.Context, locale string) ([]domain.Blog, error) {
@@ -59,7 +59,7 @@ func (r *BlogRepository) ListPublic(ctx context.Context, locale string) ([]domai
 		FROM blogs b
 		JOIN blog_translations t ON t.blog_id = b.id
 		WHERE t.locale = $1 AND `+publicPublicationWhere()+`
-		ORDER BY b.is_featured DESC, COALESCE(b.published_at, b.scheduled_at, b.created_at) DESC, b.id DESC
+		ORDER BY COALESCE(b.published_at, b.created_at) DESC, b.id DESC
 	`, locale)
 	if err != nil {
 		return nil, err

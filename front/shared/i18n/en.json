@@ -753,7 +753,9 @@
     "menu": "Menu",
     "play": "Play",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "moveLeft": "Move left",
+    "moveRight": "Move right"
   },
   "messages": {
     "loading": "Loading...",

@@ -48,6 +48,19 @@ function toLocalDateTime(value) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
+function formatTableDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function normalizeBlog(blog) {
   const byLocale = new Map((blog.translations || []).map((item) => [item.locale, item]));
   return {
@@ -267,7 +280,7 @@ export default function Blogs() {
     try {
       const payload = {
         ...form,
-        scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
+        scheduled_at: form.status === "scheduled" && form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
         tags: Array.isArray(form.tags) ? form.tags : [],
         translations: form.translations.filter((item) => item.title.trim())
       };
@@ -369,7 +382,10 @@ export default function Blogs() {
 
           <div className="mt-5 grid gap-4 lg:grid-cols-4">
             <label className="text-xs font-semibold text-primary/65">Status
-              <select value={form.status} onChange={(event) => updateForm({ status: event.target.value })} className="mt-2 w-full border border-primary/20 bg-white px-3 py-2.5 text-sm">
+              <select value={form.status} onChange={(event) => {
+                const nextStatus = event.target.value;
+                updateForm({ status: nextStatus, scheduled_at: nextStatus === "scheduled" ? form.scheduled_at : "" });
+              }} className="mt-2 w-full border border-primary/20 bg-white px-3 py-2.5 text-sm">
                 <option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="published">Published</option><option value="archived">Archived</option>
               </select>
             </label>
@@ -483,10 +499,10 @@ export default function Blogs() {
           </div>
         </div>
         {loading ? <p className="mt-5 text-sm text-primary/60">Loading...</p> : <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm"><thead className="border-b border-primary/10 text-xs uppercase text-primary/45"><tr><th className="py-3">Title</th><th>Status</th><th>Languages</th><th>Updated</th><th className="text-right">Actions</th></tr></thead><tbody>
+          <table className="w-full min-w-[860px] text-left text-sm"><thead className="border-b border-primary/10 text-xs uppercase text-primary/45"><tr><th className="py-3">Title</th><th>Status</th><th>Schedule date</th><th>Languages</th><th>Updated</th><th className="text-right">Actions</th></tr></thead><tbody>
             {filteredBlogs.map((blog) => {
               const primary = blog.translations?.find((item) => item.locale === "fa") || blog.translations?.[0];
-              return <tr key={blog.id} className="border-b border-primary/10"><td className="py-4"><p className="font-semibold">{primary?.title || "Untitled"}</p><p className="text-xs text-primary/45">{primary?.slug}</p></td><td><span className="border border-primary/15 px-2 py-1 text-xs capitalize">{blog.status}</span></td><td className="uppercase text-primary/60">{(blog.translations || []).map((item) => item.locale).join(" · ")}</td><td className="text-xs text-primary/55">{new Date(blog.updated_at || blog.created_at).toLocaleDateString()}</td><td><div className="flex justify-end gap-1"><button title="Edit" onClick={() => editBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><Pencil size={16} /></button><button title="Duplicate" onClick={() => duplicateBlog(blog)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><FilePlus2 size={16} /></button>{primary?.slug && primary.translation_status === "published" && <a title="Open" target="_blank" rel="noreferrer" href={`/${primary.locale}/blogs/${primary.slug}`} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><ExternalLink size={16} /></a>}<button title="Delete" onClick={() => deleteBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-red-200 text-red-600"><Trash2 size={16} /></button></div></td></tr>;
+              return <tr key={blog.id} className="border-b border-primary/10"><td className="py-4"><p className="font-semibold">{primary?.title || "Untitled"}</p><p className="text-xs text-primary/45">{primary?.slug}</p></td><td><span className="border border-primary/15 px-2 py-1 text-xs capitalize">{blog.status}</span></td><td className="whitespace-nowrap text-xs text-primary/55">{formatTableDateTime(blog.scheduled_at)}</td><td className="uppercase text-primary/60">{(blog.translations || []).map((item) => item.locale).join(" · ")}</td><td className="text-xs text-primary/55">{new Date(blog.updated_at || blog.created_at).toLocaleDateString()}</td><td><div className="flex justify-end gap-1"><button title="Edit" onClick={() => editBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><Pencil size={16} /></button><button title="Duplicate" onClick={() => duplicateBlog(blog)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><FilePlus2 size={16} /></button>{primary?.slug && primary.translation_status === "published" && <a title="Open" target="_blank" rel="noreferrer" href={`/${primary.locale}/blogs/${primary.slug}`} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><ExternalLink size={16} /></a>}<button title="Delete" onClick={() => deleteBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-red-200 text-red-600"><Trash2 size={16} /></button></div></td></tr>;
             })}
           </tbody></table>
         </div>}

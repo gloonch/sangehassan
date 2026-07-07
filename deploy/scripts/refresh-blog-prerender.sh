@@ -10,6 +10,9 @@ LOCK_FILE="${LOCK_FILE:-/run/sangehassan-blog-prerender.lock}"
 LOCALES="${LOCALES:-fa en ar}"
 FORCE="${FORCE:-0}"
 WEBSITE_IMAGE_REF="${WEBSITE_IMAGE_REF:-deploy-website:latest}"
+DB_CONTAINER="${DB_CONTAINER:-sangehassan-db}"
+DB_USER="${DB_USER:-sangehassan}"
+DB_NAME="${DB_NAME:-sangehassan}"
 
 log() {
   printf '[%s] %s\n' "$(date -Is)" "$*"
@@ -56,8 +59,33 @@ fetch_public_blogs() {
     ' "$response" >>"$BLOGS_TSV"
   done
 
-  sort -u "$BLOGS_TSV" >"$BLOGS_SORTED_TSV"
+  # Preserve API order because the blog listing page is prerendered in this order.
+  awk '!seen[$0]++' "$BLOGS_TSV" >"$BLOGS_SORTED_TSV"
   sha256sum "$BLOGS_SORTED_TSV" | awk '{print $1}' >"$FINGERPRINT_FILE"
+}
+
+promote_due_scheduled_blogs() {
+  local promoted
+
+  promoted="$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc "
+    WITH due AS (
+      UPDATE blogs
+      SET status = 'published',
+          published_at = COALESCE(scheduled_at, published_at, NOW()),
+          scheduled_at = NULL,
+          updated_at = NOW()
+      WHERE status = 'scheduled'
+        AND scheduled_at IS NOT NULL
+        AND scheduled_at <= NOW()
+      RETURNING id
+    )
+    SELECT COUNT(*) FROM due;
+  ")"
+  promoted="$(printf '%s' "$promoted" | tr -d '[:space:]')"
+
+  if [ "${promoted:-0}" != "0" ]; then
+    log "promoted $promoted scheduled blog(s) to published"
+  fi
 }
 
 verify_blog_routes() {
@@ -77,7 +105,13 @@ verify_blog_routes() {
     local html_file="$TMP_DIR/verify-$index.html"
     local status
 
-    status="$(curl -sS -L --max-time 45 -o "$html_file" -w '%{http_code}' "$fetch_url" || true)"
+    status=""
+    for _ in $(seq 1 5); do
+      status="$(curl -sS -L --max-time 45 -o "$html_file" -w '%{http_code}' "$fetch_url" || true)"
+      [ "$status" = "200" ] && break
+      sleep 2
+    done
+
     if [ "$status" != "200" ]; then
       log "verify failed: $public_url returned $status from $base_url"
       failures=$((failures + 1))
@@ -108,8 +142,14 @@ verify_blog_routes() {
 }
 
 build_and_verify_image() {
+  local cache_bust
+  cache_bust="$(cat "$FINGERPRINT_FILE")"
+  if [ "$FORCE" = "1" ]; then
+    cache_bust="$cache_bust-force-$(date +%s%N)"
+  fi
+
   log "building website image"
-  (cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" build --build-arg "PRERENDER_CACHE_BUST=$(cat "$FINGERPRINT_FILE")" website)
+  (cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" build --build-arg "PRERENDER_CACHE_BUST=$cache_bust" website)
 
   local image_ref
   image_ref="$(cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" config --format json | jq -r '.services.website.image // empty')"
@@ -180,6 +220,7 @@ main() {
   FINGERPRINT_FILE="$TMP_DIR/fingerprint"
   trap 'rm -rf "$TMP_DIR"' EXIT
 
+  promote_due_scheduled_blogs
   fetch_public_blogs
 
   local current_fingerprint previous_fingerprint

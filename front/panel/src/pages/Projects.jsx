@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import ReorderableImageGrid from "../components/ReorderableImageGrid";
+import { moveImage } from "../lib/imageOrderDraft";
 import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { useImageOrderDraft } from "../lib/useImageOrderDraft";
 
 const MAX_VIDEO_UPLOAD_BYTES = 90 * 1024 * 1024;
 
@@ -39,6 +42,7 @@ export default function Projects() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const { imageOrderDraft, stageImageOrder, resetImageOrderDraft } = useImageOrderDraft();
 
   const loadProjects = async () => {
     try {
@@ -178,9 +182,14 @@ export default function Projects() {
     setError("");
     try {
       const uploaded = await Promise.all(selected.map((file) => uploadFile(file)));
+      const currentImages = form.gallery_images || [];
+      const nextImages = [...currentImages, ...uploaded.map((item) => item?.image_url || "").filter(Boolean)];
+      if (imageOrderDraft) {
+        stageImageOrder(currentImages, nextImages);
+      }
       setForm((prev) => ({
         ...prev,
-        gallery_images: [...prev.gallery_images, ...uploaded.map((item) => item?.image_url || "").filter(Boolean)]
+        gallery_images: nextImages
       }));
     } catch (_) {
       setError(t("messages.error"));
@@ -190,9 +199,25 @@ export default function Projects() {
   };
 
   const handleRemoveGalleryImage = (index) => {
+    const currentImages = form.gallery_images || [];
+    const nextImages = currentImages.filter((_, idx) => idx !== index);
+    if (imageOrderDraft) {
+      stageImageOrder(currentImages, nextImages);
+    }
     setForm((prev) => ({
       ...prev,
-      gallery_images: prev.gallery_images.filter((_, idx) => idx !== index)
+      gallery_images: nextImages
+    }));
+  };
+
+  const handleMoveGalleryImage = (index, direction) => {
+    const currentImages = form.gallery_images || [];
+    const nextImages = moveImage(currentImages, index, direction);
+    if (nextImages === currentImages) return;
+    stageImageOrder(currentImages, nextImages);
+    setForm((prev) => ({
+      ...prev,
+      gallery_images: nextImages
     }));
   };
 
@@ -252,6 +277,7 @@ export default function Projects() {
 
       setForm(emptyForm);
       setEditingId(null);
+      resetImageOrderDraft();
       loadProjects();
     } catch (_) {
       setError(t("messages.error"));
@@ -280,6 +306,7 @@ export default function Projects() {
         product_ids: productIds.map(Number).filter(Boolean),
         sort_order: item.sort_order || 0
       });
+      resetImageOrderDraft(item.gallery_images || []);
     } catch (_) {
       setError(t("messages.error"));
     } finally {
@@ -500,20 +527,20 @@ export default function Projects() {
 
             {form.gallery_images.length > 0 && (
               <div className="rounded-2xl border border-primary/10 bg-sand/60 p-4">
-                <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
-                  {form.gallery_images.map((url, index) => (
-                    <div key={`${url}-${index}`} className="relative overflow-hidden rounded-xl border border-primary/15">
-                      <img src={resolveImageUrl(url)} alt="Gallery" className="h-20 w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveGalleryImage(index)}
-                        className="absolute right-1 top-1 rounded-full bg-white/95 px-1.5 text-[10px] font-semibold text-primary"
-                      >
-                        x
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <ReorderableImageGrid
+                  images={form.gallery_images}
+                  showPreview={false}
+                  onRemove={handleRemoveGalleryImage}
+                  onMove={handleMoveGalleryImage}
+                  thumbnailClassName="h-20"
+                  gridClassName="grid grid-cols-3 gap-3 md:grid-cols-5"
+                  labels={{
+                    empty: t("messages.empty"),
+                    remove: t("actions.delete"),
+                    moveLeft: t("actions.moveLeft"),
+                    moveRight: t("actions.moveRight")
+                  }}
+                />
               </div>
             )}
 
@@ -535,6 +562,7 @@ export default function Projects() {
                     setEditingId(null);
                     setForm(emptyForm);
                     setError("");
+                    resetImageOrderDraft();
                   }}
                 >
                   {t("actions.cancel")}
