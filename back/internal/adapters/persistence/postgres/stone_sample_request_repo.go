@@ -36,6 +36,7 @@ func (r *StoneSampleRequestRepository) ListSampleCategories(ctx context.Context)
 			)
 		)
 		WHERE c.is_active = TRUE
+		  AND c.slug NOT IN ('accessories', 'finishings')
 		GROUP BY c.id
 		HAVING COUNT(DISTINCT p.id) > 0
 		ORDER BY c.parent_id NULLS FIRST, c.id
@@ -490,9 +491,15 @@ func (r *StoneSampleRequestRepository) attachRequestChildren(ctx context.Context
 
 func sampleProductWhere(filter domain.StoneSampleCatalogFilter) (string, []any) {
 	args := make([]any, 0, 3)
-	parts := []string{"p.is_active = TRUE", "p.is_indexable = TRUE", "p.sample_available = TRUE"}
+	parts := []string{
+		"p.is_active = TRUE",
+		"p.is_indexable = TRUE",
+		"p.sample_available = TRUE",
+		"NOT EXISTS (SELECT 1 FROM categories hidden_category WHERE hidden_category.id = p.main_category_id AND hidden_category.slug IN ('accessories', 'finishings'))",
+	}
 	if filter.CategoryID != nil {
 		args = append(args, *filter.CategoryID)
+		parts = append(parts, fmt.Sprintf("EXISTS (SELECT 1 FROM categories requested_category WHERE requested_category.id = $%[1]d AND requested_category.slug NOT IN ('accessories', 'finishings'))", len(args)))
 		parts = append(parts, fmt.Sprintf("(p.main_category_id = $%d OR EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id = $%d))", len(args), len(args)))
 	}
 	if strings.TrimSpace(filter.Query) != "" {
