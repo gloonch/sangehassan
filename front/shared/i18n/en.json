@@ -460,8 +460,8 @@
     "phone": "Phone",
     "message": "Your message",
     "submit": "Send",
-    "hint": "Valid phone number required.",
-    "validation": "Enter your name, message, and a valid numeric phone number.",
+    "hint": "",
+    "validation": "Please complete the required fields.",
     "emailInvalid": "Enter a valid email address.",
     "success": "Message sent.",
     "error": "Could not send. Please try again."

@@ -138,6 +138,14 @@ export default function Footer() {
       <div className="section-shell py-5 md:py-13">
         <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1.2fr_1fr_1.2fr] md:gap-10">
           <div className={`flex flex-col items-center gap-2.5 md:gap-4 ${firstColumnAlign}`}>
+            <img
+              src={logoWhiteImage}
+              alt=""
+              width="1070"
+              height="710"
+              aria-hidden="true"
+              className="h-auto w-36 opacity-[0.18] md:w-48"
+            />
             <p className="text-xs tracking-[0.04em] text-sand/82 md:text-sm">
               <span className="font-semibold text-sand">Stay Connected</span>
             </p>
@@ -162,19 +170,9 @@ export default function Footer() {
           </div>
 
           <div className="relative min-h-[13.5rem] overflow-visible md:min-h-[12.5rem]">
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <img
-                src={logoWhiteImage}
-                alt=""
-                width="1070"
-                height="710"
-                aria-hidden="true"
-                className="h-auto w-[120%] max-w-none opacity-[0.14] md:w-[200%] lg:w-[225%]"
-              />
-            </div>
             <form
               onSubmit={handleContactSubmit}
-              className="relative mx-auto flex w-full max-w-sm flex-col gap-2 rounded-md border border-sand/12 bg-primary/35 p-3 backdrop-blur-sm"
+              className="relative mx-auto flex w-full max-w-sm flex-col gap-2 rounded-md bg-primary/35 p-3 backdrop-blur-sm"
             >
               <div className="grid grid-cols-2 gap-2">
                 <label className="sr-only" htmlFor="footer-contact-name">
@@ -185,7 +183,7 @@ export default function Footer() {
                   value={contactForm.fullName}
                   onChange={(event) => updateContactForm("fullName", event.target.value)}
                   placeholder={t("footerContact.name")}
-                  className="h-8 min-w-0 rounded-md border border-sand/20 bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:border-sand"
+                  className="h-8 min-w-0 rounded-md bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:bg-white"
                 />
                 <label className="sr-only" htmlFor="footer-contact-email">
                   {t("footerContact.email")}
@@ -195,26 +193,23 @@ export default function Footer() {
                   value={contactForm.email}
                   onChange={(event) => updateContactForm("email", event.target.value)}
                   placeholder={t("footerContact.email")}
-                  className="h-8 min-w-0 rounded-md border border-sand/20 bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:border-sand"
+                  className="h-8 min-w-0 rounded-md bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:bg-white"
                 />
               </div>
               <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-2">
                 <label className="sr-only" htmlFor="footer-contact-country">
                   {t("footerContact.countryCode")}
                 </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-2 top-1/2 z-10 flex h-5 w-7 -translate-y-1/2 items-center justify-center rounded-sm bg-primary text-[9px] font-bold text-sand ring-1 ring-sand/70">
-                    {selectedCountry.iso}
-                  </span>
+                <div>
                   <select
                     id="footer-contact-country"
                     value={contactForm.countryISO}
                     onChange={(event) => updateContactForm("countryISO", event.target.value)}
-                    className="h-8 w-full rounded-md border border-sand/20 bg-sand/95 pl-10 pr-2 text-[11px] font-semibold text-primary outline-none focus:border-sand"
+                    className="h-8 w-full rounded-md bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none focus:bg-white"
                   >
                     {PHONE_COUNTRIES.map((country) => (
                       <option key={country.iso} value={country.iso}>
-                        {country.iso} {country.code}
+                        {country.code} {country.label}
                       </option>
                     ))}
                   </select>
@@ -228,7 +223,7 @@ export default function Footer() {
                   value={contactForm.phoneNumber}
                   onChange={(event) => updateContactForm("phoneNumber", event.target.value.replace(/\D/g, ""))}
                   placeholder={t("footerContact.phone")}
-                  className="h-8 min-w-0 rounded-md border border-sand/20 bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:border-sand"
+                  className="h-8 min-w-0 rounded-md bg-sand/95 px-2 text-[11px] font-semibold text-primary outline-none placeholder:text-primary/45 focus:bg-white"
                   dir="ltr"
                 />
               </div>
@@ -241,7 +236,7 @@ export default function Footer() {
                 onChange={(event) => updateContactForm("message", event.target.value)}
                 placeholder={t("footerContact.message")}
                 rows="2"
-                className="min-h-[3.25rem] resize-none rounded-md border border-sand/20 bg-sand/95 px-2 py-1.5 text-[11px] font-semibold leading-5 text-primary outline-none placeholder:text-primary/45 focus:border-sand"
+                className="min-h-[3.25rem] resize-none rounded-md bg-sand/95 px-2 py-1.5 text-[11px] font-semibold leading-5 text-primary outline-none placeholder:text-primary/45 focus:bg-white"
               />
               <div className="flex items-center justify-between gap-2">
                 <p
@@ -266,8 +261,8 @@ export default function Footer() {
             <p className="font-display text-lg leading-tight text-sand/92 md:text-2xl">Let&apos;s build in stone</p>
             {phoneItems.length > 0 && (
               <div
-                className={`flex w-full flex-wrap items-center justify-center gap-1.5 md:gap-2 ${
-                  isRTL ? "md:justify-start" : "md:justify-end"
+                className={`flex w-full flex-col items-center justify-center gap-1.5 md:gap-2 ${
+                  isRTL ? "md:items-start" : "md:items-end"
                 }`}
                 aria-label={t("footer.phoneLabel")}
               >
@@ -275,7 +270,7 @@ export default function Footer() {
                   <a
                     key={item.normalized}
                     href={`tel:${item.normalized}`}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-sand/20 px-2.5 text-[11px] font-semibold text-sand/82 transition hover:border-sand/50 hover:text-sand md:text-xs"
+                    className="inline-flex h-8 items-center gap-1.5 px-2.5 text-[11px] font-semibold text-sand/82 transition hover:text-sand md:text-xs"
                     dir="ltr"
                   >
                     <PhoneIcon className="h-3.5 w-3.5" />
