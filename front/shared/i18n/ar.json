@@ -190,6 +190,31 @@
     "privacyNote": "هوية البائع والمشتري مخفية عن المستخدمين. يمكن للمشرفين فقط رؤية بيانات الهوية الكاملة.",
     "viewDetails": "عرض التفاصيل",
     "empty": "لا توجد عروض بيع حالياً.",
+    "formOptions": {
+      "block": "بلوك",
+      "finished": "معالج"
+    },
+    "filters": {
+      "searchLabel": "البحث في عروض البيع",
+      "searchPlaceholder": "ابحث عن المنتج أو المدينة أو نوع الحجر أو الوصف",
+      "allOffers": "كل العروض",
+      "allStoneTypes": "كل أنواع الحجر",
+      "allLocations": "كل المواقع",
+      "priceStatus": "حالة السعر",
+      "priceWith": "بسعر",
+      "priceWithout": "تفاوضي/بدون سعر",
+      "minTonnage": "أدنى حمولة",
+      "maxTonnage": "أعلى حمولة",
+      "sort": "الترتيب",
+      "sortNewest": "الأحدث",
+      "sortPriceLowToHigh": "السعر: من الأقل إلى الأعلى",
+      "sortPriceHighToLow": "السعر: من الأعلى إلى الأقل",
+      "sortTonnageHighToLow": "الحمولة: من الأعلى إلى الأقل",
+      "sortTonnageLowToHigh": "الحمولة: من الأقل إلى الأعلى",
+      "results": "{count} عروض",
+      "reset": "إعادة تعيين الفلاتر",
+      "emptyFiltered": "لا توجد عروض تطابق هذه الفلاتر."
+    },
     "priceUnitOptions": {
       "per_ton": "لكل طن",
       "per_meter": "لكل متر",
@@ -428,6 +453,19 @@
     "aboutTitle": "عن سنگ حسن",
     "aboutText": "أحجار طبيعية فاخرة مع توريد شفاف وحرفية دقيقة."
   },
+  "footerContact": {
+    "name": "الاسم",
+    "email": "البريد",
+    "countryCode": "المقدمة",
+    "phone": "رقم الهاتف",
+    "message": "رسالتك",
+    "submit": "إرسال",
+    "hint": "رقم هاتف صالح مطلوب.",
+    "validation": "أدخل الاسم والرسالة ورقم هاتف رقمي صالح.",
+    "emailInvalid": "أدخل بريداً إلكترونياً صالحاً.",
+    "success": "تم إرسال الرسالة.",
+    "error": "تعذر الإرسال. حاول مرة أخرى."
+  },
   "contact": {
     "title": "اتصل بنا",
     "subtitle": "اتصل مباشرة أو أرسل رسالة. سنعود إليك في أقرب وقت.",
@@ -619,6 +657,17 @@
     "productRequests": "طلبات منتجات جديدة",
     "productRequestsEmpty": "لا توجد طلبات منتجات جديدة حالياً.",
     "requestedProduct": "المنتج المطلوب"
+  },
+  "panelContactSubmissions": {
+    "title": "رسائل التواصل",
+    "empty": "لا توجد رسائل تواصل حالياً.",
+    "countLabel": "رسائل",
+    "detailKicker": "رسالة تواصل",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "email": "البريد",
+    "country": "الدولة",
+    "message": "الرسالة"
   },
   "panelSampleRequests": {
     "title": "طلبات العينات",

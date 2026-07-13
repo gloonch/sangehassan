@@ -9,6 +9,7 @@ import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
 import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
+import { getContactPhoneItems } from "../lib/contact";
 import NotFound from "./NotFound";
 
 const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -106,21 +107,6 @@ const toPercent = (value) => {
   }
 
   return null;
-};
-
-const toLatinDigits = (value) =>
-  value
-    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
-    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
-
-const normalizePhone = (value) => {
-  if (!value || typeof value !== "string") return "";
-  const cleaned = toLatinDigits(value).replace(/[^\d+]/g, "");
-  if (!cleaned) return "";
-  if (cleaned.startsWith("+")) {
-    return `+${cleaned.slice(1).replace(/\+/g, "")}`;
-  }
-  return cleaned.replace(/\+/g, "");
 };
 
 export default function ProductDetail() {
@@ -335,10 +321,7 @@ export default function ProductDetail() {
     }))
     .filter((section) => section.items.length > 0);
   const hasMoreInfo = localizedInfoSections.length > 0;
-  const phoneValue = t("footer.phoneValue");
-  const phoneItems = [phoneValue, "09121193835", "09121193935"]
-    .map((value) => ({ value, normalized: normalizePhone(value) }))
-    .filter((item) => item.normalized);
+  const phoneItems = getContactPhoneItems(t("footer.phoneValue"));
   const siteUrl = String(import.meta.env.VITE_SITE_URL || "").toLowerCase();
   const showDomesticMessengerLinks = siteUrl.includes("sangehassan.ir");
   const hasDetailBlocks = hasMoreInfo;

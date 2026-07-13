@@ -190,6 +190,31 @@
     "privacyNote": "هویت خریدار و فروشنده برای کاربران پنهان است و فقط مدیران به اطلاعات هویتی کامل دسترسی دارند.",
     "viewDetails": "مشاهده پیشنهاد",
     "empty": "فعلا پیشنهادی برای فروش سنگ ثبت نشده است.",
+    "formOptions": {
+      "block": "کوپ",
+      "finished": "فرآوری‌شده"
+    },
+    "filters": {
+      "searchLabel": "جستجوی پیشنهادهای فروش",
+      "searchPlaceholder": "جستجوی محصول، شهر، نوع سنگ یا توضیحات",
+      "allOffers": "همه پیشنهادها",
+      "allStoneTypes": "همه نوع سنگ‌ها",
+      "allLocations": "همه شهرها",
+      "priceStatus": "وضعیت قیمت",
+      "priceWith": "دارای قیمت",
+      "priceWithout": "توافقی/بدون قیمت",
+      "minTonnage": "حداقل تناژ",
+      "maxTonnage": "حداکثر تناژ",
+      "sort": "مرتب‌سازی",
+      "sortNewest": "جدیدترین",
+      "sortPriceLowToHigh": "قیمت: کم به زیاد",
+      "sortPriceHighToLow": "قیمت: زیاد به کم",
+      "sortTonnageHighToLow": "تناژ: زیاد به کم",
+      "sortTonnageLowToHigh": "تناژ: کم به زیاد",
+      "results": "{count} پیشنهاد",
+      "reset": "پاک کردن فیلترها",
+      "emptyFiltered": "پیشنهادی مطابق این فیلترها پیدا نشد."
+    },
     "priceUnitOptions": {
       "per_ton": "هر تن",
       "per_meter": "هر متر",
@@ -428,6 +453,19 @@
     "aboutTitle": "درباره سنگ حسن",
     "aboutText": "سنگ‌های طبیعی ممتاز با تامین شفاف و اجرای دقیق."
   },
+  "footerContact": {
+    "name": "نام",
+    "email": "ایمیل",
+    "countryCode": "پیش‌شماره",
+    "phone": "شماره تماس",
+    "message": "پیام شما",
+    "submit": "ارسال",
+    "hint": "شماره معتبر الزامی است.",
+    "validation": "نام، پیام و شماره تماس عددی و معتبر را وارد کنید.",
+    "emailInvalid": "ایمیل معتبر وارد کنید.",
+    "success": "پیام ارسال شد.",
+    "error": "ارسال انجام نشد. دوباره تلاش کنید."
+  },
   "contact": {
     "title": "تماس با ما",
     "subtitle": "برای مشاوره، استعلام، یا پیگیری—هم تماس مستقیم دارید، هم امکان ارسال پیام.",
@@ -619,6 +657,17 @@
     "productRequests": "درخواست‌های محصول جدید",
     "productRequestsEmpty": "فعلا درخواستی برای محصول جدید ثبت نشده است.",
     "requestedProduct": "محصول درخواستی"
+  },
+  "panelContactSubmissions": {
+    "title": "پیام‌های تماس",
+    "empty": "فعلا پیامی ثبت نشده است.",
+    "countLabel": "پیام",
+    "detailKicker": "پیام تماس",
+    "name": "نام",
+    "phone": "شماره تماس",
+    "email": "ایمیل",
+    "country": "کشور",
+    "message": "پیام"
   },
   "panelSampleRequests": {
     "title": "درخواست‌های نمونه",

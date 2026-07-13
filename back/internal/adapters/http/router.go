@@ -33,6 +33,7 @@ func NewRouter(
 	listingService *usecase.ListingService,
 	dealRequestService *usecase.DealRequestService,
 	stoneSampleRequestService *usecase.StoneSampleRequestService,
+	contactSubmissionService *usecase.ContactSubmissionService,
 ) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
@@ -76,6 +77,7 @@ func NewRouter(
 	userMiddleware := middleware.NewUserAuthMiddleware(userAuthService)
 	listingHandler := handlers.NewListingHandler(listingService, dealRequestService, userRepo)
 	stoneSampleRequestHandler := handlers.NewStoneSampleRequestHandler(stoneSampleRequestService)
+	contactSubmissionHandler := handlers.NewContactSubmissionHandler(contactSubmissionService)
 
 	api := router.Group("/api")
 	{
@@ -110,6 +112,7 @@ func NewRouter(
 		api.GET("/blocks/:slug", blockHandler.GetBySlug)
 		api.GET("/content-sections", contentSectionHandler.ListPublic)
 		api.GET("/team-members", teamMemberHandler.ListPublic)
+		api.POST("/contact-submissions", contactSubmissionHandler.Create)
 
 		api.POST("/admin/login", adminAuthHandler.Login)
 		api.POST("/admin/logout", adminAuthHandler.Logout)
@@ -210,6 +213,8 @@ func NewRouter(
 			admin.GET("/ads", listingHandler.AdminListListings)
 			admin.DELETE("/ads/:id", listingHandler.AdminDeleteListing)
 			admin.GET("/product-requests", listingHandler.AdminListProductRequests)
+			admin.GET("/contact-submissions", contactSubmissionHandler.AdminList)
+			admin.GET("/contact-submissions/:id", contactSubmissionHandler.AdminGet)
 			admin.GET("/users", listingHandler.AdminListUsers)
 		}
 	}

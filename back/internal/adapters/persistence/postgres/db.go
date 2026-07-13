@@ -47,8 +47,42 @@ func NewDB(cfg config.Config) (*sql.DB, error) {
 	if err := ensureListingProductLinks(db); err != nil {
 		return nil, err
 	}
+	if err := ensureContactSubmissions(db); err != nil {
+		return nil, err
+	}
 
 	return db, nil
+}
+
+func ensureContactSubmissions(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS contact_submissions (
+			id BIGSERIAL PRIMARY KEY,
+			full_name TEXT NOT NULL,
+			email TEXT,
+			country_iso TEXT NOT NULL,
+			country_code TEXT NOT NULL,
+			phone_number TEXT NOT NULL,
+			phone_e164 TEXT NOT NULL,
+			message TEXT NOT NULL,
+			source TEXT NOT NULL DEFAULT 'footer',
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_contact_submissions_created
+		ON contact_submissions (created_at DESC, id DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_contact_submissions_phone
+		ON contact_submissions (phone_e164)`,
+	}
+
+	for _, statement := range statements {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureListingProductLinks(db *sql.DB) error {

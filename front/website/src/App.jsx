@@ -8,7 +8,7 @@ import AppRoutes from "./router";
 export default function App() {
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const hideFooter = ["/", "/profile", "/login", "/signup"].includes(location.pathname);
+  const hideFooter = ["/profile", "/login", "/signup"].includes(location.pathname);
   const mainTopClass = isHome ? "pt-0" : "pt-28";
 
   return (

@@ -52,6 +52,31 @@
     "privacyNote": "Buyer and seller identities are hidden from users. Only admins can view full identity details.",
     "viewDetails": "View offer",
     "empty": "No sale offers available yet.",
+    "formOptions": {
+      "block": "Block",
+      "finished": "Finished"
+    },
+    "filters": {
+      "searchLabel": "Search sale offers",
+      "searchPlaceholder": "Search product, city, stone type, or description",
+      "allOffers": "All offers",
+      "allStoneTypes": "All stone types",
+      "allLocations": "All locations",
+      "priceStatus": "Price status",
+      "priceWith": "With price",
+      "priceWithout": "Negotiable/no price",
+      "minTonnage": "Min tonnage",
+      "maxTonnage": "Max tonnage",
+      "sort": "Sort",
+      "sortNewest": "Newest",
+      "sortPriceLowToHigh": "Price: low to high",
+      "sortPriceHighToLow": "Price: high to low",
+      "sortTonnageHighToLow": "Tonnage: high to low",
+      "sortTonnageLowToHigh": "Tonnage: low to high",
+      "results": "{count} offers",
+      "reset": "Reset filters",
+      "emptyFiltered": "No offers match these filters."
+    },
     "priceUnitOptions": {
       "per_ton": "Per ton",
       "per_meter": "Per meter",
@@ -428,6 +453,19 @@
     "aboutTitle": "About SangeHassan",
     "aboutText": "Premium natural stones with honest sourcing and craftsmanship."
   },
+  "footerContact": {
+    "name": "Name",
+    "email": "Email",
+    "countryCode": "Code",
+    "phone": "Phone",
+    "message": "Your message",
+    "submit": "Send",
+    "hint": "Valid phone number required.",
+    "validation": "Enter your name, message, and a valid numeric phone number.",
+    "emailInvalid": "Enter a valid email address.",
+    "success": "Message sent.",
+    "error": "Could not send. Please try again."
+  },
   "contact": {
     "title": "Contact Us",
     "subtitle": "Call us or leave a message. We’ll get back to you as soon as possible.",
@@ -619,6 +657,17 @@
     "productRequests": "New product requests",
     "productRequestsEmpty": "No product requests yet.",
     "requestedProduct": "Requested product"
+  },
+  "panelContactSubmissions": {
+    "title": "Contact messages",
+    "empty": "No contact messages yet.",
+    "countLabel": "messages",
+    "detailKicker": "Contact message",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "country": "Country",
+    "message": "Message"
   },
   "panelSampleRequests": {
     "title": "Sample requests",
