@@ -134,7 +134,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-12 overflow-hidden bg-primary text-sand md:mt-24">
+    <footer className="overflow-hidden bg-primary text-sand">
       <div className="section-shell py-5 md:py-13">
         <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1.2fr_1fr_1.2fr] md:gap-10">
           <div className={`flex flex-col items-center gap-2.5 md:gap-4 ${firstColumnAlign}`}>
