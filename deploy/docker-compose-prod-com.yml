@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: sangehassan-db
+    restart: unless-stopped
     env_file: .prod-com.env
     environment:
       POSTGRES_USER: ${DB_USER:-sangehassan}
@@ -18,6 +19,7 @@ services:
       context: ../back
       target: prod
     container_name: sangehassan-backend
+    restart: unless-stopped
     env_file: .prod-com.env
     depends_on:
       - db
@@ -41,6 +43,7 @@ services:
         VITE_SITEMAP_LASTMOD: ${VITE_SITEMAP_LASTMOD:-}
         VITE_DEFAULT_LANG: ${VITE_DEFAULT_LANG:-en}
     container_name: sangehassan-website
+    restart: unless-stopped
     env_file: .prod-com.env
     expose:
       - "80"
@@ -55,6 +58,7 @@ services:
         VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
         VITE_DEFAULT_LANG: ${VITE_DEFAULT_LANG:-en}
     container_name: sangehassan-panel
+    restart: unless-stopped
     env_file: .prod-com.env
     expose:
       - "80"
@@ -62,6 +66,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: sangehassan-nginx
+    restart: unless-stopped
     depends_on:
       - backend
       - website

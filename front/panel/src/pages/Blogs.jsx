@@ -37,6 +37,7 @@ const createEmptyForm = () => ({
   tags: [],
   is_featured: false,
   scheduled_at: "",
+  published_at: "",
   translations: locales.map(emptyTranslation)
 });
 
@@ -67,6 +68,7 @@ function normalizeBlog(blog) {
     ...createEmptyForm(),
     ...blog,
     scheduled_at: toLocalDateTime(blog.scheduled_at),
+    published_at: toLocalDateTime(blog.published_at),
     translations: locales.map((locale) => ({ ...emptyTranslation(locale), ...(byLocale.get(locale) || {}) }))
   };
 }
@@ -281,6 +283,7 @@ export default function Blogs() {
       const payload = {
         ...form,
         scheduled_at: form.status === "scheduled" && form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
+        published_at: form.status !== "scheduled" && form.published_at ? new Date(form.published_at).toISOString() : null,
         tags: Array.isArray(form.tags) ? form.tags : [],
         translations: form.translations.filter((item) => item.title.trim())
       };
@@ -325,7 +328,7 @@ export default function Blogs() {
   const duplicateBlog = (blog) => {
     const copy = normalizeBlog(blog);
     copy.status = "draft";
-    copy.published_at = null;
+    copy.published_at = "";
     copy.scheduled_at = "";
     copy.translations = copy.translations.map((item) => ({
       ...item,
@@ -398,7 +401,10 @@ export default function Blogs() {
             <label className="text-xs font-semibold text-primary/65">Tags
               <input value={(form.tags || []).join(", ")} onChange={(event) => updateForm({ tags: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} className="mt-2 w-full border border-primary/20 bg-white px-3 py-2.5 text-sm" />
             </label>
-            {form.status === "scheduled" && <label className="text-xs font-semibold text-primary/65">Publish at
+            <label className="text-xs font-semibold text-primary/65">Published at
+              <input type="datetime-local" disabled={form.status === "scheduled"} value={form.published_at} onChange={(event) => updateForm({ published_at: event.target.value })} className="mt-2 w-full border border-primary/20 bg-white px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:bg-primary/5 disabled:text-primary/40" />
+            </label>
+            {form.status === "scheduled" && <label className="text-xs font-semibold text-primary/65">Schedule date
               <input required type="datetime-local" value={form.scheduled_at} onChange={(event) => updateForm({ scheduled_at: event.target.value })} className="mt-2 w-full border border-primary/20 bg-white px-3 py-2.5 text-sm" />
             </label>}
             <label className="flex items-center gap-2 pt-7 text-sm font-semibold"><input type="checkbox" checked={form.is_featured} onChange={(event) => updateForm({ is_featured: event.target.checked })} /> Featured article</label>
@@ -499,10 +505,10 @@ export default function Blogs() {
           </div>
         </div>
         {loading ? <p className="mt-5 text-sm text-primary/60">Loading...</p> : <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-sm"><thead className="border-b border-primary/10 text-xs uppercase text-primary/45"><tr><th className="py-3">Title</th><th>Status</th><th>Schedule date</th><th>Languages</th><th>Updated</th><th className="text-right">Actions</th></tr></thead><tbody>
+          <table className="w-full min-w-[1020px] table-fixed text-left text-sm"><colgroup><col className="w-[30%]" /><col className="w-[10%]" /><col className="w-[15%]" /><col className="w-[15%]" /><col className="w-[10%]" /><col className="w-[10%]" /><col className="w-[10%]" /></colgroup><thead className="border-b border-primary/10 text-xs uppercase text-primary/45"><tr><th className="py-3 pr-3">Title</th><th className="pr-3">Status</th><th className="pr-3">Publish date</th><th className="pr-3">Schedule date</th><th className="pr-3">Languages</th><th className="pr-3">Updated</th><th className="text-right">Actions</th></tr></thead><tbody>
             {filteredBlogs.map((blog) => {
               const primary = blog.translations?.find((item) => item.locale === "fa") || blog.translations?.[0];
-              return <tr key={blog.id} className="border-b border-primary/10"><td className="py-4"><p className="font-semibold">{primary?.title || "Untitled"}</p><p className="text-xs text-primary/45">{primary?.slug}</p></td><td><span className="border border-primary/15 px-2 py-1 text-xs capitalize">{blog.status}</span></td><td className="whitespace-nowrap text-xs text-primary/55">{formatTableDateTime(blog.scheduled_at)}</td><td className="uppercase text-primary/60">{(blog.translations || []).map((item) => item.locale).join(" · ")}</td><td className="text-xs text-primary/55">{new Date(blog.updated_at || blog.created_at).toLocaleDateString()}</td><td><div className="flex justify-end gap-1"><button title="Edit" onClick={() => editBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><Pencil size={16} /></button><button title="Duplicate" onClick={() => duplicateBlog(blog)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><FilePlus2 size={16} /></button>{primary?.slug && primary.translation_status === "published" && <a title="Open" target="_blank" rel="noreferrer" href={`/${primary.locale}/blogs/${primary.slug}`} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><ExternalLink size={16} /></a>}<button title="Delete" onClick={() => deleteBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-red-200 text-red-600"><Trash2 size={16} /></button></div></td></tr>;
+              return <tr key={blog.id} className="border-b border-primary/10"><td className="py-4 pr-3"><p className="font-semibold">{primary?.title || "Untitled"}</p><p className="break-all text-xs text-primary/45">{primary?.slug}</p></td><td className="pr-3"><span className="border border-primary/15 px-2 py-1 text-xs capitalize">{blog.status}</span></td><td className="whitespace-nowrap pr-3 text-xs text-primary/55">{formatTableDateTime(blog.published_at)}</td><td className="whitespace-nowrap pr-3 text-xs text-primary/55">{formatTableDateTime(blog.scheduled_at)}</td><td className="pr-3 uppercase text-primary/60">{(blog.translations || []).map((item) => item.locale).join(" · ")}</td><td className="pr-3 text-xs text-primary/55">{new Date(blog.updated_at || blog.created_at).toLocaleDateString()}</td><td><div className="flex justify-end gap-1"><button title="Edit" onClick={() => editBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><Pencil size={16} /></button><button title="Duplicate" onClick={() => duplicateBlog(blog)} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><FilePlus2 size={16} /></button>{primary?.slug && primary.translation_status === "published" && <a title="Open" target="_blank" rel="noreferrer" href={`/${primary.locale}/blogs/${primary.slug}`} className="inline-flex h-9 w-9 items-center justify-center border border-primary/15"><ExternalLink size={16} /></a>}<button title="Delete" onClick={() => deleteBlog(blog.id)} className="inline-flex h-9 w-9 items-center justify-center border border-red-200 text-red-600"><Trash2 size={16} /></button></div></td></tr>;
             })}
           </tbody></table>
         </div>}

@@ -106,10 +106,10 @@ verify_blog_routes() {
     local status
 
     status=""
-    for _ in $(seq 1 5); do
+    for _ in $(seq 1 12); do
       status="$(curl -sS -L --max-time 45 -o "$html_file" -w '%{http_code}' "$fetch_url" || true)"
       [ "$status" = "200" ] && break
-      sleep 2
+      sleep 3
     done
 
     if [ "$status" != "200" ]; then
