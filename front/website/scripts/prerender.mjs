@@ -1348,7 +1348,9 @@ async function loadBlogRoutes() {
         routes.push({
           path: pagePath,
           title: pageNumber === 1 ? meta.title : `${blogBaseTitle} - ${pageNumber} | ${blogBrand}`,
-          description: meta.description,
+          description: pageNumber === 1
+            ? meta.description
+            : `${meta.description} ${locale === "fa" ? "صفحه" : locale === "ar" ? "الصفحة" : "Page"} ${pageNumber}.`,
           schemaType: "Blog",
           routeKind: "blog-list",
           image: pageItems.find((blog) => blog.cover_image_url)?.cover_image_url || defaultShareImage,

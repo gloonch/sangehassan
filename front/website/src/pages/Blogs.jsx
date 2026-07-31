@@ -14,6 +14,12 @@ const localeContent = {
 };
 
 const pageSize = 9;
+const pageDescription = (copy, locale, page) => {
+  if (page === 1) return copy.intro;
+  if (locale === "fa") return `${copy.intro} صفحه ${page}.`;
+  if (locale === "ar") return `${copy.intro} الصفحة ${page}.`;
+  return `${copy.intro} Page ${page}.`;
+};
 const freshRequest = () => ({
   cache: "no-store",
   headers: {
@@ -71,10 +77,11 @@ export default function Blogs() {
   const alternates = page === 1 ? ["fa", "en", "ar"].map((code) => ({ lang: code, path: `/${code}/blogs` })) : [];
   if (page === 1) alternates.push({ lang: "x-default", path: "/en/blogs" });
   const pageTitle = page > 1 ? `${copy.title} - ${page} | SangeHassan` : `${copy.title} | SangeHassan`;
+  const description = pageDescription(copy, locale, page);
 
   usePageSeo({
     title: pageTitle,
-    description: copy.intro,
+    description,
     path,
     lang: locale,
     locale: copy.locale,
@@ -84,7 +91,7 @@ export default function Blogs() {
     previousPath: page === 2 ? basePath : page > 2 ? `${basePath}/page/${page - 1}` : "",
     nextPath: page < pageCount ? `${basePath}/page/${page + 1}` : "",
     jsonLdId: "blogs-jsonld",
-    jsonLd: { "@context": "https://schema.org", "@type": "Blog", "@id": `${getCanonicalUrl(path)}#webpage`, inLanguage: locale, name: copy.title, description: copy.intro, url: getCanonicalUrl(path) }
+    jsonLd: { "@context": "https://schema.org", "@type": "Blog", "@id": `${getCanonicalUrl(path)}#webpage`, inLanguage: locale, name: copy.title, description, url: getCanonicalUrl(path) }
   });
 
   return (

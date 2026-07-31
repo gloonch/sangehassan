@@ -26,6 +26,16 @@ const clip = (value, limit) => {
 
 export function getProductSeo(product, locale = "en") {
   const title = localizedField(product, "title", locale) || product?.slug || "Natural stone";
+  const englishTitle = String(product?.title_en || "").trim();
+  const genericSlugReference = /^product-\d+$/i.test(product?.slug || "")
+    ? String(product.slug).replace(/-/g, " ").replace(/^./, (letter) => letter.toUpperCase())
+    : "";
+  const identity = genericSlugReference || (
+    locale !== "en" && englishTitle && englishTitle.toLocaleLowerCase() !== title.toLocaleLowerCase()
+      ? englishTitle
+      : ""
+  );
+  const qualifiedTitle = identity ? `${title} (${identity})` : title;
   const category = localizedField(product?.category || product?.categories?.[0], "title", locale);
   const mines = productValues(product, "mines", "mines", locale);
   const finishes = productValues(product, "finishes", "finishes", locale);
@@ -45,14 +55,14 @@ export function getProductSeo(product, locale = "en") {
   let generatedSummary;
   let seoTitle;
   if (locale === "fa") {
-    generatedSummary = `${title}${category ? ` از دسته ${category}` : "، محصول سنگ طبیعی"}${mines.length ? ` با معدن ${mines.slice(0, 2).join(" و ")}` : ""}${finishes.length ? ` و فرآوری ${finishes.slice(0, 2).join(" و ")}` : ""}. تصاویر، مشخصات و گزینه‌های مناسب خرید و بررسی پروژه را در سنگ حسن مشاهده کنید.`;
-    seoTitle = `${title}${detail ? ` | ${detail}` : " | مشخصات و خرید"} | سنگ حسن`;
+    generatedSummary = `${qualifiedTitle}${category ? ` از دسته ${category}` : "، محصول سنگ طبیعی"}${mines.length ? ` با معدن ${mines.slice(0, 2).join(" و ")}` : ""}${finishes.length ? ` و فرآوری ${finishes.slice(0, 2).join(" و ")}` : ""}. تصاویر، مشخصات و گزینه‌های مناسب خرید و بررسی پروژه را در سنگ حسن مشاهده کنید.`;
+    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | مشخصات و خرید"} | سنگ حسن`;
   } else if (locale === "ar") {
-    generatedSummary = `${title}${category ? ` من فئة ${category}` : " من الحجر الطبيعي"}${mines.length ? ` من محاجر ${mines.slice(0, 2).join(" و")}` : ""}${finishes.length ? ` بتشطيب ${finishes.slice(0, 2).join(" و")}` : ""}. شاهد الصور والمواصفات وخيارات التوريد للمشاريع من سانج حسن.`;
-    seoTitle = `${title}${detail ? ` | ${detail}` : " | المواصفات والتوريد"} | سانج حسن`;
+    generatedSummary = `${qualifiedTitle}${category ? ` من فئة ${category}` : " من الحجر الطبيعي"}${mines.length ? ` من محاجر ${mines.slice(0, 2).join(" و")}` : ""}${finishes.length ? ` بتشطيب ${finishes.slice(0, 2).join(" و")}` : ""}. شاهد الصور والمواصفات وخيارات التوريد للمشاريع من سانج حسن.`;
+    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | المواصفات والتوريد"} | سانج حسن`;
   } else {
-    generatedSummary = `${title}${category ? ` is a ${category} product` : " is a natural stone product"}${mines.length ? ` sourced from ${mines.slice(0, 2).join(" and ")}` : ""}${finishes.length ? ` and available in ${finishes.slice(0, 2).join(" and ")} finishes` : ""}. View images, specifications, and project sourcing options from SangeHassan.`;
-    seoTitle = `${title}${detail ? ` | ${detail}` : " | Specifications & Supply"} | SangeHassan`;
+    generatedSummary = `${qualifiedTitle}${category ? ` is a ${category} product` : " is a natural stone product"}${mines.length ? ` sourced from ${mines.slice(0, 2).join(" and ")}` : ""}${finishes.length ? ` and available in ${finishes.slice(0, 2).join(" and ")} finishes` : ""}. View images, specifications, and project sourcing options from SangeHassan.`;
+    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | Specifications & Supply"} | SangeHassan`;
   }
 
   return {
