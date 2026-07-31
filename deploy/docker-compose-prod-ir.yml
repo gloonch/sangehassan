@@ -29,6 +29,7 @@ services:
       - "8080"
     volumes:
       - images_data_prod:/app/storage/images
+      - workflow_files_data_prod:/app/storage/workflow-files
       - ../back/storage/images:/seed/images:ro
 
   website:
@@ -84,3 +85,4 @@ services:
 volumes:
   pg_data_prod:
   images_data_prod:
+  workflow_files_data_prod:

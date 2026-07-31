@@ -8,7 +8,7 @@ export default function Login() {
   const { t } = useTranslation();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ phone: "", password: "" });
   const [error, setError] = useState("");
 
   const handleSubmit = async (event) => {
@@ -33,12 +33,13 @@ export default function Login() {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-            {t("adminLogin.username")}
+            شماره تلفن
             <input
-              type="text"
+              type="tel"
               className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
-              value={form.username}
-              onChange={(event) => setForm({ ...form, username: event.target.value })}
+              value={form.phone}
+              placeholder="09121234567"
+              onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
           </label>
           <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">

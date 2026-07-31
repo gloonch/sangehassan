@@ -5,25 +5,31 @@ import LanguageSwitch from "./LanguageSwitch";
 
 const navItems = [
   { key: "dashboard", path: "/dashboard", label: "nav.dashboard", end: true },
-  { key: "products", path: "/dashboard/products", label: "panelProducts.title" },
-  { key: "productTerms", path: "/dashboard/product-terms", label: "panelProductTerms.title" },
-  { key: "catalogFacetSEO", path: "/dashboard/catalog-facet-seo", label: "catalogFacetSEO.title" },
-  { key: "blocks", path: "/dashboard/blocks", label: "panelBlocks.title" },
-  { key: "projects", path: "/dashboard/projects", label: "panelProjects.title" },
-  { key: "categories", path: "/dashboard/categories", label: "categories.title" },
-  { key: "blogs", path: "/dashboard/blogs", label: "panelBlogs.title" },
-  { key: "templates", path: "/dashboard/templates", label: "templates.title" },
-  { key: "content", path: "/dashboard/content", label: "panelContent.title" },
-  { key: "team", path: "/dashboard/team", label: "panelTeam.title" },
-  { key: "ads", path: "/dashboard/ads", label: "panelAds.title" },
-  { key: "contactSubmissions", path: "/dashboard/contact-submissions", label: "panelContactSubmissions.title" },
-  { key: "sampleRequests", path: "/dashboard/sample-requests", label: "panelSampleRequests.title" },
-  { key: "users", path: "/dashboard/users", label: "panelUsers.title" }
+  { key: "products", path: "/dashboard/products", label: "panelProducts.title", permission: "content.manage" },
+  { key: "productTerms", path: "/dashboard/product-terms", label: "panelProductTerms.title", permission: "content.manage" },
+  { key: "catalogFacetSEO", path: "/dashboard/catalog-facet-seo", label: "catalogFacetSEO.title", permission: "content.manage" },
+  { key: "blocks", path: "/dashboard/blocks", label: "panelBlocks.title", permission: "content.manage" },
+  { key: "projects", path: "/dashboard/projects", label: "panelProjects.title", permission: "content.manage" },
+  { key: "categories", path: "/dashboard/categories", label: "categories.title", permission: "content.manage" },
+  { key: "blogs", path: "/dashboard/blogs", label: "panelBlogs.title", permission: "content.manage" },
+  { key: "templates", path: "/dashboard/templates", label: "templates.title", permission: "content.manage" },
+  { key: "content", path: "/dashboard/content", label: "panelContent.title", permission: "content.manage" },
+  { key: "team", path: "/dashboard/team", label: "panelTeam.title", permission: "content.manage" },
+  { key: "ads", path: "/dashboard/ads", label: "panelAds.title", permission: "content.manage" },
+  { key: "contactSubmissions", path: "/dashboard/contact-submissions", label: "panelContactSubmissions.title", permission: "content.manage" },
+  { key: "sampleRequests", path: "/dashboard/sample-requests", label: "panelSampleRequests.title", permission: "content.manage" },
+  { key: "users", path: "/dashboard/users", label: "panelUsers.title", permission: "users.view" },
+  { key: "roles", path: "/dashboard/roles", text: "نقش‌ها و دسترسی‌ها", permission: "roles.view" },
+  { key: "workflows", path: "/dashboard/workflows", text: "طراحی Workflow", permission: "workflow_templates.manage" },
+  { key: "batches", path: "/dashboard/batches", text: "بچ‌ها", permissions: ["batches.view_assigned", "batches.view_all"] },
+  { key: "inventory", path: "/dashboard/inventory", text: "موجودی", permission: "inventory.lots.view" },
+  { key: "shipments", path: "/dashboard/shipments", text: "محموله‌ها", permissions: ["shipments.view_assigned", "shipments.view_all"] },
+  { key: "audit", path: "/dashboard/audit", text: "گزارش تغییرات", permission: "audit.view" }
 ];
 
 export default function PanelLayout() {
   const { t } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, user, hasPermission } = useAuth();
 
   return (
     <div className="min-h-screen">
@@ -35,6 +41,7 @@ export default function PanelLayout() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
+            <span className="text-xs text-primary/60">{[user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.phone}</span>
             <button
               type="button"
               onClick={logout}
@@ -47,7 +54,7 @@ export default function PanelLayout() {
 
         <nav className="rounded-3xl border border-primary/10 bg-primary/5 px-4 py-3 shadow-lg">
           <div className="flex flex-wrap items-center gap-3 overflow-x-auto">
-            {navItems.map((item) => (
+            {navItems.filter((item) => (!item.permission || hasPermission(item.permission)) && (!item.permissions || item.permissions.some(hasPermission))).map((item) => (
               <NavLink
                 key={item.key}
                 to={item.path}
@@ -60,7 +67,7 @@ export default function PanelLayout() {
                   }`
                 }
               >
-                {t(item.label)}
+                {item.text || t(item.label)}
               </NavLink>
             ))}
           </div>

@@ -73,7 +73,27 @@ To apply the latest schema to an existing DB volume without dropping data:
 ```sh
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/001_init.sql
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/002_auth.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/014_operations_phase1.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/015_operations_phase2.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/016_operations_phase3.sql
 ```
+
+## Operational dashboard bootstrap
+
+Phase 1 uses the shared `users` table and database-backed roles and permissions. Configure the first protected administrator before starting the backend:
+
+```sh
+BOOTSTRAP_SUPER_ADMIN_PHONE=+989121234567
+BOOTSTRAP_SUPER_ADMIN_PASSWORD=replace_with_a_strong_temporary_password
+BOOTSTRAP_SUPER_ADMIN_FIRST_NAME=مدیر
+BOOTSTRAP_SUPER_ADMIN_LAST_NAME=اصلی
+```
+
+Bootstrap runs only while no active Super Admin exists and forces a password change on first login. Existing database volumes must apply `014_operations_phase1.sql` before starting the updated backend.
+
+Phase 2 adds versioned Workflow templates, normalized per-order snapshots, lifecycle transitions, dynamic forms, handoff discrepancies, triggers, and private files. Apply `015_operations_phase2.sql` after Phase 1. Set `WORKFLOW_FILE_DIR` when the default `/app/storage/workflow-files` is not suitable; production compose files persist this directory in a backend-only volume that is never mounted by nginx.
+
+Phase 3 adds order lines, Batch-scoped fulfillment, immutable inventory movements, private Shipment/Package files, partial delivery, operational costs, Workflow scopes and controlled branching. Apply `016_operations_phase3.sql` after Phase 2; existing Order-scoped instances are backfilled without receiving new Batch or Step records.
 
 ## Data import (SangeHassan export)
 The extracted JSON lives in `data/` and images in `data/images/products`. We added a Go importer and expanded the DB schema (attributes + product-category relations).

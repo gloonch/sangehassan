@@ -85,6 +85,7 @@ func (s *UserAuthService) SignUp(ctx context.Context, phone, password string) (d
 		Phone:        &normalizedPhone,
 		Role:         "user",
 		IsActive:     true,
+		UserType:     "CUSTOMER",
 	})
 	if err != nil {
 		if conflictErr := resolveUniqueConflict(err); conflictErr != nil {
@@ -98,10 +99,28 @@ func (s *UserAuthService) SignUp(ctx context.Context, phone, password string) (d
 		return domain.UserInfo{}, TokenPair{}, err
 	}
 
-	return user.SafeInfo(), pair, nil
+	info, infoErr := s.GetMe(ctx, user.ID)
+	if infoErr != nil {
+		return domain.UserInfo{}, TokenPair{}, infoErr
+	}
+	return info, pair, nil
 }
 
 func (s *UserAuthService) Login(ctx context.Context, phone, password string) (domain.UserInfo, TokenPair, error) {
+	return s.login(ctx, phone, password, "")
+}
+
+func (s *UserAuthService) LoginCustomer(ctx context.Context, phone, password string) (domain.UserInfo, TokenPair, error) {
+	return s.login(ctx, phone, password, "CUSTOMER")
+}
+
+// LoginInternal authenticates an operational user before issuing any session
+// tokens. Customer accounts must use the public website login flow instead.
+func (s *UserAuthService) LoginInternal(ctx context.Context, phone, password string) (domain.UserInfo, TokenPair, error) {
+	return s.login(ctx, phone, password, "INTERNAL")
+}
+
+func (s *UserAuthService) login(ctx context.Context, phone, password, requiredUserType string) (domain.UserInfo, TokenPair, error) {
 	normalizedPhone := normalizePhone(phone)
 	if normalizedPhone == "" {
 		return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
@@ -115,11 +134,14 @@ func (s *UserAuthService) Login(ctx context.Context, phone, password string) (do
 		return domain.UserInfo{}, TokenPair{}, err
 	}
 
-	if !user.IsActive {
+	if !user.IsActive || user.Status == "DISABLED" || user.Status == "LOCKED" || user.Status == "INVITED" {
 		return domain.UserInfo{}, TokenPair{}, ErrInactiveUser
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+		return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
+	}
+	if requiredUserType != "" && user.UserType != requiredUserType {
 		return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
 	}
 
@@ -130,7 +152,11 @@ func (s *UserAuthService) Login(ctx context.Context, phone, password string) (do
 
 	_ = s.users.UpdateLastLogin(ctx, user.ID, time.Now())
 
-	return user.SafeInfo(), pair, nil
+	info, infoErr := s.GetMe(ctx, user.ID)
+	if infoErr != nil {
+		return domain.UserInfo{}, TokenPair{}, infoErr
+	}
+	return info, pair, nil
 }
 
 func (s *UserAuthService) Refresh(ctx context.Context, rawRefresh string) (domain.UserInfo, TokenPair, error) {
@@ -154,7 +180,7 @@ func (s *UserAuthService) Refresh(ctx context.Context, rawRefresh string) (domai
 	if err != nil {
 		return domain.UserInfo{}, TokenPair{}, err
 	}
-	if !user.IsActive {
+	if !user.IsActive || user.Status != "ACTIVE" {
 		return domain.UserInfo{}, TokenPair{}, ErrInactiveUser
 	}
 
@@ -166,7 +192,11 @@ func (s *UserAuthService) Refresh(ctx context.Context, rawRefresh string) (domai
 		return domain.UserInfo{}, TokenPair{}, err
 	}
 
-	return user.SafeInfo(), pair, nil
+	info, infoErr := s.GetMe(ctx, user.ID)
+	if infoErr != nil {
+		return domain.UserInfo{}, TokenPair{}, infoErr
+	}
+	return info, pair, nil
 }
 
 func (s *UserAuthService) Logout(ctx context.Context, userID string) error {
@@ -181,7 +211,27 @@ func (s *UserAuthService) GetMe(ctx context.Context, userID string) (domain.User
 		}
 		return domain.UserInfo{}, err
 	}
-	return user.SafeInfo(), nil
+	info := user.SafeInfo()
+	info.Roles, info.Permissions, err = s.users.Authorization(ctx, userID)
+	return info, err
+}
+
+func (s *UserAuthService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
+	if len(newPassword) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+	user, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)) != nil {
+		return ErrInvalidCredentials
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	return s.users.UpdatePassword(ctx, userID, string(hash), false)
 }
 
 func (s *UserAuthService) UpdateMe(ctx context.Context, userID string, fullName, phone, email *string) (domain.UserInfo, error) {
@@ -299,7 +349,7 @@ func (s *UserAuthService) ParseAccess(tokenString string) (string, error) {
 	return claims.Subject, nil
 }
 
-func normalizePhone(raw string) string {
+func NormalizePhone(raw string) string {
 	value := strings.TrimSpace(raw)
 	if value == "" {
 		return ""
@@ -317,8 +367,24 @@ func normalizePhone(raw string) string {
 	if strings.HasPrefix(normalized, "00") {
 		normalized = "+" + strings.TrimPrefix(normalized, "00")
 	}
+	if strings.HasPrefix(normalized, "09") && len(normalized) == 11 {
+		normalized = "+98" + normalized[1:]
+	}
+	if strings.HasPrefix(normalized, "98") && !strings.HasPrefix(normalized, "+") {
+		normalized = "+" + normalized
+	}
+	if !strings.HasPrefix(normalized, "+") || len(normalized) < 11 || len(normalized) > 16 {
+		return ""
+	}
+	for _, r := range normalized[1:] {
+		if !unicode.IsDigit(r) {
+			return ""
+		}
+	}
 	return normalized
 }
+
+func normalizePhone(raw string) string { return NormalizePhone(raw) }
 
 func phoneAliasEmail(phone string) string {
 	var digits strings.Builder

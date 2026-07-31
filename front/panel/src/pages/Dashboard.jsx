@@ -2,9 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import OperationsDashboard from "../components/OperationsDashboard";
+import { useAuth } from "../lib/auth";
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canManageContent = hasPermission("content.manage");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,6 +18,7 @@ export default function Dashboard() {
   const [watermarkError, setWatermarkError] = useState("");
 
   useEffect(() => {
+    if (!canManageContent) { setLoading(false); return undefined; }
     let mounted = true;
     const load = async () => {
       try {
@@ -33,9 +38,10 @@ export default function Dashboard() {
     return () => {
       mounted = false;
     };
-  }, [t]);
+  }, [t, canManageContent]);
 
   useEffect(() => {
+    if (!canManageContent) { setWatermarkLoading(false); return undefined; }
     let mounted = true;
     const load = async () => {
       try {
@@ -55,7 +61,7 @@ export default function Dashboard() {
     return () => {
       mounted = false;
     };
-  }, [t]);
+  }, [t, canManageContent]);
 
   const handleWatermarkToggle = async () => {
     if (!watermarkSettings || watermarkSaving) return;
@@ -85,6 +91,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <OperationsDashboard />
+      {canManageContent && <>
       <div className="panel-card">
         <h2 className="font-display text-2xl">{t("dashboard.overviewTitle")}</h2>
         <p className="mt-2 text-sm text-primary/70">{t("dashboard.overviewSubtitle")}</p>
@@ -220,6 +228,7 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      </>}
     </div>
   );
 }

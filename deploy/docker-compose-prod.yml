@@ -26,6 +26,8 @@ services:
     volumes:
       # Persist uploads and share with nginx in prod.
       - images_data_prod:/app/storage/images
+      # Workflow documents remain private and are only served by authorized API endpoints.
+      - workflow_files_data_prod:/app/storage/workflow-files
       # Seed the volume from the repo's checked-in images on first start.
       - ../back/storage/images:/seed/images:ro
 
@@ -76,3 +78,4 @@ services:
 volumes:
   pg_data_prod:
   images_data_prod:
+  workflow_files_data_prod:

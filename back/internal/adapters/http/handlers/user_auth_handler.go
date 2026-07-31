@@ -38,6 +38,10 @@ type userUpdatePayload struct {
 	FullName *string `json:"full_name"`
 	Phone    *string `json:"phone"`
 }
+type changePasswordPayload struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
 
 func (h *UserAuthHandler) Signup(c *gin.Context) {
 	var payload userSignupPayload
@@ -66,13 +70,25 @@ func (h *UserAuthHandler) Signup(c *gin.Context) {
 }
 
 func (h *UserAuthHandler) Login(c *gin.Context) {
+	h.login(c, "CUSTOMER")
+}
+
+func (h *UserAuthHandler) LoginInternal(c *gin.Context) {
+	h.login(c, "INTERNAL")
+}
+
+func (h *UserAuthHandler) login(c *gin.Context, userType string) {
 	var payload userLoginPayload
 	if err := c.ShouldBindJSON(&payload); err != nil || payload.Phone == "" || payload.Password == "" {
 		respondError(c, http.StatusBadRequest, "invalid payload")
 		return
 	}
 
-	user, pair, err := h.service.Login(c.Request.Context(), payload.Phone, payload.Password)
+	login := h.service.LoginCustomer
+	if userType == "INTERNAL" {
+		login = h.service.LoginInternal
+	}
+	user, pair, err := login(c.Request.Context(), payload.Phone, payload.Password)
 	if err != nil {
 		respondError(c, http.StatusUnauthorized, "invalid credentials")
 		return
@@ -163,6 +179,20 @@ func (h *UserAuthHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 	respondOK(c, user)
+}
+
+func (h *UserAuthHandler) ChangePassword(c *gin.Context) {
+	var payload changePasswordPayload
+	if c.ShouldBindJSON(&payload) != nil {
+		respondError(c, http.StatusBadRequest, "invalid payload")
+		return
+	}
+	id, _ := c.Get("user_id")
+	if err := h.service.ChangePassword(c.Request.Context(), id.(string), payload.CurrentPassword, payload.NewPassword); err != nil {
+		respondError(c, http.StatusBadRequest, "password change failed")
+		return
+	}
+	respondOK(c, gin.H{"changed": true})
 }
 
 func (h *UserAuthHandler) Requests(c *gin.Context) {

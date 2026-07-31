@@ -179,6 +179,7 @@ export default function Navbar() {
   const avatarSource = displayName.startsWith("+") ? displayName.slice(1) : displayName;
   const avatarChar = (avatarSource || "U").trim().charAt(0).toUpperCase();
   const profileLabel = displayName || t("nav.profile");
+  const profilePath = user?.permissions?.includes("customer_portal.orders.view_own") ? "/account" : "/profile";
   const visibleNavItems = navItems.map((item) => (
     item.key === "products" || item.key === "blogs" ? { ...item, path: `/${lang}/${item.key}` } : item
   ));
@@ -238,7 +239,7 @@ export default function Navbar() {
               <div className="mt-6 w-full max-w-md border-t border-primary/15 pt-6">
                 {user ? (
                   <NavLink
-                    to="/profile"
+                    to={profilePath}
                     onClick={() => setOpen(false)}
                     data-mobile-item="true"
                     className="mx-auto inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold uppercase text-sand transition hover:bg-primary/90"
@@ -296,7 +297,7 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 lg:flex will-change-transform" data-nav-block="right">
           {user ? (
             <NavLink
-              to="/profile"
+              to={profilePath}
               className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold uppercase shadow transition ${useLightHomeNav
                 ? "border border-sand/30 bg-sand/15 text-sand hover:bg-sand/25"
                 : "bg-primary text-sand hover:bg-primary/90"

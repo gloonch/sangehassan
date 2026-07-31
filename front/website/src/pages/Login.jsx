@@ -415,6 +415,7 @@ export default function Login() {
                   {isSignup ? t("auth.switchToLoginAction") : t("auth.switchToSignupAction")}
                 </button>
               </p>
+              {!isSignup && <button type="button" onClick={() => navigate("/activate")} className="mt-3 w-full text-center text-sm font-semibold text-primary underline">کد فعال‌سازی سفارش دریافت کرده‌ام</button>}
             </div>
           </div>
         </div>

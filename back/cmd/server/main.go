@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	httpapi "sangehassan/back/internal/adapters/http"
@@ -32,7 +33,6 @@ func main() {
 	blockRepo := postgres.NewBlockRepository(db)
 	contentSectionRepo := postgres.NewContentSectionRepository(db)
 	teamMemberRepo := postgres.NewTeamMemberRepository(db)
-	adminRepo := postgres.NewAdminRepository(db)
 	userRepo := postgres.NewUserRepository(db)
 	refreshTokenRepo := postgres.NewRefreshTokenRepository(db)
 	dashboardRepo := postgres.NewDashboardRepository(db)
@@ -51,13 +51,16 @@ func main() {
 	blockService := usecase.NewBlockService(blockRepo)
 	contentSectionService := usecase.NewContentSectionService(contentSectionRepo)
 	teamMemberService := usecase.NewTeamMemberService(teamMemberRepo)
-	authService := usecase.NewAuthService(adminRepo, cfg.JWTSecret, cfg.JWTTTLHours)
 	userAuthService := usecase.NewUserAuthService(userRepo, refreshTokenRepo, dealRequestRepo, cfg.JWTSecret, cfg.AccessTokenMinutes, cfg.RefreshTokenDays)
 	dashboardService := usecase.NewDashboardService(dashboardRepo)
 	listingService := usecase.NewListingService(listingRepo)
 	dealRequestService := usecase.NewDealRequestService(dealRequestRepo, listingRepo)
 	stoneSampleRequestService := usecase.NewStoneSampleRequestService(stoneSampleRequestRepo, userRepo)
 	contactSubmissionService := usecase.NewContactSubmissionService(contactSubmissionRepo)
+	operationsService := usecase.NewOperationsService(db)
+	if err := operationsService.BootstrapSuperAdmin(context.Background(), cfg.BootstrapSuperAdminPhone, cfg.BootstrapSuperAdminPassword, cfg.BootstrapSuperAdminFirstName, cfg.BootstrapSuperAdminLastName); err != nil {
+		log.Fatalf("super admin bootstrap error: %v", err)
+	}
 
 	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir)
 	router := httpapi.NewRouter(
@@ -72,7 +75,6 @@ func main() {
 		blockService,
 		contentSectionService,
 		teamMemberService,
-		authService,
 		userAuthService,
 		userRepo,
 		dashboardService,
@@ -81,6 +83,7 @@ func main() {
 		dealRequestService,
 		stoneSampleRequestService,
 		contactSubmissionService,
+		operationsService,
 	)
 
 	if err := router.Run(":" + cfg.Port); err != nil {

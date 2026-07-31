@@ -8,39 +8,49 @@ import (
 )
 
 type Config struct {
-	AppEnv             string
-	Port               string
-	DBHost             string
-	DBPort             string
-	DBUser             string
-	DBPassword         string
-	DBName             string
-	DBSSLMode          string
-	JWTSecret          string
-	JWTTTLHours        int
-	AccessTokenMinutes int
-	RefreshTokenDays   int
-	CookieSecure       bool
-	AllowedOrigins     []string
-	UploadDir          string
-	CatalogMinProducts int
+	AppEnv                       string
+	Port                         string
+	DBHost                       string
+	DBPort                       string
+	DBUser                       string
+	DBPassword                   string
+	DBName                       string
+	DBSSLMode                    string
+	JWTSecret                    string
+	JWTTTLHours                  int
+	AccessTokenMinutes           int
+	RefreshTokenDays             int
+	CookieSecure                 bool
+	AllowedOrigins               []string
+	UploadDir                    string
+	WorkflowFileDir              string
+	CatalogMinProducts           int
+	BootstrapSuperAdminPhone     string
+	BootstrapSuperAdminPassword  string
+	BootstrapSuperAdminFirstName string
+	BootstrapSuperAdminLastName  string
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		AppEnv:             getEnv("APP_ENV", "development"),
-		Port:               getEnv("PORT", "8080"),
-		DBHost:             getEnv("DB_HOST", "localhost"),
-		DBPort:             getEnv("DB_PORT", "5432"),
-		DBUser:             getEnv("DB_USER", "postgres"),
-		DBPassword:         getEnv("DB_PASSWORD", ""),
-		DBName:             getEnv("DB_NAME", "sangehassan"),
-		DBSSLMode:          getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:          getEnv("JWT_SECRET", ""),
-		AccessTokenMinutes: atoiDefault(getEnv("ACCESS_TOKEN_MINUTES", "15"), 15),
-		RefreshTokenDays:   atoiDefault(getEnv("REFRESH_TOKEN_DAYS", "30"), 30),
-		UploadDir:          getEnv("UPLOAD_DIR", "./storage/images"),
-		CatalogMinProducts: atoiDefault(getEnv("CATALOG_MIN_PRODUCTS", "6"), 6),
+		AppEnv:                       getEnv("APP_ENV", "development"),
+		Port:                         getEnv("PORT", "8080"),
+		DBHost:                       getEnv("DB_HOST", "localhost"),
+		DBPort:                       getEnv("DB_PORT", "5432"),
+		DBUser:                       getEnv("DB_USER", "postgres"),
+		DBPassword:                   getEnv("DB_PASSWORD", ""),
+		DBName:                       getEnv("DB_NAME", "sangehassan"),
+		DBSSLMode:                    getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:                    getEnv("JWT_SECRET", ""),
+		AccessTokenMinutes:           atoiDefault(getEnv("ACCESS_TOKEN_MINUTES", "15"), 15),
+		RefreshTokenDays:             atoiDefault(getEnv("REFRESH_TOKEN_DAYS", "30"), 30),
+		UploadDir:                    getEnv("UPLOAD_DIR", "./storage/images"),
+		WorkflowFileDir:              getEnv("WORKFLOW_FILE_DIR", "./storage/workflow-files"),
+		CatalogMinProducts:           atoiDefault(getEnv("CATALOG_MIN_PRODUCTS", "6"), 6),
+		BootstrapSuperAdminPhone:     getEnv("BOOTSTRAP_SUPER_ADMIN_PHONE", ""),
+		BootstrapSuperAdminPassword:  getEnv("BOOTSTRAP_SUPER_ADMIN_PASSWORD", ""),
+		BootstrapSuperAdminFirstName: getEnv("BOOTSTRAP_SUPER_ADMIN_FIRST_NAME", ""),
+		BootstrapSuperAdminLastName:  getEnv("BOOTSTRAP_SUPER_ADMIN_LAST_NAME", ""),
 	}
 
 	if cfg.JWTSecret == "" {

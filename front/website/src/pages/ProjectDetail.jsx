@@ -160,7 +160,11 @@ export default function ProjectDetail() {
       ? `${localizedTitle} | ${localizedSeo.suffix}`
       : localizedSeo.suffix;
     const seoDescription = project
-      ? (localizedDescription || localizedSeo.descriptionFallback)
+      ? (localizedDescription || (lang === "fa"
+        ? `جزئیات پروژه ${localizedTitle} شامل تصاویر اجرای واقعی، سنگ‌های استفاده‌شده و اطلاعات پروژه سنگ حسن.`
+        : lang === "ar"
+          ? `تفاصيل مشروع ${localizedTitle} مع صور التنفيذ الفعلي والأحجار المستخدمة ومعلومات المشروع من سانج حسن.`
+          : `Explore ${localizedTitle}, SangeHassan project ${id}, with completed-work images, natural stone references, and project sourcing details.`))
       : localizedSeo.descriptionFallback;
     const ogImage = project?.cover_image_url
       ? getAbsoluteUrl(resolveImageUrl(project.cover_image_url))

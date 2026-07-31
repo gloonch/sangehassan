@@ -1,79 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchJSON } from "../lib/api";
-import { useTranslation } from "../lib/i18n";
+import { useAuth } from "../lib/auth";
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return "-";
-  return dt.toLocaleString();
-};
-
+const emptyForm = { first_name: "", last_name: "", phone: "", temporary_password: "", role_ids: [] };
 export default function Users() {
-  const { t } = useTranslation();
-  const [items, setItems] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const res = await fetchJSON("/api/admin/users?limit=100");
-        if (!mounted) return;
-        const data = res.data || {};
-        setItems(data.items || []);
-        setTotal(data.total || 0);
-        setError("");
-      } catch (err) {
-        if (!mounted) return;
-        setItems([]);
-        setTotal(0);
-        setError(t("messages.error"));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [t]);
-
-  return (
-    <section className="panel-card">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-display text-xl">{t("panelUsers.title")}</h2>
-        <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-          {total} {t("panelUsers.countLabel")}
-        </span>
-      </div>
-
-      {loading ? (
-        <p className="text-sm text-primary/70">{t("messages.loading")}</p>
-      ) : error ? (
-        <p className="text-sm text-red-500">{error}</p>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-primary/70">{t("panelUsers.empty")}</p>
-      ) : (
-        <div className="max-h-[720px] space-y-3 overflow-y-auto pr-2">
-          {items.map((user) => (
-            <div
-              key={user.id}
-              className="rounded-xl border border-primary/10 bg-white/80 px-4 py-3"
-            >
-              <p className="text-sm font-semibold text-primary">{user.full_name || "-"}</p>
-              <p className="mt-1 text-xs text-primary/70">{t("panelUsers.email")}: {user.email || "-"}</p>
-              <p className="mt-1 text-xs text-primary/70">{t("panelUsers.phone")}: {user.phone || "-"}</p>
-              <p className="mt-1 text-xs text-primary/70">{t("panelUsers.role")}: {user.role || "-"}</p>
-              <p className="mt-1 text-xs text-primary/60">
-                {t("panelUsers.registeredAt")}: {formatDateTime(user.created_at)}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+  const { hasPermission } = useAuth();
+  const [users,setUsers]=useState([]),[roles,setRoles]=useState([]),[filters,setFilters]=useState({search:"",status:"",role:""}),[form,setForm]=useState(emptyForm),[showCreate,setShowCreate]=useState(false),[message,setMessage]=useState(""),[error,setError]=useState("");
+  const load=async()=>{try{const query=new URLSearchParams(filters);const [u,r]=await Promise.all([fetchJSON(`/api/v1/admin/users?${query}`),fetchJSON("/api/v1/admin/roles")]);setUsers(u.data||[]);setRoles(r.data||[]);setError("")}catch(e){setError(e.message)}};
+  useEffect(()=>{load()},[filters.search,filters.status,filters.role]);
+  const internalRoles=useMemo(()=>roles.filter(r=>r.code!=="CUSTOMER"),[roles]);
+  const submit=async(e)=>{e.preventDefault();try{const res=await fetchJSON("/api/v1/admin/users",{method:"POST",body:JSON.stringify(form)});setMessage(`کاربر ساخته شد. رمز موقت: ${res.data?.temporary_password||form.temporary_password}`);setForm(emptyForm);setShowCreate(false);load()}catch(e){setError(e.message)}};
+  const toggle=async(u)=>{await fetchJSON(`/api/v1/admin/users/${u.id}/status`,{method:"POST",body:JSON.stringify({status:u.status==="ACTIVE"?"DISABLED":"ACTIVE"})});load()};
+  const reset=async(u)=>{const password=window.prompt("رمز موقت جدید (حداقل ۸ نویسه)");if(!password)return;await fetchJSON(`/api/v1/admin/users/${u.id}/reset-password`,{method:"POST",body:JSON.stringify({temporary_password:password})});setMessage(`رمز موقت جدید فقط همین بار نمایش داده می‌شود: ${password}`);load()};
+  const editRoles=async(u)=>{const value=window.prompt(`کد نقش‌ها را با ویرگول جدا کنید. گزینه‌ها: ${internalRoles.map(r=>r.code).join(", ")}`,(u.roles||[]).join(", "));if(value===null)return;const codes=value.split(",").map(x=>x.trim()).filter(Boolean);const unknown=codes.filter(code=>!internalRoles.some(r=>r.code===code));if(unknown.length){setError(`نقش ناشناخته: ${unknown.join(", ")}`);return}const role_ids=internalRoles.filter(r=>codes.includes(r.code)).map(r=>r.id);await fetchJSON(`/api/v1/admin/users/${u.id}/roles`,{method:"PUT",body:JSON.stringify({role_ids})});setMessage("نقش‌های کاربر ذخیره شد.");load()};
+  return <div className="space-y-5" dir="rtl"><section className="panel-card"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-display text-2xl">کاربران داخلی</h2><p className="text-sm text-primary/60">مدیریت شماره ورود، نقش‌ها و وضعیت حساب</p></div>{hasPermission("users.create")&&<button onClick={()=>setShowCreate(v=>!v)} className="rounded-full bg-primary px-5 py-2 text-sm text-sand">ایجاد کاربر</button>}</div><div className="mt-5 grid gap-3 md:grid-cols-3"><input className="rounded-xl border p-3" placeholder="جست‌وجوی نام یا شماره" value={filters.search} onChange={e=>setFilters({...filters,search:e.target.value})}/><select className="rounded-xl border p-3" value={filters.role} onChange={e=>setFilters({...filters,role:e.target.value})}><option value="">همه نقش‌ها</option>{roles.map(r=><option key={r.id} value={r.code}>{r.name_fa}</option>)}</select><select className="rounded-xl border p-3" value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value})}><option value="">همه وضعیت‌ها</option><option value="ACTIVE">فعال</option><option value="INVITED">دعوت‌شده</option><option value="DISABLED">غیرفعال</option><option value="LOCKED">قفل‌شده</option></select></div></section>
+  {showCreate&&<form onSubmit={submit} className="panel-card grid gap-3 md:grid-cols-2"><input className="rounded-xl border p-3" placeholder="نام" value={form.first_name} onChange={e=>setForm({...form,first_name:e.target.value})}/><input className="rounded-xl border p-3" placeholder="نام خانوادگی" value={form.last_name} onChange={e=>setForm({...form,last_name:e.target.value})}/><input required className="rounded-xl border p-3" placeholder="شماره تلفن" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/><div className="flex gap-2"><input required className="min-w-0 flex-1 rounded-xl border p-3" placeholder="رمز موقت" value={form.temporary_password} onChange={e=>setForm({...form,temporary_password:e.target.value})}/><button type="button" className="rounded-xl border px-3" onClick={()=>setForm({...form,temporary_password:`Sh!${crypto.randomUUID().slice(0,9)}`})}>تولید</button></div><fieldset className="md:col-span-2"><legend className="mb-2 text-sm">نقش‌ها</legend><div className="flex flex-wrap gap-2">{internalRoles.map(r=><label key={r.id} className="rounded-full border px-3 py-2 text-xs"><input type="checkbox" className="ml-2" checked={form.role_ids.includes(r.id)} onChange={e=>setForm({...form,role_ids:e.target.checked?[...form.role_ids,r.id]:form.role_ids.filter(id=>id!==r.id)})}/>{r.name_fa}</label>)}</div></fieldset><button className="rounded-full bg-primary p-3 text-sand">ثبت کاربر و نمایش رمز موقت</button></form>}
+  {message&&<div className="rounded-xl border border-green-300 bg-green-50 p-4 text-green-800">{message}<button className="mr-4 underline" onClick={()=>setMessage("")}>بستن</button></div>}{error&&<p className="text-red-600">{error}</p>}
+  <section className="panel-card overflow-x-auto"><table className="w-full min-w-[760px] text-right text-sm"><thead><tr className="border-b"><th className="p-3">کاربر</th><th>شماره</th><th>نقش‌ها</th><th>وضعیت</th><th>آخرین ورود</th><th>عملیات</th></tr></thead><tbody>{users.map(u=><tr key={u.id} className="border-b border-primary/10"><td className="p-3 font-semibold">{`${u.first_name||""} ${u.last_name||""}`.trim()||"—"}{u.must_change_password&&<small className="block text-amber-700">نیازمند تغییر رمز</small>}</td><td dir="ltr">{u.phone}</td><td>{u.roles?.join("، ")||"—"}</td><td>{u.status}</td><td>{u.last_login_at?new Date(u.last_login_at).toLocaleString("fa-IR"):"—"}</td><td className="space-x-2 space-x-reverse">{hasPermission("users.assign_roles")&&<button className="rounded-lg border px-2 py-1" onClick={()=>editRoles(u)}>نقش‌ها</button>}{hasPermission("users.disable")&&<button className="rounded-lg border px-2 py-1" onClick={()=>toggle(u)}>{u.status==="ACTIVE"?"غیرفعال":"فعال"}</button>}{hasPermission("users.reset_password")&&<button className="rounded-lg border px-2 py-1" onClick={()=>reset(u)}>رمز جدید</button>}</td></tr>)}</tbody></table></section></div>;
 }

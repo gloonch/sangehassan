@@ -3,11 +3,14 @@
 Both production compose files use the same volume names because prod-com and prod-ir run on separate VPS hosts.
 
 Named volumes:
+
+- `workflow_files_data_prod` -> private workflow files mounted only in backend at `/app/storage/workflow-files`
 - `pg_data_prod`: Postgres database files at `/var/lib/postgresql/data`
 - `images_data_prod`: uploaded/seeded image files shared between backend and nginx
 
 Container mount points:
 - backend writes images at `/app/storage/images`
+- backend stores private workflow documents at `/app/storage/workflow-files`; nginx has no mount for this volume
 - nginx serves images from `/var/www/images`
 - Postgres init SQL is mounted from `./postgres/init` to `/docker-entrypoint-initdb.d`
 - repo seed images are mounted read-only from `../back/storage/images` to `/seed/images`

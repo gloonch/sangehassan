@@ -23,6 +23,8 @@ const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
 const LocalizedProductRoute = lazy(() => import("./pages/LocalizedProductRoute"));
 const StoneSampleRequest = lazy(() => import("./pages/StoneSampleRequest"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Account = lazy(() => import("./pages/Account"));
+const ActivateAccount = lazy(() => import("./pages/ActivateAccount"));
 
 export default function AppRoutes() {
   return (
@@ -48,6 +50,7 @@ export default function AppRoutes() {
       <Route element={<RequireUserAuth />}>
         <Route path="/ads/new" element={<NewAd />} />
         <Route path="/stone-sample-request" element={<StoneSampleRequest />} />
+        <Route path="/account" element={<Account />} />
       </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/fa/blogs" element={<Blogs />} />
@@ -63,6 +66,7 @@ export default function AppRoutes() {
       <Route path="/projects/:id" element={<ProjectDetail />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Navigate to="/login?mode=signup" replace />} />
+      <Route path="/activate" element={<ActivateAccount />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/about" element={<About />} />

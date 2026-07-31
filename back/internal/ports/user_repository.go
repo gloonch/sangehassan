@@ -16,4 +16,6 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (domain.User, error)
 	UpdateProfile(ctx context.Context, user domain.User) (domain.User, error)
 	UpdateLastLogin(ctx context.Context, id string, at time.Time) error
+	Authorization(ctx context.Context, id string) ([]string, []string, error)
+	UpdatePassword(ctx context.Context, id, passwordHash string, mustChange bool) error
 }
