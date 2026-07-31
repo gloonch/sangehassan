@@ -39,24 +39,31 @@ fetch_public_blogs() {
   : >"$BLOGS_TSV"
 
   for locale in $LOCALES; do
-    local response="$TMP_DIR/blogs-$locale.json"
-    local url="$SITE_URL/api/blogs?locale=$locale"
-    log "fetching $url"
-    curl -fsS --retry 2 --retry-delay 3 --max-time 30 "$url" -o "$response"
-    jq -r --arg locale "$locale" '
-      (.data // [])
-      | .[]
-      | select((.slug // "") != "")
-      | [
-          $locale,
-          (.slug // ""),
-          (.updated_at // ""),
-          (.published_at // ""),
-          (.robots // "index,follow"),
-          (.canonical_url // "")
-        ]
-      | @tsv
-    ' "$response" >>"$BLOGS_TSV"
+    local offset=0
+    local total=0
+    while :; do
+      local response="$TMP_DIR/blogs-$locale-$offset.json"
+      local url="$SITE_URL/api/blogs?locale=$locale&limit=100&offset=$offset"
+      log "fetching $url"
+      curl -fsS --retry 2 --retry-delay 3 --max-time 30 "$url" -o "$response"
+      jq -r --arg locale "$locale" '
+        (.data.items // [])
+        | .[]
+        | select((.slug // "") != "")
+        | [
+            $locale,
+            (.slug // ""),
+            (.updated_at // ""),
+            (.published_at // ""),
+            (.robots // "index,follow"),
+            (.canonical_url // "")
+          ]
+        | @tsv
+      ' "$response" >>"$BLOGS_TSV"
+      total="$(jq -r '.data.total // 0' "$response")"
+      offset=$((offset + 100))
+      [ "$offset" -lt "$total" ] || break
+    done
   done
 
   # Preserve API order because the blog listing page is prerendered in this order.
@@ -156,6 +163,7 @@ build_and_verify_image() {
   if [ -z "$image_ref" ]; then
     image_ref="$WEBSITE_IMAGE_REF"
   fi
+  BUILT_IMAGE_REF="$image_ref"
   if [ -z "$image_ref" ]; then
     log "could not resolve built website image reference"
     return 1
@@ -188,6 +196,18 @@ build_and_verify_image() {
   verify_blog_routes "http://127.0.0.1:$verify_port" || verify_result=$?
   cleanup_verify_container
   return "$verify_result"
+}
+
+restore_previous_website() {
+  local previous_image_id="$1"
+  if [ -z "$previous_image_id" ] || [ -z "${BUILT_IMAGE_REF:-}" ]; then
+    log "automatic rollback unavailable: previous or built image reference is missing"
+    return 1
+  fi
+
+  log "restoring previous website image"
+  docker tag "$previous_image_id" "$BUILT_IMAGE_REF"
+  (cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" up -d --no-build --force-recreate website)
 }
 
 write_state() {
@@ -233,12 +253,20 @@ main() {
   fi
 
   log "public blog fingerprint changed; refreshing website prerender"
+  local previous_image_id
+  previous_image_id="$(docker inspect --format '{{.Image}}' sangehassan-website 2>/dev/null || true)"
   build_and_verify_image
 
   log "starting verified website image"
-  (cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" up -d --no-build website)
+  if ! (cd "$PROJECT_ROOT/deploy" && docker compose -f "$COMPOSE_FILE" up -d --no-build website); then
+    restore_previous_website "$previous_image_id" || true
+    return 1
+  fi
 
-  verify_blog_routes "$SITE_URL"
+  if ! verify_blog_routes "$SITE_URL"; then
+    restore_previous_website "$previous_image_id" || true
+    return 1
+  fi
   write_state
   log "blog prerender refresh completed"
 }

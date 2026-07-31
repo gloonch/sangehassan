@@ -29,7 +29,9 @@ func noStoreBlogResponse(c *gin.Context) {
 
 func (h *BlogHandler) ListPublic(c *gin.Context) {
 	noStoreBlogResponse(c)
-	blogs, err := h.service.ListPublic(c.Request.Context(), c.DefaultQuery("locale", "en"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "9"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	blogs, err := h.service.ListPublic(c.Request.Context(), c.DefaultQuery("locale", "en"), limit, offset)
 	if err != nil {
 		h.respondBlogError(c, err, "failed to load blogs")
 		return

@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { gsap } from "gsap";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { getLiveDealsConfig, renderDealMessage } from "../lib/liveDeals";
-import { getTileCompletionTime } from "../lib/routeReveal";
 import LanguageSwitch from "./LanguageSwitch";
 import logoImage from "@shared/assets/logo.png";
 import logoWhiteImage from "@shared/assets/logo_white.png";
@@ -105,10 +103,21 @@ export default function Navbar() {
     };
 
     restore();
-    fetchSession();
+    let sessionFetchStarted = false;
+    const startSessionFetch = () => {
+      if (sessionFetchStarted) return;
+      sessionFetchStarted = true;
+      fetchSession();
+    };
+    const timeoutId = window.setTimeout(startSessionFetch, 2500);
+    const idleId = typeof window.requestIdleCallback === "function"
+      ? window.requestIdleCallback(startSessionFetch, { timeout: 2500 })
+      : null;
 
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
+      if (idleId !== null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
     };
   }, []);
 
@@ -165,87 +174,6 @@ export default function Navbar() {
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
-
-  useEffect(() => {
-    if (!open || typeof window === "undefined" || !window.matchMedia) return;
-    const panel = mobileMenuPanelRef.current;
-    if (!panel) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const rows = panel.querySelectorAll("[data-mobile-item='true']");
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        panel,
-        { xPercent: 16 },
-        {
-          xPercent: 0,
-          duration: reduceMotion ? 0.3 : 0.65,
-          ease: "power3.out",
-          force3D: true
-        }
-      );
-
-      if (rows.length) {
-        gsap.fromTo(
-          rows,
-          { x: 20, autoAlpha: 0 },
-          {
-            x: 0,
-            autoAlpha: 1,
-            duration: reduceMotion ? 0.22 : 0.42,
-            delay: reduceMotion ? 0.06 : 0.14,
-            stagger: reduceMotion ? 0.012 : 0.04,
-            ease: "power2.out"
-          }
-        );
-      }
-    }, panel);
-
-    return () => ctx.revert();
-  }, [open]);
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || typeof window === "undefined" || !window.matchMedia) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isLandingPage = location.pathname === "/";
-
-    const left = header.querySelector("[data-nav-block='left']");
-    const center = header.querySelector("[data-nav-block='center']");
-    const rightCandidates = Array.from(header.querySelectorAll("[data-nav-block='right']"));
-    const right =
-      rightCandidates.find((element) => element.offsetParent !== null) ||
-      rightCandidates[0] ||
-      null;
-    const blocks = [left, center, right].filter(Boolean);
-    if (!blocks.length) return;
-
-    if (!isLandingPage) {
-      gsap.set(blocks, { autoAlpha: 1, y: 0, clearProps: "transform,opacity" });
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      gsap.set(blocks, { autoAlpha: 0, y: 26, force3D: true });
-
-      const timeline = gsap.timeline();
-      blocks.forEach((block, index) => {
-        timeline.to(
-          block,
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: reduceMotion ? 0.38 : 0.82,
-            ease: "power3.out",
-            clearProps: "transform,opacity"
-          },
-          getTileCompletionTime(index, reduceMotion)
-        );
-      });
-    }, header);
-
-    return () => ctx.revert();
-  }, [location.pathname]);
 
   const displayName = getUserDisplayName(user);
   const avatarSource = displayName.startsWith("+") ? displayName.slice(1) : displayName;

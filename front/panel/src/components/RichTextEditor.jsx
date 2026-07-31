@@ -119,7 +119,7 @@ export default function RichTextEditor({ value, locale, onChange, onUploadImage 
       fetchJSON("/api/products?limit=500&offset=0").catch(() => ({ data: [] })),
       fetchJSON("/api/categories").catch(() => ({ data: [] })),
       fetchJSON("/api/projects").catch(() => ({ data: [] })),
-      fetchJSON(`/api/blogs?locale=${locale}`).catch(() => ({ data: [] }))
+      fetchJSON(`/api/blogs?locale=${locale}&limit=100&offset=0`).catch(() => ({ data: { items: [] } }))
     ]).then(([products, categories, projects, blogs]) => {
       if (!active) return;
       const localized = (item, field) => item?.[`${field}_${locale}`] || item?.[`${field}_en`] || item?.[`${field}_fa`] || item?.[field] || "";
@@ -131,7 +131,7 @@ export default function RichTextEditor({ value, locale, onChange, onUploadImage 
         ...(products.data || []).filter((item) => item.slug).map((item) => ({ type: "Product", label: localized(item, "title") || item.slug, href: `/${locale}/products/${item.slug}` })),
         ...(categories.data || []).filter((item) => item.slug).map((item) => ({ type: "Category", label: localized(item, "title") || item.slug, href: `/${locale}/products/${item.slug}` })),
         ...(projects.data || []).map((item) => ({ type: "Project", label: localized(item, "title") || `Project ${item.id}`, href: `/projects/${item.id}` })),
-        ...(blogs.data || []).filter((item) => item.slug).map((item) => ({ type: "Article", label: item.title, href: `/${locale}/blogs/${item.slug}` }))
+        ...(blogs.data?.items || []).filter((item) => item.slug).map((item) => ({ type: "Article", label: item.title, href: `/${locale}/blogs/${item.slug}` }))
       ]);
     }).finally(() => {
       if (active) setLoadingLinks(false);

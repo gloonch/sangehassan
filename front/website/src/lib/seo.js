@@ -19,6 +19,27 @@ const jsonLdContainsEntity = (value, entityId, entityType) => {
   return Object.values(value).some((item) => jsonLdContainsEntity(item, entityId, entityType));
 };
 
+const jsonLdPrimaryEntityId = (value) => {
+  if (!value || typeof value !== "object") return "";
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const id = jsonLdPrimaryEntityId(item);
+      if (id) return id;
+    }
+    return "";
+  }
+  const ignoredTypes = new Set(["Organization", "WebSite", "BreadcrumbList", "ListItem", "ImageObject"]);
+  const types = Array.isArray(value["@type"]) ? value["@type"] : [value["@type"]];
+  if (value["@id"] && types.some((type) => type && !ignoredTypes.has(String(type).split("/").pop()))) {
+    return value["@id"];
+  }
+  for (const item of Object.values(value)) {
+    const id = jsonLdPrimaryEntityId(item);
+    if (id) return id;
+  }
+  return "";
+};
+
 export const getSiteOrigin = () => {
   if (configuredSiteUrl) return configuredSiteUrl;
   if (typeof window === "undefined") return "";
@@ -49,6 +70,8 @@ export const usePageSeo = ({
   type = "website",
   robots = "index,follow",
   alternates = [],
+  previousPath = "",
+  nextPath = "",
   jsonLd = null,
   jsonLdId = ""
 }) => {
@@ -140,6 +163,25 @@ export const usePageSeo = ({
       cleanups.push(...created);
     };
 
+    const upsertNavigationLink = (rel, linkPath) => {
+      const existing = document.head.querySelector(`link[rel="${rel}"]`);
+      if (!linkPath) {
+        if (existing) existing.remove();
+        return;
+      }
+      const el = existing || document.createElement("link");
+      const created = !existing;
+      const prevHref = el.getAttribute("href");
+      el.setAttribute("rel", rel);
+      el.setAttribute("href", getCanonicalUrl(linkPath));
+      if (created) document.head.appendChild(el);
+      cleanups.push(() => {
+        if (created) el.remove();
+        else if (prevHref === null) el.removeAttribute("href");
+        else el.setAttribute("href", prevHref);
+      });
+    };
+
     const removeJsonLd = (id) => {
       const script = id ? document.getElementById(id) : null;
       if (script) script.remove();
@@ -167,8 +209,8 @@ export const usePageSeo = ({
         return;
       }
 
-      const payloadId = typeof payload["@id"] === "string" ? payload["@id"] : "";
-      if (payloadId && jsonLdTypeMatches(payload["@type"], "Product") && documentHasJsonLdEntity(payloadId, "Product", id)) {
+      const payloadId = typeof payload["@id"] === "string" ? payload["@id"] : jsonLdPrimaryEntityId(payload);
+      if (payloadId && documentHasJsonLdEntity(payloadId, "", id)) {
         removeJsonLd(id);
         return;
       }
@@ -198,6 +240,8 @@ export const usePageSeo = ({
     document.title = title;
     upsertCanonical(pageUrl);
     upsertAlternates(alternates);
+    upsertNavigationLink("prev", previousPath);
+    upsertNavigationLink("next", nextPath);
     upsertMeta('meta[name="description"]', { name: "description" }, description);
     upsertMeta('meta[name="robots"]', { name: "robots" }, robots);
     upsertMeta('meta[property="og:type"]', { property: "og:type" }, type);
@@ -215,5 +259,5 @@ export const usePageSeo = ({
     return () => {
       cleanups.reverse().forEach((fn) => fn());
     };
-  }, [alternates, description, image, jsonLd, jsonLdId, lang, locale, path, robots, title, type]);
+  }, [alternates, description, image, jsonLd, jsonLdId, lang, locale, nextPath, path, previousPath, robots, title, type]);
 };

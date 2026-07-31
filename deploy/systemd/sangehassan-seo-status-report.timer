@@ -1,0 +1,11 @@
+[Unit]
+Description=Run SangeHassan HTTP status report daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15m
+Unit=sangehassan-seo-status-report.service
+
+[Install]
+WantedBy=timers.target

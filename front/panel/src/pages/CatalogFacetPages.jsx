@@ -15,6 +15,16 @@ const emptyForm = {
   is_indexable: true
 };
 
+const wordCount = (value) => String(value || "").trim().split(/\s+/).filter(Boolean).length;
+const isPersianSEOReady = (page) => Boolean(
+  page.is_active &&
+  page.is_indexable &&
+  String(page.title_fa || "").trim().length >= 30 &&
+  String(page.description_fa || "").trim().length >= 80 &&
+  String(page.h1_fa || "").trim() &&
+  wordCount(page.intro_fa) >= 120
+);
+
 export default function CatalogFacetPages() {
   const { t, lang } = useTranslation();
   const [pages, setPages] = useState([]);
@@ -156,6 +166,9 @@ export default function CatalogFacetPages() {
                   <div>
                     <p className="text-sm font-semibold">{page.category_slug} / {page.taxonomy} / {page.term_key}</p>
                     <p className="mt-1 text-xs text-primary/55">{getTermLabel(term)} · {page.is_active ? t("form.active") : t("form.inactive")} · {page.is_indexable ? t("form.indexable") : t("form.noindex")}</p>
+                    <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${isPersianSEOReady(page) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+                      {isPersianSEOReady(page) ? "FA SEO ready" : `FA needs content (${wordCount(page.intro_fa)}/120)`}
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => edit(page)} className="rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold">{t("actions.edit")}</button>

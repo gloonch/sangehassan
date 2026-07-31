@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { gsap } from "gsap";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
+import { usePrerenderData } from "../lib/prerenderData";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
 import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.webp";
 import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.webp";
@@ -73,32 +73,9 @@ const getLocalStorageValue = (key) => {
   }
 };
 
-const setLocalStorageValue = (key, value) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    /* Storage can be unavailable in private or restricted browser modes. */
-  }
-};
-
-const shuffleForNewVisit = (slides, storageKey) => {
-  const shuffled = shuffleSlides(slides);
-  if (typeof window === "undefined" || shuffled.length < 2) return shuffled;
-
-  const previousFirstSlide = getLocalStorageValue(storageKey);
-  if (previousFirstSlide && shuffled[0]?.src === previousFirstSlide) {
-    const swapIndex = 1 + Math.floor(Math.random() * (shuffled.length - 1));
-    [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
-  }
-
-  setLocalStorageValue(storageKey, shuffled[0]?.src || "");
-  return shuffled;
-};
-
 const createSlideDecks = () => ({
-  products: shuffleForNewVisit(productSlides.length ? productSlides : [fallbackSlide], "sh-home-products-first-slide"),
-  blocks: shuffleForNewVisit(blockSlides.length ? blockSlides : [fallbackSlide], "sh-home-blocks-first-slide")
+  products: productSlides.length ? [productSlides[0], ...shuffleSlides(productSlides.slice(1))] : [fallbackSlide],
+  blocks: blockSlides.length ? [blockSlides[0], ...shuffleSlides(blockSlides.slice(1))] : [fallbackSlide]
 });
 
 const slideTransitionMs = 1800;
@@ -616,13 +593,15 @@ const teamSectionContent = {
 
 export default function Home() {
   const { t, lang } = useTranslation();
-  const [sections, setSections] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
+  const prerenderData = usePrerenderData();
+  const initialSections = Array.isArray(prerenderData?.homeSections) ? prerenderData.homeSections : [];
+  const initialTeamMembers = Array.isArray(prerenderData?.homeTeamMembers) ? prerenderData.homeTeamMembers : [];
+  const [sections, setSections] = useState(initialSections);
+  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
   const [slideDecks, setSlideDecks] = useState(initialSlideDecks);
   const [activeSlides, setActiveSlides] = useState({ products: 0, blocks: 0 });
   const [previousSlides, setPreviousSlides] = useState({ products: null, blocks: null });
   const previousClearTimerRef = useRef(null);
-  const rootRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -747,6 +726,7 @@ export default function Home() {
   }, [lang]);
 
   useEffect(() => {
+    if (initialSections.length) return undefined;
     let mounted = true;
     fetchJSON("/api/content-sections?page=home")
       .then((res) => {
@@ -760,9 +740,10 @@ export default function Home() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialSections.length]);
 
   useEffect(() => {
+    if (initialTeamMembers.length) return undefined;
     let mounted = true;
     fetchJSON("/api/team-members")
       .then((res) => {
@@ -776,7 +757,7 @@ export default function Home() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialTeamMembers.length]);
 
   useEffect(() => {
     const decks = createSlideDecks();
@@ -926,36 +907,9 @@ export default function Home() {
   );
   */
 
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || typeof window === "undefined" || !window.matchMedia) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const items = root.querySelectorAll("[data-home-anim='item']");
-    if (!items.length) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        items,
-        { autoAlpha: 0, y: 20 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: reduceMotion ? 0.45 : 1.2,
-          delay: reduceMotion ? 0.1 : 0.5,
-          stagger: reduceMotion ? 0.03 : 0.09,
-          ease: "power3.out",
-          overwrite: "auto"
-        }
-      );
-    }, root);
-
-    return () => ctx.revert();
-  }, [lang, blocksSection, finishedSection]);
-
   return (
     <>
-      <div ref={rootRef} className="relative h-[100dvh] w-full overflow-hidden">
+      <div className="relative h-[100dvh] w-full overflow-hidden">
         <section className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
           {[finishedSection, blocksSection].map((section, index) => {
             const isBlocks = section.key === "blocks";
@@ -977,6 +931,7 @@ export default function Home() {
               (slideIndex, slideIndexPosition, slideIndexes) =>
                 slideIndex !== null && slideIndexes.indexOf(slideIndex) === slideIndexPosition
             );
+            const HeadingTag = index === 0 ? "h1" : "h2";
 
             return (
               <Link
@@ -1033,9 +988,9 @@ export default function Home() {
                     <p data-home-anim="item" className="text-[10px] uppercase tracking-[0.34em] text-sand/72 sm:text-xs">
                       {isBlocks ? t("blocks.title") : t("products.title")}
                     </p>
-                    <h1 data-home-anim="item" className="mt-2 font-display text-xl leading-tight sm:text-2xl md:text-3xl lg:text-4xl">
+                    <HeadingTag className="mt-2 font-display text-xl leading-tight sm:text-2xl md:text-3xl lg:text-4xl">
                       {title}
-                    </h1>
+                    </HeadingTag>
                     {subtitle ? <p data-home-anim="item" className="mx-auto mt-3 max-w-[33rem] text-[11px] text-sand/88 sm:text-xs md:text-sm lg:text-base">{subtitle}</p> : null}
 
                     {lines.length > 0 && (
@@ -1228,7 +1183,7 @@ export default function Home() {
                   className="group relative h-[24rem] overflow-hidden bg-white/[0.08] shadow-[0_28px_80px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:h-[30rem]"
                 >
                   {member.photo ? (
-                    <img src={member.photo} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+                    <img src={member.photo} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" aria-hidden="true" />
                   ) : (
                     <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(229,225,221,0.22),rgba(8,58,79,0.18)_36%,rgba(0,0,0,0.42))]" aria-hidden="true" />
                   )}

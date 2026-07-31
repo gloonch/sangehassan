@@ -4,6 +4,7 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl, resolveProtectedImageUrl, resolveProtectedThumbnailUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, usePageSeo } from "../lib/seo";
+import { getProductSeo, productAdditionalProperties } from "../lib/productSeo";
 import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
@@ -11,8 +12,6 @@ import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../
 import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
 import { getContactPhoneItems } from "../lib/contact";
 import NotFound from "./NotFound";
-
-const stripHTML = (value) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
 const iconBaseProps = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -194,7 +193,8 @@ export default function ProductDetail() {
     }
   };
   const closeLightbox = () => setLightboxOpen(false);
-  const localizedTitle = getLocalized(product, lang) || product?.title_en || "";
+  const productSeo = getProductSeo(product, lang);
+  const localizedTitle = productSeo.title || getLocalized(product, lang) || product?.title_en || "";
   const localizedDescriptionHTML =
     (lang === "fa" ? product?.description_html_fa : lang === "ar" ? product?.description_html_ar : product?.description_html_en) ||
     product?.description_html ||
@@ -202,42 +202,17 @@ export default function ProductDetail() {
     "";
   const relatedProducts = Array.isArray(product?.related_products) ? product.related_products : [];
   const relatedProjects = Array.isArray(product?.related_projects) ? product.related_projects : [];
-  const seoTitle = localizedTitle ? `${localizedTitle} | SangeHassan` : "Product Detail | SangeHassan";
-  const seoDescription =
-    stripHTML(localizedDescriptionHTML).slice(0, 160) ||
-    "Detailed natural stone product page from SangeHassan with images, sourcing information, and project references.";
+  const seoTitle = productSeo.seoTitle || "Product Detail | SangeHassan";
+  const seoDescription = productSeo.description;
   const localizedProductPath = `/${lang}/products/${slug}`;
   const isLegacyProductPath = /^\/products\/[^/]+\/?$/.test(location.pathname);
   const productOfferPrice = getProductOfferPrice(product);
-  const productOfferPriceIRR = productOfferPrice > 0 ? productOfferPrice * 10 : 0;
   const productJsonLd = useMemo(() => {
     if (initialProduct) return null;
     if (!product || !localizedTitle) return null;
 
     const pageUrl = getCanonicalUrl(localizedProductPath);
     const imageUrl = activeImage ? getAbsoluteUrl(resolveProtectedImageUrl(activeImage)) : undefined;
-    const offer = productOfferPriceIRR > 0
-      ? {
-        "@type": "Offer",
-        url: pageUrl,
-        priceCurrency: "IRR",
-        price: String(productOfferPriceIRR),
-        availability: "https://schema.org/InStock",
-        itemCondition: "https://schema.org/NewCondition",
-        seller: {
-          "@type": "Organization",
-          name: "SangeHassan"
-        },
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          name: t("productDetail.offerLabel"),
-          price: String(productOfferPriceIRR),
-          priceCurrency: "IRR",
-          description: t("productDetail.offerSchemaNote")
-        }
-      }
-      : undefined;
-
     return {
       "@context": "https://schema.org",
       "@type": "Product",
@@ -250,9 +225,11 @@ export default function ProductDetail() {
         "@type": "Brand",
         name: "SangeHassan"
       },
-      offers: offer
+      category: productSeo.category || undefined,
+      material: lang === "fa" ? "سنگ طبیعی" : lang === "ar" ? "حجر طبيعي" : "Natural stone",
+      additionalProperty: productAdditionalProperties(product, lang)
     };
-  }, [activeImage, initialProduct, localizedProductPath, localizedTitle, product, productOfferPriceIRR, seoDescription, t]);
+  }, [activeImage, initialProduct, lang, localizedProductPath, localizedTitle, product, productSeo.category, seoDescription]);
 
   usePageSeo({
     title: seoTitle,
@@ -664,7 +641,7 @@ export default function ProductDetail() {
               {localizedDescriptionHTML ? (
                 <div className="space-y-3 text-sm text-primary/75" dangerouslySetInnerHTML={{ __html: localizedDescriptionHTML }} />
               ) : (
-                <p className="text-sm text-primary/70">{t("messages.empty")}</p>
+                <p className="text-sm leading-7 text-primary/70">{productSeo.summary}</p>
               )}
             </section>
 

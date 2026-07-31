@@ -49,6 +49,8 @@ const emptySelectedListInputs = {
   availability: ""
 };
 
+const hasSEOContent = (value) => String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().length >= 80;
+
 export default function Products() {
   const { t, lang } = useTranslation();
   const [products, setProducts] = useState([]);
@@ -766,7 +768,14 @@ export default function Products() {
           <p className="text-sm text-primary/70">{t("panelProducts.empty")}</p>
         ) : (
           <div className="max-h-[720px] space-y-3 overflow-y-auto pr-2">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product) => {
+              const localeReadiness = ["fa", "en", "ar"].map((locale) => ({
+                locale,
+                ready: Boolean(product[`title_${locale}`]) && hasSEOContent(
+                  product[`description_html_${locale}`] || product[`short_description_html_${locale}`]
+                )
+              }));
+              return (
               <div
                 key={product.id}
                 className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/10 bg-white/80 px-4 py-3"
@@ -785,6 +794,13 @@ export default function Products() {
                     <p className="text-sm font-semibold text-primary">{product.title_en}</p>
                     <p className="text-xs text-primary/60">{product.title_fa} • {product.title_ar}</p>
                     <p className="text-xs text-primary/40">{product.category?.title_en}</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {localeReadiness.map((item) => (
+                        <span key={item.locale} className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${item.ready ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+                          {item.locale} {item.ready ? "SEO ready" : "needs content"}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {product.is_popular && (
@@ -817,7 +833,8 @@ export default function Products() {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

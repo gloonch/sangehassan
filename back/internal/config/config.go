@@ -40,7 +40,7 @@ func Load() (Config, error) {
 		AccessTokenMinutes: atoiDefault(getEnv("ACCESS_TOKEN_MINUTES", "15"), 15),
 		RefreshTokenDays:   atoiDefault(getEnv("REFRESH_TOKEN_DAYS", "30"), 30),
 		UploadDir:          getEnv("UPLOAD_DIR", "./storage/images"),
-		CatalogMinProducts: atoiDefault(getEnv("CATALOG_MIN_PRODUCTS", "2"), 2),
+		CatalogMinProducts: atoiDefault(getEnv("CATALOG_MIN_PRODUCTS", "6"), 6),
 	}
 
 	if cfg.JWTSecret == "" {

@@ -1,30 +1,33 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
-import ProductsLanding from "./pages/ProductsLanding";
-import ProductDetail from "./pages/ProductDetail";
-import Blogs from "./pages/Blogs";
-import BlogDetail from "./pages/BlogDetail";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import Gallery from "./pages/Gallery";
-import About from "./pages/About";
-import BlocksLanding from "./pages/BlocksLanding";
-import BlockDetail from "./pages/BlockDetail";
-import Ads from "./pages/Ads";
-import AdDetail from "./pages/AdDetail";
-import NewAd from "./pages/NewAd";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
 import RequireUserAuth from "./components/RequireUserAuth";
-import ProductHub from "./pages/ProductHub";
-import ProductCatalog from "./pages/ProductCatalog";
-import LocalizedProductRoute from "./pages/LocalizedProductRoute";
-import StoneSampleRequest from "./pages/StoneSampleRequest";
-import NotFound from "./pages/NotFound";
+
+const ProductsLanding = lazy(() => import("./pages/ProductsLanding"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Blogs = lazy(() => import("./pages/Blogs"));
+const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const Login = lazy(() => import("./pages/Login"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const About = lazy(() => import("./pages/About"));
+const BlocksLanding = lazy(() => import("./pages/BlocksLanding"));
+const BlockDetail = lazy(() => import("./pages/BlockDetail"));
+const Ads = lazy(() => import("./pages/Ads"));
+const AdDetail = lazy(() => import("./pages/AdDetail"));
+const NewAd = lazy(() => import("./pages/NewAd"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const ProductHub = lazy(() => import("./pages/ProductHub"));
+const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
+const LocalizedProductRoute = lazy(() => import("./pages/LocalizedProductRoute"));
+const StoneSampleRequest = lazy(() => import("./pages/StoneSampleRequest"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<div className="min-h-screen bg-sand" aria-busy="true" />}>
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/products" element={<ProductsLanding />} />
       <Route path="/products/overview" element={<Navigate to="/products" replace />} />
@@ -48,10 +51,13 @@ export default function AppRoutes() {
       </Route>
       <Route path="/blogs" element={<Blogs />} />
       <Route path="/fa/blogs" element={<Blogs />} />
+      <Route path="/fa/blogs/page/:pageNumber" element={<Blogs />} />
       <Route path="/fa/blogs/:slug" element={<BlogDetail />} />
       <Route path="/en/blogs" element={<Blogs />} />
+      <Route path="/en/blogs/page/:pageNumber" element={<Blogs />} />
       <Route path="/en/blogs/:slug" element={<BlogDetail />} />
       <Route path="/ar/blogs" element={<Blogs />} />
+      <Route path="/ar/blogs/page/:pageNumber" element={<Blogs />} />
       <Route path="/ar/blogs/:slug" element={<BlogDetail />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:id" element={<ProjectDetail />} />
@@ -62,6 +68,7 @@ export default function AppRoutes() {
       <Route path="/about" element={<About />} />
       <Route path="/404" element={<NotFound />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

@@ -9,9 +9,9 @@ import { getLanguageFromPath } from "../lib/i18n";
 import NotFound from "./NotFound";
 
 const localeMeta = {
-  fa: { locale: "fa_IR", articles: "مقالات", home: "خانه", updated: "به‌روزرسانی", min: "دقیقه مطالعه", toc: "در این مقاله", back: "بازگشت به مقالات", authorLabel: "نویسنده", reviewerLabel: "بررسی فنی", contentTeam: "تیم محتوای سنگ حسن", reviewTeam: "تیم فروش و تأمین سنگ حسن" },
-  en: { locale: "en_US", articles: "Articles", home: "Home", updated: "Updated", min: "min read", toc: "In this article", back: "Back to articles", authorLabel: "Author", reviewerLabel: "Technical review", contentTeam: "SangeHassan content team", reviewTeam: "SangeHassan sales and sourcing team" },
-  ar: { locale: "ar_SA", articles: "المقالات", home: "الرئيسية", updated: "آخر تحديث", min: "دقيقة قراءة", toc: "في هذا المقال", back: "العودة إلى المقالات", authorLabel: "الكاتب", reviewerLabel: "مراجعة فنية", contentTeam: "فريق محتوى سانج حسن", reviewTeam: "فريق المبيعات والتوريد في سانج حسن" }
+  fa: { locale: "fa_IR", articles: "مقالات", home: "خانه", updated: "به‌روزرسانی", min: "دقیقه مطالعه", toc: "در این مقاله", related: "مقالات مرتبط", back: "بازگشت به مقالات", authorLabel: "نویسنده", reviewerLabel: "بررسی فنی", contentTeam: "تیم محتوای سنگ حسن", reviewTeam: "تیم فروش و تأمین سنگ حسن" },
+  en: { locale: "en_US", articles: "Articles", home: "Home", updated: "Updated", min: "min read", toc: "In this article", related: "Related articles", back: "Back to articles", authorLabel: "Author", reviewerLabel: "Technical review", contentTeam: "SangeHassan content team", reviewTeam: "SangeHassan sales and sourcing team" },
+  ar: { locale: "ar_SA", articles: "المقالات", home: "الرئيسية", updated: "آخر تحديث", min: "دقيقة قراءة", toc: "في هذا المقال", related: "مقالات ذات صلة", back: "العودة إلى المقالات", authorLabel: "الكاتب", reviewerLabel: "مراجعة فنية", contentTeam: "فريق محتوى سانج حسن", reviewTeam: "فريق المبيعات والتوريد في سانج حسن" }
 };
 
 const faArticleSeoOverrides = {
@@ -140,6 +140,7 @@ export default function BlogDetail() {
   const navigate = useNavigate();
   const locale = getLanguageFromPath(location.pathname);
   const prerenderedBlog = usePrerenderData("blog");
+  const relatedBlogs = usePrerenderData("relatedBlogs") || [];
   const initialBlog = useMemo(() => {
     if (!prerenderedBlog) return null;
     return prerenderedBlog.locale === locale && prerenderedBlog.slug === slug ? prerenderedBlog : null;
@@ -255,6 +256,20 @@ export default function BlogDetail() {
         {prepared.headings.length > 2 && <aside className="lg:sticky lg:top-28 lg:self-start"><p className="text-xs font-semibold uppercase text-primary/45">{meta.toc}</p><ol className="mt-4 space-y-3 border-s border-primary/15 ps-4 text-sm text-primary/60">{prepared.headings.map((heading) => <li key={heading.id} className={heading.level > 2 ? "ps-3" : ""}><a href={`#${heading.id}`} className="hover:text-primary">{heading.text}</a></li>)}</ol></aside>}
         <div className={`blog-article-content ${prepared.headings.length <= 2 ? "lg:col-start-2" : ""}`} dangerouslySetInnerHTML={{ __html: prepared.html }} />
       </div>
+
+      {relatedBlogs.length > 0 && (
+        <section className="section-shell border-t border-primary/15 py-10" aria-labelledby="related-articles-title">
+          <h2 id="related-articles-title" className="font-display text-2xl">{meta.related}</h2>
+          <div className="mt-6 grid gap-x-8 gap-y-5 md:grid-cols-2">
+            {relatedBlogs.map((item) => (
+              <Link key={item.slug} to={`${basePath}/${item.slug}`} className="group border-b border-primary/15 pb-4">
+                <h3 className="text-base font-semibold leading-7 group-hover:text-accent">{item.title}</h3>
+                {item.excerpt && <p className="mt-1 line-clamp-2 text-sm leading-6 text-primary/55">{item.excerpt}</p>}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <footer className="section-shell border-t border-primary/15 py-9">
         <div className="flex flex-wrap items-center justify-between gap-5">

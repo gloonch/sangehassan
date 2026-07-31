@@ -56,3 +56,10 @@ type Blog struct {
 	ReadingTimeMinutes int             `json:"reading_time_minutes,omitempty"`
 	RedirectedFrom     string          `json:"redirected_from,omitempty"`
 }
+
+type BlogPage struct {
+	Items  []Blog `json:"items"`
+	Total  int    `json:"total"`
+	Limit  int    `json:"limit"`
+	Offset int    `json:"offset"`
+}

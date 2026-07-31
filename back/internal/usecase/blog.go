@@ -46,12 +46,27 @@ func NewBlogService(repo ports.BlogRepository) *BlogService {
 	return &BlogService{repo: repo, sanitizer: policy}
 }
 
-func (s *BlogService) ListPublic(ctx context.Context, locale string) ([]domain.Blog, error) {
+func (s *BlogService) ListPublic(ctx context.Context, locale string, limit, offset int) (domain.BlogPage, error) {
 	if !validBlogLocale(locale) {
-		return nil, fmt.Errorf("%w: unsupported locale", ErrInvalidBlog)
+		return domain.BlogPage{}, fmt.Errorf("%w: unsupported locale", ErrInvalidBlog)
 	}
-	blogs, err := s.repo.ListPublic(ctx, locale)
-	return decorateBlogs(blogs), err
+	if limit <= 0 {
+		limit = 9
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	page, err := s.repo.ListPublic(ctx, locale, limit, offset)
+	if err != nil {
+		return domain.BlogPage{}, err
+	}
+	page.Items = decorateBlogs(page.Items)
+	page.Limit = limit
+	page.Offset = offset
+	return page, nil
 }
 
 func (s *BlogService) ListAdmin(ctx context.Context) ([]domain.Blog, error) {

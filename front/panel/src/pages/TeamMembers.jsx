@@ -45,6 +45,28 @@ const formatExperienceLabel = (years, lang, t) => {
   return `+${formatLocalizedNumber(count, lang)} ${t("panelTeam.experienceYearsSuffix")}`;
 };
 
+const optimizeTeamPhoto = async (file) => {
+  if (!file?.type?.startsWith("image/")) return file;
+  try {
+    if (typeof createImageBitmap !== "function") return file;
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 480 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+    if (!blob) return file;
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "team-photo";
+    return new File([blob], `${baseName}.webp`, { type: "image/webp" });
+  } catch (_) {
+    return file;
+  }
+};
+
 export default function TeamMembers() {
   const { t, lang } = useTranslation();
   const [members, setMembers] = useState([]);
@@ -88,8 +110,9 @@ export default function TeamMembers() {
     setUploading(true);
     setError("");
     try {
+      const optimizedFile = await optimizeTeamPhoto(file);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", optimizedFile);
       const response = await fetch(`${API_BASE}/api/admin/upload/team`, {
         method: "POST",
         body: formData,

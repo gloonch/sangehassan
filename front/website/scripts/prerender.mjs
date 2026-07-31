@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
+import { getProductSeo, productAdditionalProperties } from "../src/lib/productSeo.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -101,17 +102,21 @@ const staticRoutes = [
       "Integrated natural stone supply and production network, from quarry blocks to finished stone products for professional projects, B2B, and export.",
     schemaType: "WebPage",
     image: defaultShareImage,
+    preloads: [sharedAssetUrl("../shared/assets/landing_page/products/finish-slide-01.webp")],
     changefreq: "weekly",
     priority: 1
   },
   {
     path: "/products",
+    canonical: "/en/products",
     title: "Natural Stone Products | SangeHassan",
     description:
       "Browse SangeHassan natural stone products, including slabs, tiles, and finished stones for building projects, B2B supply, and export.",
     schemaType: "CollectionPage",
     breadcrumbName: "Products",
     image: defaultShareImage,
+    robots: "noindex,follow",
+    sitemap: false,
     changefreq: "weekly",
     priority: 0.9
   },
@@ -435,11 +440,13 @@ function pageJsonLd(route) {
   if (route.schemaType === "Article" || route.schemaType === "BlogPosting") {
     page.headline = route.headline || route.title;
     page.author = {
-      "@id": organizationId
+      "@type": "Organization",
+      name: route.lang === "fa" ? "تیم محتوای سنگ حسن" : route.lang === "ar" ? "فريق محتوى سانج حسن" : "SangeHassan content team",
+      url: siteUrl
     };
     page.reviewedBy = {
       "@type": "Organization",
-      name: route.lang === "fa" ? "تیم فروش و تأمین سنگ حسن" : "SangeHassan sales and sourcing team"
+      name: route.lang === "fa" ? "تیم فروش و تأمین سنگ حسن" : route.lang === "ar" ? "فريق المبيعات والتوريد في سانج حسن" : "SangeHassan sales and sourcing team"
     };
     page.publisher = {
       "@id": organizationId
@@ -506,6 +513,16 @@ function buildHead(route) {
 
   for (const alternate of route.alternates || []) {
     tags.push(`<link rel="alternate" hreflang="${escapeAttr(alternate.lang)}" href="${escapeAttr(absoluteUrl(alternate.path))}" />`);
+  }
+
+  if (route.previousPath) {
+    tags.push(`<link rel="prev" href="${escapeAttr(absoluteUrl(route.previousPath))}" />`);
+  }
+  if (route.nextPath) {
+    tags.push(`<link rel="next" href="${escapeAttr(absoluteUrl(route.nextPath))}" />`);
+  }
+  for (const preload of route.preloads || []) {
+    tags.push(`<link rel="preload" as="image" href="${escapeAttr(preload)}" fetchpriority="high" />`);
   }
 
   if (image) {
@@ -602,7 +619,7 @@ function sitemapXml(routes) {
   const entries = sitemapRoutes(routes)
     .map((route) => {
       const loc = absoluteUrl(route.path);
-      const lastmod = normalizeDate(route.lastmod);
+      const lastmod = route.lastmod ? normalizeDate(route.lastmod) : "";
       const changefreq = route.changefreq || "weekly";
       const priority = route.priority ?? (route.path === "/" ? 1 : 0.7);
 
@@ -610,7 +627,7 @@ function sitemapXml(routes) {
         "  <url>",
         `    <loc>${escapeXml(loc)}</loc>`,
         ...(route.alternates || []).map((alternate) => `    <xhtml:link rel="alternate" hreflang="${escapeXml(alternate.lang)}" href="${escapeXml(absoluteUrl(alternate.path))}" />`),
-        `    <lastmod>${escapeXml(lastmod)}</lastmod>`,
+        ...(lastmod ? [`    <lastmod>${escapeXml(lastmod)}</lastmod>`] : []),
         `    <changefreq>${escapeXml(changefreq)}</changefreq>`,
         `    <priority>${escapeXml(priority.toFixed(2))}</priority>`,
         "  </url>"
@@ -629,6 +646,21 @@ function sitemapXml(routes) {
 
 function robotsTxt() {
   return [
+    "User-agent: OAI-SearchBot",
+    "Allow: /",
+    "",
+    "User-agent: GPTBot",
+    "Allow: /",
+    "",
+    "User-agent: ChatGPT-User",
+    "Allow: /",
+    "",
+    "User-agent: ClaudeBot",
+    "Allow: /",
+    "",
+    "User-agent: PerplexityBot",
+    "Allow: /",
+    "",
     "User-agent: *",
     "Allow: /",
     "Disallow: /api/",
@@ -644,10 +676,44 @@ function robotsTxt() {
   ].join("\n");
 }
 
+function llmsTxt(routes) {
+  const indexable = routes.filter(isIndexable);
+  const blogRoutes = indexable
+    .filter((route) => route.routeKind === "blog-detail" && route.lang === "fa")
+    .sort((a, b) => String(b.datePublished || "").localeCompare(String(a.datePublished || "")));
+  const catalogRoutes = indexable.filter((route) =>
+    route.lang === "fa" && (route.routeKind === "catalog-hub" || route.routeKind === "catalog-category")
+  );
+  const lines = [
+    "# SangeHassan | سنگ حسن",
+    "",
+    "> تامین و تولید سنگ طبیعی ایران برای پروژه‌های ساختمانی، نما، کف و فضاهای داخلی.",
+    "",
+    "## صفحات اصلی",
+    `- [محصولات سنگ طبیعی](${absoluteUrl("/fa/products")})`,
+    `- [مقالات تخصصی سنگ](${absoluteUrl("/fa/blogs")})`,
+    `- [پروژه‌ها](${absoluteUrl("/projects")})`,
+    `- [درباره سنگ حسن](${absoluteUrl("/about")})`,
+    "",
+    "## دسته‌های محصولات",
+    ...catalogRoutes.slice(0, 20).map((route) => `- [${stripHTML(route.title.replace(/\s*\|\s*SangeHassan.*$/i, ""))}](${absoluteUrl(route.path)})`),
+    "",
+    "## راهنماهای تخصصی",
+    ...blogRoutes.slice(0, 40).map((route) => `- [${stripHTML(route.headline || route.title)}](${absoluteUrl(route.path)}): ${stripHTML(route.description)}`),
+    "",
+    "## تماس",
+    `- Website: ${siteUrl}`,
+    `- Contact and company information: ${absoluteUrl("/about")}`,
+    ""
+  ];
+  return lines.join("\n");
+}
+
 async function writeSearchFiles(routes) {
   await Promise.all([
     fs.writeFile(path.join(distDir, "sitemap.xml"), sitemapXml(routes)),
-    fs.writeFile(path.join(distDir, "robots.txt"), robotsTxt())
+    fs.writeFile(path.join(distDir, "robots.txt"), robotsTxt()),
+    fs.writeFile(path.join(distDir, "llms.txt"), llmsTxt(routes))
   ]);
 }
 
@@ -708,48 +774,6 @@ function productShareImage(product) {
   return protectedProductImagePath(firstImage(product)) || defaultShareImage;
 }
 
-function productOfferPrice(product) {
-  if (!product?.is_popular) return 0;
-  const value = typeof product.price === "number" ? product.price : Number(product.price);
-  return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
-}
-
-function productOfferSchemaNote(lang = "en") {
-  if (lang === "fa") {
-    return "این قیمت کف قیمت پیشنهادی است و برای استعلام معتبر باید با سنگ حسن تماس گرفته شود.";
-  }
-  if (lang === "ar") {
-    return "هذا سعر ابتدائي، ويجب التواصل مع سانج حسن للحصول على السعر الحالي الموثوق.";
-  }
-  return "This is a starting floor price; contact SangeHassan for the current valid quote.";
-}
-
-function productOfferJsonLd(product, routePath, lang = "en") {
-  const tomanPrice = productOfferPrice(product);
-  if (tomanPrice <= 0) return undefined;
-  const rialPrice = tomanPrice * 10;
-  const url = absoluteUrl(routePath);
-  return {
-    "@type": "Offer",
-    url,
-    priceCurrency: "IRR",
-    price: String(rialPrice),
-    availability: "https://schema.org/InStock",
-    itemCondition: "https://schema.org/NewCondition",
-    seller: {
-      "@type": "Organization",
-      name: "SangeHassan"
-    },
-    priceSpecification: {
-      "@type": "UnitPriceSpecification",
-      name: "Offer",
-      price: String(rialPrice),
-      priceCurrency: "IRR",
-      description: productOfferSchemaNote(lang)
-    }
-  };
-}
-
 function protectProductPrerenderData(product) {
   if (!product || typeof product !== "object") return product;
 
@@ -778,24 +802,15 @@ function productRoute(product) {
   const localizedRoutes = catalogLocales.map((locale) => {
     const meta = catalogLocaleMeta[locale];
     const routePath = catalogPath(locale, `/${slug}`);
-    const title = localizedField(product, "title", locale) || slug;
-    const localizedDescription = locale === "fa"
-      ? product.description_html_fa || product.short_description_html_fa
-      : locale === "ar"
-        ? product.description_html_ar || product.short_description_html_ar
-        : product.description_html_en || product.short_description_html_en;
-    const description = truncate(localizedDescription || product.description_html || product.short_description_html || product.description || "") ||
-      (locale === "fa"
-        ? "صفحه معرفی محصول سنگ طبیعی شامل تصاویر، مشخصات و اطلاعات کاربردی پروژه."
-        : locale === "ar"
-          ? "صفحة منتج الحجر الطبيعي مع الصور والمواصفات ومعلومات الاستخدام في المشاريع."
-          : "Detailed natural stone product page with images, specifications and project references.");
+    const productSeo = getProductSeo(product, locale);
+    const title = productSeo.title || slug;
+    const description = productSeo.description;
     const category = product.category || product.categories?.[0];
     const categorySlug = category?.slug;
     const categoryTitle = localizedField(category, "title", locale);
     return {
       path: routePath,
-      title: `${title} | SangeHassan`,
+      title: productSeo.seoTitle,
       description,
       image: productShareImage(product),
       type: "product",
@@ -823,7 +838,9 @@ function productRoute(product) {
           "@type": "Brand",
           name: "SangeHassan"
         },
-        offers: productOfferJsonLd(product, routePath, locale)
+        category: productSeo.category || undefined,
+        material: locale === "fa" ? "سنگ طبیعی" : locale === "ar" ? "حجر طبيعي" : "Natural stone",
+        additionalProperty: productAdditionalProperties(product, locale)
       }
     };
   });
@@ -875,6 +892,15 @@ function catalogPageRoute(page, routeMeta, locale) {
   const suffix = catalogRouteSuffix(routeMeta);
   const routePath = catalogPath(locale, suffix);
   const products = Array.isArray(page.products) ? page.products : [];
+  const isFacetRoute = routeMeta.type === "facet";
+  const facetQualityReady = !isFacetRoute || (
+    locale === "fa" &&
+    (page.pagination?.total || products.length) >= 6 &&
+    stripHTML(page.seo?.intro || "").split(/\s+/).filter(Boolean).length >= 120 &&
+    stripHTML(page.seo?.title || "").length >= 30 &&
+    stripHTML(page.seo?.description || "").length >= 80
+  );
+  const indexable = Boolean(routeMeta.indexable && page.indexable && facetQualityReady);
   const structuredData = products.length ? [{
     "@type": "ItemList",
     "@id": `${absoluteUrl(routePath)}#products`,
@@ -907,8 +933,8 @@ function catalogPageRoute(page, routeMeta, locale) {
     lang: locale,
     locale: meta.locale,
     alternates: catalogAlternates(suffix),
-    robots: routeMeta.indexable && page.indexable ? "index,follow" : "noindex,follow",
-    sitemap: Boolean(routeMeta.indexable && page.indexable),
+    robots: indexable ? "index,follow" : "noindex,follow",
+    sitemap: indexable,
     changefreq: "weekly",
     priority: routeMeta.type === "category" ? 0.82 : 0.7,
     lastmod: page.category.updated_at || page.category.created_at,
@@ -1179,7 +1205,7 @@ function projectRoute(project) {
   const title = project.title_en || project.title_fa || project.title_ar || `Project ${id}`;
   const description =
     truncate(project.description_en || project.description || project.description_fa || project.description_ar || "") ||
-    "Detailed view of a completed SangeHassan project including gallery and project description.";
+    truncate(`Explore ${title}, SangeHassan project ${id}, with completed-work images, natural stone references, and project sourcing details.`);
 
   return {
     path: `/projects/${id}`,
@@ -1233,7 +1259,23 @@ function adRoute(ad) {
   };
 }
 
-function blogRoute(blog, locale) {
+function relatedPublishedBlogs(blog, summaries = []) {
+  const currentTags = new Set(Array.isArray(blog.tags) ? blog.tags.map(String) : []);
+  return summaries
+    .filter((item) => item.slug && item.slug !== blog.slug)
+    .map((item) => {
+      const tags = Array.isArray(item.tags) ? item.tags.map(String) : [];
+      const sharedTags = tags.filter((tag) => currentTags.has(tag)).length;
+      const sameCategory = Boolean(blog.category_slug && item.category_slug === blog.category_slug);
+      return { item, score: (sameCategory ? 10 : 0) + sharedTags };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 4)
+    .map(({ item }) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt || "" }));
+}
+
+function blogRoute(blog, locale, summaries = []) {
   if (!blog?.slug) return null;
   const meta = blogLocaleMeta[locale];
   const routePath = `/${locale}/blogs/${blog.slug}`;
@@ -1269,7 +1311,7 @@ function blogRoute(blog, locale) {
     headline,
     schemaLanguage: locale === "fa" ? "fa-IR" : locale,
     structuredData: faqSchema ? [faqSchema] : [],
-    prerenderData: { blog }
+    prerenderData: { blog, relatedBlogs: relatedPublishedBlogs(blog, summaries) }
   };
 }
 
@@ -1277,8 +1319,8 @@ async function loadBlogRoutes() {
   const routes = [];
   const seenDetailKeys = new Set();
 
-  const addBlogRoute = (blog, locale) => {
-    const route = blogRoute(blog, locale);
+  const addBlogRoute = (blog, locale, summaries) => {
+    const route = blogRoute(blog, locale, summaries);
     if (!route) return;
     const key = `${locale}/${blog.slug}`;
     if (seenDetailKeys.has(key)) return;
@@ -1288,28 +1330,50 @@ async function loadBlogRoutes() {
 
   for (const locale of catalogLocales) {
     try {
-      const blogs = (await fetchApi(`/api/blogs?locale=${locale}`)) || [];
+      const firstPage = (await fetchApi(`/api/blogs?locale=${locale}&limit=100&offset=0`)) || { items: [], total: 0, limit: 100, offset: 0 };
+      const blogs = Array.isArray(firstPage.items) ? [...firstPage.items] : [];
+      for (let offset = 100; offset < (firstPage.total || 0); offset += 100) {
+        const nextPage = await fetchApi(`/api/blogs?locale=${locale}&limit=100&offset=${offset}`);
+        blogs.push(...(Array.isArray(nextPage?.items) ? nextPage.items : []));
+      }
       const meta = blogLocaleMeta[locale];
-      routes.push({
-        path: `/${locale}/blogs`,
-        title: meta.title,
-        description: meta.description,
-        schemaType: "Blog",
-        routeKind: "blog-list",
-        image: blogs.find((blog) => blog.cover_image_url)?.cover_image_url || defaultShareImage,
-        lang: locale,
-        locale: meta.locale,
-        alternates: [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }],
-        changefreq: "weekly",
-        priority: 0.75,
-        lastmod: blogs[0]?.updated_at || blogs[0]?.published_at,
-        prerenderData: { blogs }
-      });
+      const blogBaseTitle = meta.title.replace(/\s*\|.*$/, "");
+      const blogBrand = locale === "fa" ? "سنگ حسن" : locale === "ar" ? "سانج حسن" : "SangeHassan";
+      const pageSize = 9;
+      const pageCount = Math.max(1, Math.ceil(blogs.length / pageSize));
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+        const offset = (pageNumber - 1) * pageSize;
+        const pageItems = blogs.slice(offset, offset + pageSize);
+        const pagePath = pageNumber === 1 ? `/${locale}/blogs` : `/${locale}/blogs/page/${pageNumber}`;
+        routes.push({
+          path: pagePath,
+          title: pageNumber === 1 ? meta.title : `${blogBaseTitle} - ${pageNumber} | ${blogBrand}`,
+          description: meta.description,
+          schemaType: "Blog",
+          routeKind: "blog-list",
+          image: pageItems.find((blog) => blog.cover_image_url)?.cover_image_url || defaultShareImage,
+          lang: locale,
+          locale: meta.locale,
+          alternates: pageNumber === 1
+            ? [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }]
+            : [],
+          previousPath: pageNumber === 2 ? `/${locale}/blogs` : pageNumber > 2 ? `/${locale}/blogs/page/${pageNumber - 1}` : "",
+          nextPath: pageNumber < pageCount ? `/${locale}/blogs/page/${pageNumber + 1}` : "",
+          breadcrumbs: [
+            { name: meta.articles, path: `/${locale}/blogs` },
+            ...(pageNumber > 1 ? [{ name: String(pageNumber), path: pagePath }] : [])
+          ],
+          changefreq: "weekly",
+          priority: pageNumber === 1 ? 0.75 : 0.6,
+          lastmod: pageItems[0]?.updated_at || pageItems[0]?.published_at,
+          prerenderData: { blogPage: { items: pageItems, total: blogs.length, limit: pageSize, offset } }
+        });
+      }
       const skipped = [];
       for (const summary of blogs) {
         try {
           const blog = (await fetchApi(`/api/blogs/${locale}/${summary.slug}`)) || summary;
-          addBlogRoute(blog, locale);
+          addBlogRoute(blog, locale, blogs);
         } catch (error) {
           const message = `prerender: blog skipped for ${locale}/${summary.slug}: ${error.message}`;
           if (strictBlogPrerender) skipped.push(message);
@@ -1338,7 +1402,7 @@ async function loadDynamicRoutes() {
   }
 
   try {
-    const [products, blocks, projects, ads] = await Promise.all([
+    const [products, blocks, projects, ads, homeSections, homeTeamMembers] = await Promise.all([
       fetchApi("/api/products?limit=500&offset=0").catch((error) => {
         console.warn(`prerender: products skipped: ${error.message}`);
         return [];
@@ -1354,7 +1418,9 @@ async function loadDynamicRoutes() {
       fetchApi("/api/ads").catch((error) => {
         console.warn(`prerender: ads skipped: ${error.message}`);
         return [];
-      })
+      }),
+      fetchApi("/api/content-sections?page=home").catch(() => []),
+      fetchApi("/api/team-members").catch(() => [])
     ]);
 
     const blogRoutes = await loadBlogRoutes();
@@ -1366,7 +1432,11 @@ async function loadDynamicRoutes() {
       loadCatalogRoutes()
     ]);
 
-    return [...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes, ...catalogRoutes, ...blogRoutes];
+    const homeRoute = {
+      ...staticRoutes.find((route) => route.path === "/"),
+      prerenderData: { homeSections, homeTeamMembers }
+    };
+    return [homeRoute, ...productRoutes, ...blockRoutes, ...projectRoutes, ...adRoutes, ...catalogRoutes, ...blogRoutes];
   } catch (error) {
     if (error.strictPrerender) throw error;
     console.warn(`prerender: dynamic detail pages skipped: ${error.message}`);
@@ -1394,7 +1464,7 @@ async function main() {
     const routes = [...routeMap.values()];
 
     for (const route of routes) {
-      const appHtml = render(route.path, route.prerenderData || null);
+      const appHtml = await render(route.path, route.prerenderData || null);
       const html = replaceAssetUrls(injectRouteHtml(template, route, appHtml), assetReplacements);
       await writeRoute(route.path, html);
     }

@@ -7,7 +7,7 @@ import (
 )
 
 type BlogRepository interface {
-	ListPublic(ctx context.Context, locale string) ([]domain.Blog, error)
+	ListPublic(ctx context.Context, locale string, limit, offset int) (domain.BlogPage, error)
 	ListAdmin(ctx context.Context) ([]domain.Blog, error)
 	GetPublicBySlug(ctx context.Context, locale, slug string) (domain.Blog, error)
 	GetByID(ctx context.Context, id int64) (domain.Blog, error)

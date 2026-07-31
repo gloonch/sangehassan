@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
@@ -24,14 +24,14 @@ const freshRequest = () => ({
 
 export default function Blogs() {
   const { lang } = useTranslation();
-  const { locale: routeLocale } = useParams();
+  const { locale: routeLocale, pageNumber } = useParams();
   const locale = localeContent[routeLocale] ? routeLocale : lang;
   const copy = localeContent[locale] || localeContent.en;
-  const initialBlogs = usePrerenderData("blogs");
-  const [blogs, setBlogs] = useState(() => initialBlogs || []);
-  const [loading, setLoading] = useState(!initialBlogs);
-  const [searchParams] = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const initialPage = usePrerenderData("blogPage");
+  const page = Math.max(1, Number(pageNumber) || 1);
+  const offset = (page - 1) * pageSize;
+  const [blogPage, setBlogPage] = useState(() => initialPage || { items: [], total: 0, limit: pageSize, offset });
+  const [loading, setLoading] = useState(!initialPage);
   const basePath = `/${locale}/blogs`;
   const isRTL = locale === "fa" || locale === "ar";
 
@@ -40,9 +40,9 @@ export default function Blogs() {
 
     const loadFreshBlogs = (showLoading = false) => {
       if (showLoading) setLoading(true);
-      fetchJSON(`/api/blogs?locale=${locale}&_=${Date.now()}`, freshRequest())
-        .then((response) => { if (active) setBlogs(response.data || []); })
-        .catch(() => { if (active) setBlogs([]); })
+      fetchJSON(`/api/blogs?locale=${locale}&limit=${pageSize}&offset=${offset}&_=${Date.now()}`, freshRequest())
+        .then((response) => { if (active) setBlogPage(response.data || { items: [], total: 0, limit: pageSize, offset }); })
+        .catch(() => { if (active) setBlogPage({ items: [], total: 0, limit: pageSize, offset }); })
         .finally(() => { if (active) setLoading(false); });
     };
 
@@ -52,7 +52,7 @@ export default function Blogs() {
       }
     };
 
-    loadFreshBlogs(!initialBlogs);
+    loadFreshBlogs(!initialPage || initialPage.offset !== offset);
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
@@ -60,19 +60,20 @@ export default function Blogs() {
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [initialBlogs, locale]);
+  }, [initialPage, locale, offset]);
 
-  const pageCount = Math.max(1, Math.ceil(blogs.length / pageSize));
-  const visible = blogs.slice((page - 1) * pageSize, page * pageSize);
+  const blogs = Array.isArray(blogPage.items) ? blogPage.items : [];
+  const pageCount = Math.max(1, Math.ceil((blogPage.total || 0) / pageSize));
   const coverBlog = blogs.find((blog) => blog.cover_image_url);
   const coverImage = coverBlog?.cover_image_url || "";
   const coverImageVersion = coverBlog?.updated_at || coverBlog?.published_at || "";
-  const path = page > 1 ? `${basePath}?page=${page}` : basePath;
-  const alternates = ["fa", "en", "ar"].map((code) => ({ lang: code, path: `/${code}/blogs` }));
-  alternates.push({ lang: "x-default", path: "/en/blogs" });
+  const path = page > 1 ? `${basePath}/page/${page}` : basePath;
+  const alternates = page === 1 ? ["fa", "en", "ar"].map((code) => ({ lang: code, path: `/${code}/blogs` })) : [];
+  if (page === 1) alternates.push({ lang: "x-default", path: "/en/blogs" });
+  const pageTitle = page > 1 ? `${copy.title} - ${page} | SangeHassan` : `${copy.title} | SangeHassan`;
 
   usePageSeo({
-    title: `${copy.title} | SangeHassan`,
+    title: pageTitle,
     description: copy.intro,
     path,
     lang: locale,
@@ -80,8 +81,10 @@ export default function Blogs() {
     image: coverImage ? resolveVersionedImageUrl(coverImage, coverImageVersion) : "",
     robots: "index,follow",
     alternates,
+    previousPath: page === 2 ? basePath : page > 2 ? `${basePath}/page/${page - 1}` : "",
+    nextPath: page < pageCount ? `${basePath}/page/${page + 1}` : "",
     jsonLdId: "blogs-jsonld",
-    jsonLd: { "@context": "https://schema.org", "@type": "Blog", inLanguage: locale, name: copy.title, description: copy.intro, url: getCanonicalUrl(basePath) }
+    jsonLd: { "@context": "https://schema.org", "@type": "Blog", "@id": `${getCanonicalUrl(path)}#webpage`, inLanguage: locale, name: copy.title, description: copy.intro, url: getCanonicalUrl(path) }
   });
 
   return (
@@ -91,9 +94,9 @@ export default function Blogs() {
         <p className="mt-4 max-w-2xl text-base leading-8 text-primary/65">{copy.intro}</p>
       </header>
 
-      {loading ? <p className="py-16 text-sm text-primary/60">...</p> : visible.length === 0 ? <p className="py-16 text-sm text-primary/60">{copy.empty}</p> : (
+      {loading ? <p className="py-16 text-sm text-primary/60">...</p> : blogs.length === 0 ? <p className="py-16 text-sm text-primary/60">{copy.empty}</p> : (
         <div className="grid gap-x-7 gap-y-10 py-10 md:grid-cols-2 lg:grid-cols-3">
-          {visible.map((blog) => (
+          {blogs.map((blog) => (
             <article key={blog.id} className="group flex min-w-0 flex-col border-b border-primary/15 pb-7">
               <Link to={`${basePath}/${blog.slug}`} className="block aspect-[4/3] overflow-hidden bg-primary/5">
                 {blog.cover_image_url && <img src={resolveVersionedImageUrl(blog.cover_image_url, blog.updated_at || blog.published_at || "")} alt={blog.featured_image_alt || blog.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" loading="lazy" />}
@@ -114,7 +117,7 @@ export default function Blogs() {
 
       {pageCount > 1 && <nav className="flex flex-wrap gap-2 border-t border-primary/15 pt-7" aria-label="Pagination">
         {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => {
-          const target = number === 1 ? basePath : `${basePath}?page=${number}`;
+          const target = number === 1 ? basePath : `${basePath}/page/${number}`;
           return <Link key={number} to={target} className={`inline-flex h-10 w-10 items-center justify-center border text-sm ${number === page ? "border-primary bg-primary text-white" : "border-primary/20"}`}>{number}</Link>;
         })}
       </nav>}

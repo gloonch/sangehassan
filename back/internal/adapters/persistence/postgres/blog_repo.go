@@ -32,6 +32,15 @@ const publicBlogColumns = `
 	COALESCE(t.seo_title, ''), COALESCE(t.seo_description, ''), COALESCE(t.canonical_url, ''),
 	t.robots, t.translation_status, COALESCE(t.featured_image_alt, ''), COALESCE(t.og_image_alt, '')`
 
+const publicBlogSummaryColumns = `
+	b.id, b.status, b.author_name, COALESCE(b.cover_image_url, ''), COALESCE(b.og_image_url, ''),
+	COALESCE(b.category_slug, ''), b.tags, b.is_featured, b.scheduled_at, b.published_at,
+	b.created_at, COALESCE(b.updated_at, b.created_at),
+	t.locale, t.title, t.slug, COALESCE(t.excerpt, ''),
+	COALESCE(t.seo_title, ''), COALESCE(t.seo_description, ''), COALESCE(t.canonical_url, ''),
+	t.robots, t.translation_status, COALESCE(t.featured_image_alt, ''), COALESCE(t.og_image_alt, ''),
+	GREATEST(1, CEIL(char_length(regexp_replace(t.content_html, '<[^>]+>', ' ', 'g')) / 1000.0)::int)`
+
 func scanPublicBlog(scanner rowScanner) (domain.Blog, error) {
 	var blog domain.Blog
 	var contentJSON []byte
@@ -47,34 +56,60 @@ func scanPublicBlog(scanner rowScanner) (domain.Blog, error) {
 	return blog, err
 }
 
+func scanPublicBlogSummary(scanner rowScanner) (domain.Blog, error) {
+	var blog domain.Blog
+	err := scanner.Scan(
+		&blog.ID, &blog.Status, &blog.AuthorName, &blog.CoverImageURL, &blog.OGImageURL,
+		&blog.CategorySlug, pq.Array(&blog.Tags), &blog.IsFeatured, &blog.ScheduledAt, &blog.PublishedAt,
+		&blog.CreatedAt, &blog.UpdatedAt,
+		&blog.Locale, &blog.Title, &blog.Slug, &blog.Excerpt,
+		&blog.SEOTitle, &blog.SEODescription, &blog.CanonicalURL, &blog.Robots,
+		&blog.TranslationStatus, &blog.FeaturedImageAlt, &blog.OGImageAlt, &blog.ReadingTimeMinutes,
+	)
+	return blog, err
+}
+
 func publicPublicationWhere() string {
 	return `t.translation_status = 'published'
 		AND b.status = 'published'
 		AND COALESCE(b.published_at, b.created_at) <= NOW()`
 }
 
-func (r *BlogRepository) ListPublic(ctx context.Context, locale string) ([]domain.Blog, error) {
+func (r *BlogRepository) ListPublic(ctx context.Context, locale string, limit, offset int) (domain.BlogPage, error) {
+	var total int
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM blogs b
+		JOIN blog_translations t ON t.blog_id = b.id
+		WHERE t.locale = $1 AND `+publicPublicationWhere(), locale).Scan(&total); err != nil {
+		return domain.BlogPage{}, err
+	}
+
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT `+publicBlogColumns+`
+		SELECT `+publicBlogSummaryColumns+`
 		FROM blogs b
 		JOIN blog_translations t ON t.blog_id = b.id
 		WHERE t.locale = $1 AND `+publicPublicationWhere()+`
 		ORDER BY COALESCE(b.published_at, b.created_at) DESC, b.id DESC
-	`, locale)
+		LIMIT $2 OFFSET $3
+	`, locale, limit, offset)
 	if err != nil {
-		return nil, err
+		return domain.BlogPage{}, err
 	}
 	defer rows.Close()
 
 	blogs := make([]domain.Blog, 0)
 	for rows.Next() {
-		blog, scanErr := scanPublicBlog(rows)
+		blog, scanErr := scanPublicBlogSummary(rows)
 		if scanErr != nil {
-			return nil, scanErr
+			return domain.BlogPage{}, scanErr
 		}
 		blogs = append(blogs, blog)
 	}
-	return blogs, rows.Err()
+	if err := rows.Err(); err != nil {
+		return domain.BlogPage{}, err
+	}
+	return domain.BlogPage{Items: blogs, Total: total, Limit: limit, Offset: offset}, nil
 }
 
 func (r *BlogRepository) ListAdmin(ctx context.Context) ([]domain.Blog, error) {
