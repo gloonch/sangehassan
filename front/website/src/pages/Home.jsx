@@ -8,46 +8,66 @@ import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
 import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.webp";
+import marketComplexityIllustrationMobile from "@shared/assets/landing_icons/market_complexity_icon_transparent-mobile.webp";
 import networkSupplyIllustration from "@shared/assets/landing_icons/network_supply_icon_transparent.webp";
+import networkSupplyIllustrationMobile from "@shared/assets/landing_icons/network_supply_icon_transparent-mobile.webp";
 import trustQualityIllustration from "@shared/assets/landing_icons/trust_quality_icon_transparent.webp";
+import trustQualityIllustrationMobile from "@shared/assets/landing_icons/trust_quality_icon_transparent-mobile.webp";
 import tradeboardBrowseListingsIllustration from "@shared/assets/tradeboard/tradeboard-browse-listings.webp";
+import tradeboardBrowseListingsIllustrationMobile from "@shared/assets/tradeboard/tradeboard-browse-listings-mobile.webp";
 import tradeboardPostListingIllustration from "@shared/assets/tradeboard/tradeboard-post-listing.webp";
+import tradeboardPostListingIllustrationMobile from "@shared/assets/tradeboard/tradeboard-post-listing-mobile.webp";
 import tradeboardSecureReviewIllustration from "@shared/assets/tradeboard/tradeboard-secure-review.webp";
+import tradeboardSecureReviewIllustrationMobile from "@shared/assets/tradeboard/tradeboard-secure-review-mobile.webp";
 import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
+import blockImage01Mobile from "@shared/assets/landing_page/blocks/block-slide-01-mobile.webp";
 import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
+import blockImage02Mobile from "@shared/assets/landing_page/blocks/block-slide-02-mobile.webp";
 import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
+import blockImage03Mobile from "@shared/assets/landing_page/blocks/block-slide-03-mobile.webp";
 import blockImage04 from "@shared/assets/landing_page/blocks/block-slide-04.webp";
+import blockImage04Mobile from "@shared/assets/landing_page/blocks/block-slide-04-mobile.webp";
 import blockImage05 from "@shared/assets/landing_page/blocks/block-slide-05.webp";
+import blockImage05Mobile from "@shared/assets/landing_page/blocks/block-slide-05-mobile.webp";
 import blockImage06 from "@shared/assets/landing_page/blocks/block-slide-06.webp";
+import blockImage06Mobile from "@shared/assets/landing_page/blocks/block-slide-06-mobile.webp";
 import blockImage07 from "@shared/assets/landing_page/blocks/block-slide-07.webp";
+import blockImage07Mobile from "@shared/assets/landing_page/blocks/block-slide-07-mobile.webp";
 import blockImage08 from "@shared/assets/landing_page/blocks/block-slide-08.webp";
+import blockImage08Mobile from "@shared/assets/landing_page/blocks/block-slide-08-mobile.webp";
 import finishesImage01 from "@shared/assets/landing_page/products/finish-slide-01.webp";
 import finishesImage01Mobile from "@shared/assets/landing_page/products/finish-slide-01-mobile.webp";
 import finishesImage02 from "@shared/assets/landing_page/products/finish-slide-02.webp";
+import finishesImage02Mobile from "@shared/assets/landing_page/products/finish-slide-02-mobile.webp";
 import finishesImage03 from "@shared/assets/landing_page/products/finish-slide-03.webp";
+import finishesImage03Mobile from "@shared/assets/landing_page/products/finish-slide-03-mobile.webp";
 import finishesImage04 from "@shared/assets/landing_page/products/finish-slide-04.webp";
+import finishesImage04Mobile from "@shared/assets/landing_page/products/finish-slide-04-mobile.webp";
 import productImage01 from "@shared/assets/landing_page/products/product-slide-01.webp";
+import productImage01Mobile from "@shared/assets/landing_page/products/product-slide-01-mobile.webp";
 import productImage02 from "@shared/assets/landing_page/products/product-slide-02.webp";
+import productImage02Mobile from "@shared/assets/landing_page/products/product-slide-02-mobile.webp";
 import productImage03 from "@shared/assets/landing_page/products/product-slide-03.webp";
+import productImage03Mobile from "@shared/assets/landing_page/products/product-slide-03-mobile.webp";
 
 const productSlides = [
   { src: finishesImage01, mobileSrc: finishesImage01Mobile, width: 736, height: 981 },
-  { src: finishesImage02, width: 736, height: 1508 },
-  { src: finishesImage03, width: 736, height: 1308 },
-  { src: finishesImage04, width: 735, height: 825 },
-  { src: productImage01, width: 900, height: 862 },
-  { src: productImage02, width: 900, height: 864 },
-  { src: productImage03, width: 900, height: 850 }
+  { src: finishesImage02, mobileSrc: finishesImage02Mobile, width: 736, height: 1508 },
+  { src: finishesImage03, mobileSrc: finishesImage03Mobile, width: 736, height: 1308 },
+  { src: finishesImage04, mobileSrc: finishesImage04Mobile, width: 735, height: 825 },
+  { src: productImage01, mobileSrc: productImage01Mobile, width: 900, height: 862 },
+  { src: productImage02, mobileSrc: productImage02Mobile, width: 900, height: 864 },
+  { src: productImage03, mobileSrc: productImage03Mobile, width: 900, height: 850 }
 ];
 const blockSlides = [
-  { src: blockImage01, width: 900, height: 895 },
-  { src: blockImage02, width: 900, height: 894 },
-  { src: blockImage03, width: 725, height: 906 },
-  { src: blockImage04, width: 900, height: 1123 },
-  { src: blockImage05, width: 900, height: 1123 },
-  { src: blockImage06, width: 900, height: 1104 },
-  { src: blockImage07, width: 900, height: 1106 },
-  { src: blockImage08, width: 900, height: 1104 }
+  { src: blockImage01, mobileSrc: blockImage01Mobile, width: 900, height: 895 },
+  { src: blockImage02, mobileSrc: blockImage02Mobile, width: 900, height: 894 },
+  { src: blockImage03, mobileSrc: blockImage03Mobile, width: 725, height: 906 },
+  { src: blockImage04, mobileSrc: blockImage04Mobile, width: 900, height: 1123 },
+  { src: blockImage05, mobileSrc: blockImage05Mobile, width: 900, height: 1123 },
+  { src: blockImage06, mobileSrc: blockImage06Mobile, width: 900, height: 1104 },
+  { src: blockImage07, mobileSrc: blockImage07Mobile, width: 900, height: 1106 },
+  { src: blockImage08, mobileSrc: blockImage08Mobile, width: 900, height: 1104 }
 ];
 const fallbackSlide = { src: blocksOverlayImage, width: 1068, height: 845 };
 
@@ -79,7 +99,7 @@ const createSlideDecks = () => ({
   blocks: blockSlides.length ? [blockSlides[0], ...shuffleSlides(blockSlides.slice(1))] : [fallbackSlide]
 });
 
-const slideTransitionMs = 1800;
+const slideTransitionMs = 900;
 
 const getNextSlideIndex = (activeSlide, slides) => {
   if (!slides.length || slides.length < 2) return null;
@@ -199,16 +219,19 @@ const splitLines = (text) =>
 const whySangehassanIllustrations = {
   market: {
     src: marketComplexityIllustration,
+    mobileSrc: marketComplexityIllustrationMobile,
     width: 802,
     height: 648
   },
   network: {
     src: networkSupplyIllustration,
+    mobileSrc: networkSupplyIllustrationMobile,
     width: 941,
     height: 942
   },
   trust: {
     src: trustQualityIllustration,
+    mobileSrc: trustQualityIllustrationMobile,
     width: 1059,
     height: 726
   }
@@ -361,16 +384,19 @@ const whySangehassanContent = {
 const tradeboardIllustrations = {
   browse: {
     src: tradeboardBrowseListingsIllustration,
+    mobileSrc: tradeboardBrowseListingsIllustrationMobile,
     width: 768,
     height: 768
   },
   post: {
     src: tradeboardPostListingIllustration,
+    mobileSrc: tradeboardPostListingIllustrationMobile,
     width: 768,
     height: 768
   },
   review: {
     src: tradeboardSecureReviewIllustration,
+    mobileSrc: tradeboardSecureReviewIllustrationMobile,
     width: 768,
     height: 768
   }
@@ -602,6 +628,7 @@ export default function Home() {
   const [slideDecks, setSlideDecks] = useState(initialSlideDecks);
   const [activeSlides, setActiveSlides] = useState({ products: 0, blocks: 0 });
   const [previousSlides, setPreviousSlides] = useState({ products: null, blocks: null });
+  const [slidesReady, setSlidesReady] = useState(false);
   const previousClearTimerRef = useRef(null);
 
   useEffect(() => {
@@ -772,6 +799,21 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const enableSlides = () => setSlidesReady(true);
+    const timeoutId = window.setTimeout(enableSlides, 8000);
+    window.addEventListener("pointerdown", enableSlides, { once: true, passive: true });
+    window.addEventListener("keydown", enableSlides, { once: true });
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("pointerdown", enableSlides);
+      window.removeEventListener("keydown", enableSlides);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!slidesReady) return undefined;
+
     const timer = window.setInterval(() => {
       setActiveSlides((current) => {
         const next = {
@@ -803,7 +845,7 @@ export default function Home() {
 
         return next;
       });
-    }, 2000);
+    }, 5000);
 
     return () => {
       window.clearInterval(timer);
@@ -811,7 +853,7 @@ export default function Home() {
         window.clearTimeout(previousClearTimerRef.current);
       }
     };
-  }, [slideDecks]);
+  }, [slideDecks, slidesReady]);
 
   const sectionsByKey = useMemo(() => {
     const map = {};
@@ -927,7 +969,7 @@ export default function Home() {
             const slides = isBlocks ? slideDecks.blocks : slideDecks.products;
             const activeSlide = isBlocks ? activeSlides.blocks : activeSlides.products;
             const previousSlide = isBlocks ? previousSlides.blocks : previousSlides.products;
-            const nextSlide = getNextSlideIndex(activeSlide, slides);
+            const nextSlide = slidesReady ? getNextSlideIndex(activeSlide, slides) : null;
             const visibleSlideIndexes = [previousSlide, activeSlide, nextSlide].filter(
               (slideIndex, slideIndexPosition, slideIndexes) =>
                 slideIndex !== null && slideIndexes.indexOf(slideIndex) === slideIndexPosition
@@ -948,31 +990,32 @@ export default function Home() {
                     const isPreviousSlide = slideIndex === previousSlide;
                     const role = isActiveSlide ? "active" : isPreviousSlide ? "previous" : "preload";
                     const panel = isBlocks ? "blocks" : "products";
-                    const shouldLoadEager = isActiveSlide;
+                    const shouldLoadEager = isActiveSlide && activeSlide === 0;
+                    const shouldPrioritize = shouldLoadEager && index === 0;
 
                     return (
-                      <img
-                        key={image.src}
-                        src={image.src}
-                        srcSet={image.mobileSrc ? `${image.mobileSrc} 480w, ${image.src} ${image.width}w` : undefined}
-                        sizes={image.mobileSrc ? "(max-width: 1023px) 100vw, 50vw" : undefined}
-                        alt=""
-                        width={image.width}
-                        height={image.height}
-                        className={`landing-slide-layer absolute inset-0 h-full w-full object-cover object-center ${isActiveSlide
-                          ? "landing-slide-active"
-                          : isPreviousSlide
-                            ? "landing-slide-previous"
-                            : "landing-slide-preload"
-                          }`}
-                        data-slide-panel={panel}
-                        data-slide-role={role}
-                        data-slide-index={slideIndex}
-                        loading={shouldLoadEager ? "eager" : "lazy"}
-                        decoding="async"
-                        fetchpriority={shouldLoadEager ? "high" : "low"}
-                        {...getSlideDebugHandlers(panel, role, slideIndex, image)}
-                      />
+                      <picture key={image.src}>
+                        {image.mobileSrc ? <source media="(max-width: 1023px)" srcSet={image.mobileSrc} /> : null}
+                        <img
+                          src={image.src}
+                          alt=""
+                          width={image.width}
+                          height={image.height}
+                          className={`landing-slide-layer absolute inset-0 h-full w-full object-cover object-center ${isActiveSlide
+                            ? "landing-slide-active"
+                            : isPreviousSlide
+                              ? "landing-slide-previous"
+                              : "landing-slide-preload"
+                            }`}
+                          data-slide-panel={panel}
+                          data-slide-role={role}
+                          data-slide-index={slideIndex}
+                          loading={shouldLoadEager ? "eager" : "lazy"}
+                          decoding="async"
+                          fetchpriority={shouldPrioritize ? "high" : "auto"}
+                          {...getSlideDebugHandlers(panel, role, slideIndex, image)}
+                        />
+                      </picture>
                     );
                   })}
                 </div>
@@ -1068,19 +1111,22 @@ export default function Home() {
                   >
                     <div className="relative flex h-36 items-center justify-center sm:h-40">
                       <span className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.07] blur-[42px]" aria-hidden="true" />
-                      <img
-                        src={illustration.src}
-                        alt=""
-                        width={illustration.width}
-                        height={illustration.height}
-                        loading="lazy"
-                        decoding="async"
-                        className={`relative h-auto w-full object-contain opacity-82 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)] [filter:brightness(0.9)_contrast(0.9)_saturate(0.9)] ${card.key === "network"
-                          ? "max-h-[13rem] max-w-[17rem] sm:max-h-[16rem] sm:max-w-[21rem]"
-                          : "max-h-[11rem] max-w-[14rem] sm:max-h-[14rem] sm:max-w-[17rem]"
-                          }`}
-                        aria-hidden="true"
-                      />
+                      <picture className="contents">
+                        <source media="(max-width: 767px)" srcSet={illustration.mobileSrc} />
+                        <img
+                          src={illustration.src}
+                          alt=""
+                          width={illustration.width}
+                          height={illustration.height}
+                          loading="lazy"
+                          decoding="async"
+                          className={`relative h-auto w-full object-contain opacity-82 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)] [filter:brightness(0.9)_contrast(0.9)_saturate(0.9)] ${card.key === "network"
+                            ? "max-h-[13rem] max-w-[17rem] sm:max-h-[16rem] sm:max-w-[21rem]"
+                            : "max-h-[11rem] max-w-[14rem] sm:max-h-[14rem] sm:max-w-[17rem]"
+                            }`}
+                          aria-hidden="true"
+                        />
+                      </picture>
                     </div>
                     <h3 className="mt-6 font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
                     <p className="mx-auto mt-3 max-w-[22rem] text-sm leading-7 text-sand/74">{card.summary}</p>
@@ -1127,15 +1173,18 @@ export default function Home() {
                 >
                   <div className="relative flex h-36 items-center justify-center sm:h-40">
                     <span className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.1] blur-[42px]" aria-hidden="true" />
-                    <img
-                      src={illustration.src}
-                      alt={card.imageAlt}
-                      width={illustration.width}
-                      height={illustration.height}
-                      loading="lazy"
-                      decoding="async"
-                      className="relative h-full w-full scale-[1.55] object-contain opacity-90 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)]"
-                    />
+                    <picture className="contents">
+                      <source media="(max-width: 767px)" srcSet={illustration.mobileSrc} />
+                      <img
+                        src={illustration.src}
+                        alt={card.imageAlt}
+                        width={illustration.width}
+                        height={illustration.height}
+                        loading="lazy"
+                        decoding="async"
+                        className="relative h-full w-full scale-[1.55] object-contain opacity-90 drop-shadow-[0_18px_38px_rgba(0,0,0,0.22)]"
+                      />
+                    </picture>
                   </div>
                   <h3 className="mt-6 font-display text-xl leading-tight text-white sm:text-3xl">{card.title}</h3>
                   <p className="mx-auto mt-3 max-w-[22rem] text-sm leading-7 text-sand/74">{card.summary}</p>

@@ -555,6 +555,20 @@ function injectRouteHtml(template, route, appHtml) {
   return stripRuntimeProductJsonLd(html);
 }
 
+async function inlineBuildStyles(template) {
+  const stylesheetPattern = /<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+\.css)["'][^>]*>/gi;
+  const matches = [...template.matchAll(stylesheetPattern)];
+  let output = template;
+
+  for (const match of matches) {
+    const assetPath = match[1].replace(/^\//, "");
+    const css = await fs.readFile(path.join(distDir, assetPath), "utf8");
+    output = output.replace(match[0], `<style data-build-styles>${css}</style>`);
+  }
+
+  return output;
+}
+
 async function loadAssetReplacements() {
   const rawManifest = await fs.readFile(manifestPath, "utf8");
   const manifest = JSON.parse(rawManifest);
@@ -1452,7 +1466,7 @@ async function loadDynamicRoutes() {
 }
 
 async function main() {
-  const template = await fs.readFile(templatePath, "utf8");
+  const template = await inlineBuildStyles(await fs.readFile(templatePath, "utf8"));
   const assetReplacements = await loadAssetReplacements();
   const vite = await createServer({
     root: rootDir,

@@ -23,16 +23,12 @@ export default function GoogleAnalytics() {
 
   useEffect(() => {
     const start = () => loadAnalytics();
-    const timeoutId = window.setTimeout(start, 2500);
-    const idleId = typeof window.requestIdleCallback === "function"
-      ? window.requestIdleCallback(start, { timeout: 2500 })
-      : null;
+    const timeoutId = window.setTimeout(start, 10000);
     window.addEventListener("pointerdown", start, { once: true, passive: true });
     window.addEventListener("keydown", start, { once: true });
 
     return () => {
       window.clearTimeout(timeoutId);
-      if (idleId !== null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
       window.removeEventListener("pointerdown", start);
       window.removeEventListener("keydown", start);
     };

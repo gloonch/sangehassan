@@ -3,7 +3,7 @@ import { useTranslation } from "../lib/i18n";
 import { getContactHref, getContactPhoneItems } from "../lib/contact";
 import { fetchJSON } from "../lib/api";
 import { PHONE_COUNTRIES, getPhoneCountry, isValidLocalPhoneNumber, normalizeLocalPhoneNumber } from "../lib/phoneCountries";
-import logoWhiteImage from "@shared/assets/logo_white.png";
+import logoWhiteImage from "@shared/assets/logo-white-240.webp";
 
 const iconBaseProps = {
   xmlns: "http://www.w3.org/2000/svg",

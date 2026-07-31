@@ -5,8 +5,8 @@ import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { getLiveDealsConfig, renderDealMessage } from "../lib/liveDeals";
 import LanguageSwitch from "./LanguageSwitch";
-import logoImage from "@shared/assets/logo.png";
-import logoWhiteImage from "@shared/assets/logo_white.png";
+import logoImage from "@shared/assets/logo-240.webp";
+import logoWhiteImage from "@shared/assets/logo-white-240.webp";
 
 const navItems = [
   { key: "products", path: "/products" },
@@ -109,15 +109,15 @@ export default function Navbar() {
       sessionFetchStarted = true;
       fetchSession();
     };
-    const timeoutId = window.setTimeout(startSessionFetch, 2500);
-    const idleId = typeof window.requestIdleCallback === "function"
-      ? window.requestIdleCallback(startSessionFetch, { timeout: 2500 })
-      : null;
+    const timeoutId = window.setTimeout(startSessionFetch, 8000);
+    window.addEventListener("pointerdown", startSessionFetch, { once: true, passive: true });
+    window.addEventListener("keydown", startSessionFetch, { once: true });
 
     return () => {
       active = false;
       window.clearTimeout(timeoutId);
-      if (idleId !== null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
+      window.removeEventListener("pointerdown", startSessionFetch);
+      window.removeEventListener("keydown", startSessionFetch);
     };
   }, []);
 
