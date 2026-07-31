@@ -8,9 +8,11 @@ docker logs --since "$SINCE" "$NGINX_CONTAINER" 2>&1 | awk '
   {
     split($0, quoted, "\"")
     split(quoted[2], request, " ")
-    split(quoted[3], response, " ")
+    response=quoted[3]
+    sub(/^[[:space:]]+/, "", response)
+    split(response, response_parts, /[[:space:]]+/)
     path=request[2]
-    code=response[2]
+    code=response_parts[1]
     if (path == "" || code !~ /^[1-5][0-9][0-9]$/) next
     sub(/\?.*$/, "", path)
     split(path, parts, "/")
@@ -27,4 +29,4 @@ docker logs --since "$SINCE" "$NGINX_CONTAINER" 2>&1 | awk '
     print "5xx_status\tpath\tcount"
     for (key in errors) print key "\t" errors[key]
   }
-' | sort
+'
