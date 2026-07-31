@@ -102,7 +102,10 @@ const staticRoutes = [
       "Integrated natural stone supply and production network, from quarry blocks to finished stone products for professional projects, B2B, and export.",
     schemaType: "WebPage",
     image: defaultShareImage,
-    preloads: [sharedAssetUrl("../shared/assets/landing_page/products/finish-slide-01.webp")],
+    preloads: [
+      { href: sharedAssetUrl("../shared/assets/landing_page/products/finish-slide-01-mobile.webp"), media: "(max-width: 767px)" },
+      { href: sharedAssetUrl("../shared/assets/landing_page/products/finish-slide-01.webp"), media: "(min-width: 768px)" }
+    ],
     changefreq: "weekly",
     priority: 1
   },
@@ -522,7 +525,9 @@ function buildHead(route) {
     tags.push(`<link rel="next" href="${escapeAttr(absoluteUrl(route.nextPath))}" />`);
   }
   for (const preload of route.preloads || []) {
-    tags.push(`<link rel="preload" as="image" href="${escapeAttr(preload)}" fetchpriority="high" />`);
+    const item = typeof preload === "string" ? { href: preload } : preload;
+    const media = item.media ? ` media="${escapeAttr(item.media)}"` : "";
+    tags.push(`<link rel="preload" as="image" href="${escapeAttr(item.href)}"${media} fetchpriority="high" />`);
   }
 
   if (image) {

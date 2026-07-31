@@ -22,6 +22,7 @@ import blockImage06 from "@shared/assets/landing_page/blocks/block-slide-06.webp
 import blockImage07 from "@shared/assets/landing_page/blocks/block-slide-07.webp";
 import blockImage08 from "@shared/assets/landing_page/blocks/block-slide-08.webp";
 import finishesImage01 from "@shared/assets/landing_page/products/finish-slide-01.webp";
+import finishesImage01Mobile from "@shared/assets/landing_page/products/finish-slide-01-mobile.webp";
 import finishesImage02 from "@shared/assets/landing_page/products/finish-slide-02.webp";
 import finishesImage03 from "@shared/assets/landing_page/products/finish-slide-03.webp";
 import finishesImage04 from "@shared/assets/landing_page/products/finish-slide-04.webp";
@@ -30,7 +31,7 @@ import productImage02 from "@shared/assets/landing_page/products/product-slide-0
 import productImage03 from "@shared/assets/landing_page/products/product-slide-03.webp";
 
 const productSlides = [
-  { src: finishesImage01, width: 736, height: 981 },
+  { src: finishesImage01, mobileSrc: finishesImage01Mobile, width: 736, height: 981 },
   { src: finishesImage02, width: 736, height: 1508 },
   { src: finishesImage03, width: 736, height: 1308 },
   { src: finishesImage04, width: 735, height: 825 },
@@ -953,6 +954,8 @@ export default function Home() {
                       <img
                         key={image.src}
                         src={image.src}
+                        srcSet={image.mobileSrc ? `${image.mobileSrc} 480w, ${image.src} ${image.width}w` : undefined}
+                        sizes={image.mobileSrc ? "(max-width: 1023px) 100vw, 50vw" : undefined}
                         alt=""
                         width={image.width}
                         height={image.height}
