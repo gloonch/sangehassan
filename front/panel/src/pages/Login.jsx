@@ -33,12 +33,12 @@ export default function Login() {
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-            شماره تلفن
+            شماره تلفن یا نام کاربری
             <input
               type="tel"
               className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
               value={form.phone}
-              placeholder="09121234567"
+              placeholder="09121234567 یا admin"
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
           </label>

@@ -120,13 +120,21 @@ func (s *UserAuthService) LoginInternal(ctx context.Context, phone, password str
 	return s.login(ctx, phone, password, "INTERNAL")
 }
 
-func (s *UserAuthService) login(ctx context.Context, phone, password, requiredUserType string) (domain.UserInfo, TokenPair, error) {
-	normalizedPhone := normalizePhone(phone)
-	if normalizedPhone == "" {
+func (s *UserAuthService) login(ctx context.Context, identifier, password, requiredUserType string) (domain.UserInfo, TokenPair, error) {
+	normalizedPhone := normalizePhone(identifier)
+	var user domain.User
+	var err error
+	if normalizedPhone != "" {
+		user, err = s.users.GetByPhone(ctx, normalizedPhone)
+	} else if requiredUserType == "INTERNAL" {
+		username := strings.ToLower(strings.TrimSpace(identifier))
+		if username == "" {
+			return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
+		}
+		user, err = s.users.GetByEmail(ctx, username)
+	} else {
 		return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
 	}
-
-	user, err := s.users.GetByPhone(ctx, normalizedPhone)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.UserInfo{}, TokenPair{}, ErrInvalidCredentials
