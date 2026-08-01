@@ -341,7 +341,8 @@ func (r *CatalogRepository) ListIndexableRoutes(ctx context.Context, minimumProd
 
 	facetRows, err := r.db.QueryContext(ctx, `
 		SELECT c.slug, t.taxonomy, t.term_key, COUNT(DISTINCT p.id)::int,
-		       c.is_indexable, (t.is_indexable AND COALESCE(cfp.is_indexable, TRUE))
+		       c.is_indexable,
+		       (t.is_indexable AND cfp.id IS NOT NULL AND cfp.is_active AND cfp.is_indexable)
 		FROM categories c
 		JOIN products p ON p.is_active = TRUE AND p.is_indexable = TRUE AND (
 			p.main_category_id = c.id OR EXISTS (
@@ -353,8 +354,7 @@ func (r *CatalogRepository) ListIndexableRoutes(ctx context.Context, minimumProd
 		LEFT JOIN catalog_facet_pages cfp ON cfp.category_id = c.id AND cfp.term_id = t.id
 		WHERE c.is_active = TRUE AND c.parent_id IS NULL
 		  AND t.taxonomy = ANY($1)
-		  AND COALESCE(cfp.is_active, TRUE) = TRUE
-		GROUP BY c.id, t.id, cfp.is_indexable
+		GROUP BY c.id, t.id, cfp.id, cfp.is_active, cfp.is_indexable
 		HAVING COUNT(DISTINCT p.id) > 0
 		ORDER BY c.id, t.taxonomy, t.id
 	`, pq.Array(catalogTaxonomies()))

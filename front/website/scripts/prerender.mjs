@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { getProductSeo, productAdditionalProperties } from "../src/lib/productSeo.js";
+import { getProductOfferStructuredData } from "../src/lib/productOffers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -63,10 +64,10 @@ const catalogLocaleMeta = {
     locale: "fa_IR",
     home: "خانه",
     products: "محصولات",
-    hubTitle: "انواع سنگ ساختمانی | تراورتن، گرانیت، مرمریت و سنگ چینی",
-    hubDescription: "مشاهده و بررسی دسته‌بندی انواع سنگ ساختمانی و طبیعی و انتخاب سنگ مناسب پروژه.",
-    hubH1: "دسته‌بندی انواع سنگ ساختمانی",
-    hubIntro: "برای مشاهده محصولات، رنگ‌ها، فرآوری‌ها و کاربردهای هر سنگ، دسته‌بندی موردنظر را انتخاب کنید."
+    hubTitle: "خرید و قیمت سنگ ساختمانی | انواع سنگ طبیعی | سنگ حسن",
+    hubDescription: "خرید و بررسی قیمت انواع سنگ ساختمانی شامل تراورتن، مرمریت، گرانیت، چینی کریستال و مرمر برای اسلب، نما، کف و پله.",
+    hubH1: "خرید و قیمت انواع سنگ ساختمانی",
+    hubIntro: "انواع سنگ طبیعی را بر اساس جنس، کاربرد، فرم عرضه و قیمت بررسی کنید. برای استعلام دقیق، نام سنگ، ابعاد، مقدار، فرآوری و شهر پروژه را ارسال کنید."
   },
   ar: {
     locale: "ar_SA",
@@ -859,7 +860,8 @@ function productRoute(product) {
         },
         category: productSeo.category || undefined,
         material: locale === "fa" ? "سنگ طبیعی" : locale === "ar" ? "حجر طبيعي" : "Natural stone",
-        additionalProperty: productAdditionalProperties(product, locale)
+        additionalProperty: productAdditionalProperties(product, locale),
+        offers: getProductOfferStructuredData(product, absoluteUrl(routePath))
       }
     };
   });

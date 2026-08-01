@@ -55,10 +55,10 @@ func (s *CatalogService) Hub(ctx context.Context, locale string) (domain.Catalog
 	}
 	if locale == "fa" {
 		seo = domain.CatalogSEO{
-			Title:       "انواع سنگ ساختمانی | تراورتن، گرانیت، مرمریت و سنگ چینی",
-			Description: "مشاهده و بررسی دسته‌بندی انواع سنگ ساختمانی و طبیعی شامل تراورتن، گرانیت، مرمریت، چینی کریستال و سایر سنگ‌های پروژه‌ای.",
-			H1:          "دسته‌بندی انواع سنگ ساختمانی",
-			Intro:       "برای مشاهده محصولات، رنگ‌ها، فرآوری‌ها و کاربردهای هر سنگ، دسته‌بندی موردنظر را انتخاب کنید.",
+			Title:       "خرید و قیمت سنگ ساختمانی | انواع سنگ طبیعی | سنگ حسن",
+			Description: "خرید و بررسی قیمت انواع سنگ ساختمانی شامل تراورتن، مرمریت، گرانیت، چینی کریستال و مرمر؛ مناسب اسلب، نما، کف و پله با استعلام پروژه‌ای.",
+			H1:          "خرید و قیمت انواع سنگ ساختمانی",
+			Intro:       "برای خرید سنگ ساختمانی، فقط نام سنگ کافی نیست؛ نوع سنگ، سورت، ابعاد، ضخامت، فرآوری، مقدار سفارش و شهر پروژه هم روی انتخاب و قیمت نهایی اثر دارند. در این مجموعه می‌توانید محصولات تراورتن، مرمریت، گرانیت، چینی کریستال، مرمر و دیگر سنگ‌های طبیعی را در همان صفحات موجود بررسی کنید و بر اساس کاربردهایی مانند نمای ساختمان، کف، پله، دیوارپوش، کانتر یا عرضه به صورت اسلب و تایل به گزینه مناسب برسید. قیمت‌های نمایش‌داده‌شده برای محصولات منتخب، کف قیمت هر مترمربع هستند و قیمت قطعی پس از مشخص‌شدن سورت و جزئیات سفارش اعلام می‌شود. تصاویر هر محصول برای ارزیابی اولیه طرح و رنگ مفیدند، اما در خرید پروژه‌ای باید نمونه یا تصاویر بچ قابل‌تحویل نیز بررسی شود. برای استعلام دقیق، نام سنگ، ابعاد، متراژ یا تعداد، ضخامت، نوع فرآوری و شهر پروژه را برای تیم سنگ حسن ارسال کنید تا امکان تأمین و قیمت روز بر اساس نیاز واقعی پروژه بررسی شود.",
 			Canonical:   "/fa/products",
 			Robots:      "index,follow",
 		}
@@ -156,10 +156,8 @@ func (s *CatalogService) Page(
 
 	indexable := category.IsIndexable && len(routeFilters) == 0
 	if selectedFacet != nil {
-		indexable = indexable && selectedFacet.IsIndexable && selectedFacet.Count >= s.minimumProducts
-		if facetPage != nil {
-			indexable = indexable && facetPage.IsIndexable
-		}
+		indexable = indexable && facetPage != nil && facetPage.IsActive && facetPage.IsIndexable &&
+			selectedFacet.IsIndexable && selectedFacet.Count >= s.minimumProducts
 	}
 	seo := buildCatalogSEO(locale, category, routeFacet, selectedFacet, indexable)
 	if facetPage != nil {

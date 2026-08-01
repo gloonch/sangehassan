@@ -9,7 +9,7 @@ import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
-import { formatOfferPrice, getProductOfferPrice } from "../lib/productOffers";
+import { formatOfferPrice, getProductOfferPrice, getProductOfferStructuredData } from "../lib/productOffers";
 import { getContactPhoneItems } from "../lib/contact";
 import NotFound from "./NotFound";
 
@@ -227,7 +227,8 @@ export default function ProductDetail() {
       },
       category: productSeo.category || undefined,
       material: lang === "fa" ? "سنگ طبیعی" : lang === "ar" ? "حجر طبيعي" : "Natural stone",
-      additionalProperty: productAdditionalProperties(product, lang)
+      additionalProperty: productAdditionalProperties(product, lang),
+      offers: getProductOfferStructuredData(product, pageUrl)
     };
   }, [activeImage, initialProduct, lang, localizedProductPath, localizedTitle, product, productSeo.category, seoDescription]);
 
@@ -553,6 +554,7 @@ export default function ProductDetail() {
                       </p>
                     </div>
                     <p className="max-w-lg text-xs leading-6 text-primary/60">{t("productDetail.offerDisclaimer")}</p>
+                    <p className="max-w-lg text-xs leading-6 text-primary/70">{t("productDetail.offerQuoteRequirements")}</p>
                   </div>
                   {phoneItems.length > 0 && (
                     <div className="min-w-0 md:max-w-[34rem]">

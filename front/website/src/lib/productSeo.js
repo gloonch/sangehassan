@@ -41,28 +41,32 @@ export function getProductSeo(product, locale = "en") {
   const finishes = productValues(product, "finishes", "finishes", locale);
   const variants = productValues(product, "use_case_form", "variants", locale);
   const manualHTML = (locale === "fa"
-    ? product?.description_html_fa || product?.short_description_html_fa
+    ? product?.short_description_html_fa || product?.description_html_fa
     : locale === "ar"
-      ? product?.description_html_ar || product?.short_description_html_ar
-      : product?.description_html_en || product?.short_description_html_en) ||
-    product?.description_html || product?.short_description_html || product?.description || "";
+      ? product?.short_description_html_ar || product?.description_html_ar
+      : product?.short_description_html_en || product?.description_html_en) ||
+    product?.short_description_html || product?.description_html || product?.description || "";
 
-  const normalizedTitle = title.toLocaleLowerCase();
-  const detail = [category, mines[0], finishes[0]].filter((value, index, values) =>
-    value && !normalizedTitle.includes(String(value).toLocaleLowerCase()) && values.indexOf(value) === index
-  ).slice(0, 2).join(" - ");
+  const numericPrice = typeof product?.price === "number" ? product.price : Number(product?.price);
+  const hasPrice = product?.is_popular && Number.isFinite(numericPrice) && numericPrice > 0;
 
   let generatedSummary;
   let seoTitle;
   if (locale === "fa") {
     generatedSummary = `${qualifiedTitle}${category ? ` از دسته ${category}` : "، محصول سنگ طبیعی"}${mines.length ? ` با معدن ${mines.slice(0, 2).join(" و ")}` : ""}${finishes.length ? ` و فرآوری ${finishes.slice(0, 2).join(" و ")}` : ""}. تصاویر، مشخصات و گزینه‌های مناسب خرید و بررسی پروژه را در سنگ حسن مشاهده کنید.`;
-    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | مشخصات و خرید"} | سنگ حسن`;
+    seoTitle = hasPrice
+      ? `قیمت و خرید ${qualifiedTitle} | سنگ حسن`
+      : `${qualifiedTitle} | مشخصات و کاربرد | سنگ حسن`;
   } else if (locale === "ar") {
     generatedSummary = `${qualifiedTitle}${category ? ` من فئة ${category}` : " من الحجر الطبيعي"}${mines.length ? ` من محاجر ${mines.slice(0, 2).join(" و")}` : ""}${finishes.length ? ` بتشطيب ${finishes.slice(0, 2).join(" و")}` : ""}. شاهد الصور والمواصفات وخيارات التوريد للمشاريع من سانج حسن.`;
-    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | المواصفات والتوريد"} | سانج حسن`;
+    seoTitle = hasPrice
+      ? `سعر وشراء ${qualifiedTitle} | سانج حسن`
+      : `${qualifiedTitle} | المواصفات والاستخدام | سانج حسن`;
   } else {
     generatedSummary = `${qualifiedTitle}${category ? ` is a ${category} product` : " is a natural stone product"}${mines.length ? ` sourced from ${mines.slice(0, 2).join(" and ")}` : ""}${finishes.length ? ` and available in ${finishes.slice(0, 2).join(" and ")} finishes` : ""}. View images, specifications, and project sourcing options from SangeHassan.`;
-    seoTitle = `${qualifiedTitle}${detail ? ` | ${detail}` : " | Specifications & Supply"} | SangeHassan`;
+    seoTitle = hasPrice
+      ? `${qualifiedTitle} Price & Supply | SangeHassan`
+      : `${qualifiedTitle} | Specifications & Applications | SangeHassan`;
   }
 
   return {
@@ -80,15 +84,17 @@ export function getProductSeo(product, locale = "en") {
 
 export function productAdditionalProperties(product, locale = "en") {
   const seo = getProductSeo(product, locale);
+  const applications = localizedTermValues(product, "use_case_application", locale);
   const labels = locale === "fa"
-    ? { mine: "معدن", finish: "فرآوری", form: "فرم عرضه" }
+    ? { mine: "معدن", finish: "فرآوری", form: "فرم عرضه", application: "کاربرد" }
     : locale === "ar"
-      ? { mine: "المحجر", finish: "التشطيب", form: "شكل التوريد" }
-      : { mine: "Quarry", finish: "Finish", form: "Supply form" };
+      ? { mine: "المحجر", finish: "التشطيب", form: "شكل التوريد", application: "الاستخدام" }
+      : { mine: "Quarry", finish: "Finish", form: "Supply form", application: "Application" };
   return [
     [labels.mine, seo.mines],
     [labels.finish, seo.finishes],
-    [labels.form, seo.variants]
+    [labels.form, seo.variants],
+    [labels.application, applications]
   ].filter(([, values]) => values.length).map(([name, values]) => ({
     "@type": "PropertyValue",
     name,

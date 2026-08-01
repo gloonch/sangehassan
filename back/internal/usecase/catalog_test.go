@@ -65,11 +65,26 @@ func TestCatalogSingleFacetIndexabilityThreshold(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Page returned error: %v", err)
 	}
-	if !page.Indexable || page.SEO.Robots != "index,follow" {
-		t.Fatalf("expected indexable page, got indexable=%v robots=%q", page.Indexable, page.SEO.Robots)
+	if page.Indexable || page.SEO.Robots != "noindex,follow" {
+		t.Fatalf("expected unapproved facet page to be noindex, got indexable=%v robots=%q", page.Indexable, page.SEO.Robots)
 	}
 	if page.SEO.Canonical != "/fa/products/travertine/color/white" {
 		t.Fatalf("unexpected canonical: %s", page.SEO.Canonical)
+	}
+}
+
+func TestCatalogApprovedFacetIsIndexable(t *testing.T) {
+	repo := catalogRepoStub{
+		category:  domain.CatalogCategory{Category: domain.Category{ID: 1, Slug: "travertine", TitleFA: "تراورتن", IsIndexable: true}},
+		value:     domain.CatalogFacetValue{ID: 10, Key: "white", LabelFA: "سفید", Count: 2, IsIndexable: true},
+		facetPage: &domain.CatalogFacetPage{IsActive: true, IsIndexable: true},
+	}
+	page, err := NewCatalogService(repo, 2).Page(context.Background(), "fa", "travertine", "color", "white", nil, 24, 0)
+	if err != nil {
+		t.Fatalf("Page returned error: %v", err)
+	}
+	if !page.Indexable || page.SEO.Robots != "index,follow" {
+		t.Fatalf("expected approved facet page to be indexable, got indexable=%v robots=%q", page.Indexable, page.SEO.Robots)
 	}
 }
 
