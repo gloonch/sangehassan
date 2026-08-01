@@ -40,12 +40,15 @@ export function getProductSeo(product, locale = "en") {
   const mines = productValues(product, "mines", "mines", locale);
   const finishes = productValues(product, "finishes", "finishes", locale);
   const variants = productValues(product, "use_case_form", "variants", locale);
-  const manualHTML = (locale === "fa"
+  const localizedManualHTML = locale === "fa"
     ? product?.short_description_html_fa || product?.description_html_fa
     : locale === "ar"
       ? product?.short_description_html_ar || product?.description_html_ar
-      : product?.short_description_html_en || product?.description_html_en) ||
-    product?.short_description_html || product?.description_html || product?.description || "";
+      : product?.short_description_html_en || product?.description_html_en;
+  const legacyManualHTML = locale === "en"
+    ? product?.short_description_html || product?.description_html || product?.description
+    : "";
+  const manualHTML = localizedManualHTML || legacyManualHTML || "";
 
   const numericPrice = typeof product?.price === "number" ? product.price : Number(product?.price);
   const hasPrice = product?.is_popular && Number.isFinite(numericPrice) && numericPrice > 0;

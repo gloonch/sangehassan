@@ -28,4 +28,14 @@ describe("product SEO", () => {
       expect.objectContaining({ name: "کاربرد", value: "نما" })
     ]));
   });
+
+  it("does not leak English manual copy into Arabic metadata", () => {
+    const seo = getProductSeo({
+      ...product,
+      short_description_html_en: "<p>English-only product copy.</p>",
+      short_description_html_ar: ""
+    }, "ar");
+    expect(seo.description).not.toContain("English-only");
+    expect(seo.description).toContain("شاهد الصور");
+  });
 });
