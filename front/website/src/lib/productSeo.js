@@ -36,7 +36,9 @@ export function getProductSeo(product, locale = "en") {
       : ""
   );
   const qualifiedTitle = identity ? `${title} (${identity})` : title;
-  const category = localizedField(product?.category || product?.categories?.[0], "title", locale);
+  const primaryCategory = product?.category || product?.categories?.[0];
+  const category = localizedField(primaryCategory, "title", locale);
+  const isFinishingProduct = primaryCategory?.slug === "finishings";
   const mines = productValues(product, "mines", "mines", locale);
   const finishes = productValues(product, "finishes", "finishes", locale);
   const variants = productValues(product, "use_case_form", "variants", locale);
@@ -56,17 +58,23 @@ export function getProductSeo(product, locale = "en") {
   let generatedSummary;
   let seoTitle;
   if (locale === "fa") {
-    generatedSummary = `${qualifiedTitle}${category ? ` از دسته ${category}` : "، محصول سنگ طبیعی"}${mines.length ? ` با معدن ${mines.slice(0, 2).join(" و ")}` : ""}${finishes.length ? ` و فرآوری ${finishes.slice(0, 2).join(" و ")}` : ""}. تصاویر، مشخصات و گزینه‌های مناسب خرید و بررسی پروژه را در سنگ حسن مشاهده کنید.`;
+    generatedSummary = isFinishingProduct
+      ? `${qualifiedTitle} یکی از انواع فینیشینگ و فرآوری سطح سنگ است. تصاویر، مشخصات و گزینه‌های مناسب سفارش و بررسی پروژه را در سنگ حسن مشاهده کنید.`
+      : `${qualifiedTitle}${category ? ` از دسته ${category}` : "، محصول سنگ طبیعی"}${mines.length ? ` با معدن ${mines.slice(0, 2).join(" و ")}` : ""}${finishes.length ? ` و فرآوری ${finishes.slice(0, 2).join(" و ")}` : ""}. تصاویر، مشخصات و گزینه‌های مناسب خرید و بررسی پروژه را در سنگ حسن مشاهده کنید.`;
     seoTitle = hasPrice
       ? `قیمت و خرید ${qualifiedTitle} | سنگ حسن`
       : `${qualifiedTitle} | مشخصات و کاربرد | سنگ حسن`;
   } else if (locale === "ar") {
-    generatedSummary = `${qualifiedTitle}${category ? ` من فئة ${category}` : " من الحجر الطبيعي"}${mines.length ? ` من محاجر ${mines.slice(0, 2).join(" و")}` : ""}${finishes.length ? ` بتشطيب ${finishes.slice(0, 2).join(" و")}` : ""}. شاهد الصور والمواصفات وخيارات التوريد للمشاريع من سانج حسن.`;
+    generatedSummary = isFinishingProduct
+      ? `${qualifiedTitle} هو أحد خيارات تشطيب ومعالجة سطح الحجر الطبيعي. شاهد الصور والمواصفات وخيارات الطلب للمشاريع من سانج حسن.`
+      : `${qualifiedTitle}${category ? ` من فئة ${category}` : " من الحجر الطبيعي"}${mines.length ? ` من محاجر ${mines.slice(0, 2).join(" و")}` : ""}${finishes.length ? ` بتشطيب ${finishes.slice(0, 2).join(" و")}` : ""}. شاهد الصور والمواصفات وخيارات التوريد للمشاريع من سانج حسن.`;
     seoTitle = hasPrice
       ? `سعر وشراء ${qualifiedTitle} | سانج حسن`
       : `${qualifiedTitle} | المواصفات والاستخدام | سانج حسن`;
   } else {
-    generatedSummary = `${qualifiedTitle}${category ? ` is a ${category} product` : " is a natural stone product"}${mines.length ? ` sourced from ${mines.slice(0, 2).join(" and ")}` : ""}${finishes.length ? ` and available in ${finishes.slice(0, 2).join(" and ")} finishes` : ""}. View images, specifications, and project sourcing options from SangeHassan.`;
+    generatedSummary = isFinishingProduct
+      ? `${qualifiedTitle} is a natural stone surface finishing option. View images, specifications, and project ordering details from SangeHassan.`
+      : `${qualifiedTitle}${category ? ` is a ${category} product` : " is a natural stone product"}${mines.length ? ` sourced from ${mines.slice(0, 2).join(" and ")}` : ""}${finishes.length ? ` and available in ${finishes.slice(0, 2).join(" and ")} finishes` : ""}. View images, specifications, and project sourcing options from SangeHassan.`;
     seoTitle = hasPrice
       ? `${qualifiedTitle} Price & Supply | SangeHassan`
       : `${qualifiedTitle} | Specifications & Applications | SangeHassan`;

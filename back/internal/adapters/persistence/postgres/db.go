@@ -696,7 +696,7 @@ func ensureProductTermMetadata(db *sql.DB) error {
 					SELECT 1
 					FROM product_category_slugs pcs
 					WHERE pcs.product_id = p.id
-					  AND pcs.slug = 'accessories'
+					  AND pcs.slug IN ('accessories', 'finishings')
 				)
 			)
 		),
@@ -826,7 +826,7 @@ func ensureProductTermMetadata(db *sql.DB) error {
 					SELECT 1
 					FROM product_category_slugs pcs
 					WHERE pcs.product_id = p.id
-					  AND pcs.slug = 'accessories'
+					  AND pcs.slug IN ('accessories', 'finishings')
 				)
 			)
 		),
@@ -850,8 +850,40 @@ func ensureProductTermMetadata(db *sql.DB) error {
 		INSERT INTO product_term_links (product_id, term_id)
 		SELECT cp.product_id, t.id
 		FROM candidate_pairs cp
-		JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
-		ON CONFLICT DO NOTHING`,
+			JOIN product_terms t ON t.taxonomy = 'finishes' AND t.term_key = cp.term_key
+			ON CONFLICT DO NOTHING`,
+		`DELETE FROM product_term_links link
+		USING products p, categories c, product_terms term
+		WHERE link.product_id = p.id
+		  AND c.id = p.main_category_id
+		  AND c.slug = 'finishings'
+		  AND link.term_id = term.id
+		  AND term.taxonomy = 'finishes'
+		  AND term.term_key = 'honed'`,
+		`UPDATE products p
+		SET
+			finishes = ARRAY(
+				SELECT value
+				FROM UNNEST(COALESCE(p.finishes, '{}'::text[])) AS value
+				WHERE LOWER(REGEXP_REPLACE(TRIM(value), '[[:space:]]+', '', 'g')) NOT IN (
+					LOWER(REGEXP_REPLACE('Honed', '[[:space:]]+', '', 'g')),
+					LOWER(REGEXP_REPLACE('هوند (نسابیده)', '[[:space:]]+', '', 'g')),
+					LOWER(REGEXP_REPLACE('مصقول مطفي', '[[:space:]]+', '', 'g'))
+				)
+			),
+			updated_at = NOW()
+		FROM categories c
+		WHERE c.id = p.main_category_id
+		  AND c.slug = 'finishings'
+		  AND EXISTS (
+			SELECT 1
+			FROM UNNEST(COALESCE(p.finishes, '{}'::text[])) AS value
+			WHERE LOWER(REGEXP_REPLACE(TRIM(value), '[[:space:]]+', '', 'g')) IN (
+				LOWER(REGEXP_REPLACE('Honed', '[[:space:]]+', '', 'g')),
+				LOWER(REGEXP_REPLACE('هوند (نسابیده)', '[[:space:]]+', '', 'g')),
+				LOWER(REGEXP_REPLACE('مصقول مطفي', '[[:space:]]+', '', 'g'))
+			)
+		  )`,
 	}
 
 	for _, statement := range statements {

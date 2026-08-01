@@ -38,4 +38,17 @@ describe("product SEO", () => {
     expect(seo.description).not.toContain("English-only");
     expect(seo.description).toContain("شاهد الصور");
   });
+
+  it("describes finishing products without assigning another finish", () => {
+    const seo = getProductSeo({
+      title_en: "Oblique",
+      title_fa: "آبلیک",
+      slug: "oblique",
+      category: { slug: "finishings", title_en: "Finishings", title_fa: "فینیشینگ" },
+      terms: [{ taxonomy: "finishes", key: "honed", label_fa: "هوند (نسابیده)" }]
+    }, "fa");
+
+    expect(seo.description).toContain("یکی از انواع فینیشینگ و فرآوری سطح سنگ است");
+    expect(seo.description).not.toContain("فرآوری هوند");
+  });
 });
