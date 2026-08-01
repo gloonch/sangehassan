@@ -611,10 +611,11 @@ function routeOutputPaths(routePath) {
 
 async function writeRoute(routePath, html) {
   const outputs = routeOutputPaths(routePath);
+  const safeHtml = html.replace(/\0/g, "");
   await Promise.all(
     outputs.map(async (outputPath) => {
       await fs.mkdir(path.dirname(outputPath), { recursive: true });
-      await fs.writeFile(outputPath, html);
+      await fs.writeFile(outputPath, safeHtml);
     })
   );
 }

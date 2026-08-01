@@ -74,7 +74,8 @@ async function verifyUrl(url) {
       missingSelfAlternate,
       missingDefaultAlternate,
       missingPaginationPrev,
-      genericDescription
+      genericDescription,
+      containsNullByte: text.includes("\0")
     };
   } catch (error) {
     return {
@@ -122,6 +123,7 @@ const invalidStructuredData = results.filter((item) => item.status === 200 && (i
 const invalidAlternates = results.filter((item) => item.status === 200 && (item.missingSelfAlternate || item.missingDefaultAlternate));
 const invalidPagination = results.filter((item) => item.status === 200 && item.missingPaginationPrev);
 const genericDescriptions = results.filter((item) => item.status === 200 && item.genericDescription);
+const nullBytePages = results.filter((item) => item.status === 200 && item.containsNullByte);
 const duplicateGroups = (field) => {
   const groups = new Map();
   for (const item of results.filter((result) => result.status === 200 && result[field])) {
@@ -154,10 +156,11 @@ printGroup("URLهای با JSON-LD نامعتبر", invalidStructuredData, (item
 printGroup("URLهای با hreflang ناقص", invalidAlternates, (item) => item.url);
 printGroup("صفحات pagination بدون prev", invalidPagination, (item) => item.url);
 printGroup("URLهای دارای description عمومی", genericDescriptions, (item) => item.url);
+printGroup("URLهای دارای بایت NUL", nullBytePages, (item) => item.url);
 console.log(`\nگروه‌های title تکراری: ${duplicateTitles.length}`);
 console.log(`گروه‌های description تکراری: ${duplicateDescriptions.length}`);
 
 const strictDuplicates = process.env.SEO_VERIFY_STRICT_DUPLICATES === "1";
-if (noindex.length || canonicalMismatch.length || non200.length || missingMeta.length || invalidH1.length || invalidStructuredData.length || invalidAlternates.length || invalidPagination.length || genericDescriptions.length || (strictDuplicates && (duplicateTitles.length || duplicateDescriptions.length))) {
+if (noindex.length || canonicalMismatch.length || non200.length || missingMeta.length || invalidH1.length || invalidStructuredData.length || invalidAlternates.length || invalidPagination.length || genericDescriptions.length || nullBytePages.length || (strictDuplicates && (duplicateTitles.length || duplicateDescriptions.length))) {
   process.exitCode = 1;
 }
