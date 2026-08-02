@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
 import { resolveImageUrl } from "../lib/assets";
-import { PRICE_UNIT_VALUES, formatPriceUnit, getLocalizedProductTitle } from "../lib/listings";
+import { PRICE_UNIT_VALUES, formatPriceUnit, getListingQuantityFieldLabel, getLocalizedProductTitle } from "../lib/listings";
 import { usePageSeo } from "../lib/seo";
 
 let extraRowId = 0;
@@ -47,6 +47,13 @@ export default function NewAd() {
   });
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+  const updateFormType = (value) => setForm((prev) => ({
+    ...prev,
+    form: value,
+    price_unit: ["per_ton", "per_meter"].includes(prev.price_unit)
+      ? value === "block" ? "per_ton" : "per_meter"
+      : prev.price_unit
+  }));
 
   useEffect(() => {
     const query = productQuery.trim();
@@ -286,13 +293,13 @@ export default function NewAd() {
             </div>
           </Field>
           <Field label={t("ads.form.form")}>
-            <select value={form.form} onChange={(e) => update("form", e.target.value)} className={inputClass}>
+            <select value={form.form} onChange={(e) => updateFormType(e.target.value)} className={inputClass}>
               <option value="">—</option>
-              <option value="block">Block</option>
-              <option value="finished">Finished</option>
+              <option value="block">{t("ads.formOptions.block")}</option>
+              <option value="finished">{t("ads.formOptions.finished")}</option>
             </select>
           </Field>
-          <Field label={t("ads.form.tonnage")}>
+          <Field label={getListingQuantityFieldLabel(form.form, t)}>
             <input
               value={form.tonnage}
               onChange={(e) => update("tonnage", e.target.value)}

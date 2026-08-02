@@ -57,20 +57,36 @@ func (r *liveFeedListingRepoStub) ListProductRequests(context.Context, int, int)
 
 func TestLiveFeedReturnsLocalizedMinimalPayloadAndCacheHeaders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	quantity := 24.0
-	repo := &liveFeedListingRepoStub{items: []domain.ListingLiveFeedItem{{
-		ID:        42,
-		StoneType: "travertine",
-		Form:      "block",
-		Quantity:  &quantity,
-		Product: domain.ListingProduct{
-			ID:      7,
-			TitleEN: "Abbasabad Travertine",
-			TitleFA: "تراورتن عباس‌آباد",
-			TitleAR: "ترافرتين عباس آباد",
+	blockQuantity := 24.0
+	finishedQuantity := 35.0
+	repo := &liveFeedListingRepoStub{items: []domain.ListingLiveFeedItem{
+		{
+			ID:        42,
+			StoneType: "travertine",
+			Form:      "block",
+			Quantity:  &blockQuantity,
+			Product: domain.ListingProduct{
+				ID:      7,
+				TitleEN: "Abbasabad Travertine",
+				TitleFA: "تراورتن عباس‌آباد",
+				TitleAR: "ترافرتين عباس آباد",
+			},
+			PublishedAt: time.Date(2026, time.August, 2, 8, 30, 0, 0, time.UTC),
 		},
-		PublishedAt: time.Date(2026, time.August, 2, 8, 30, 0, 0, time.UTC),
-	}}}
+		{
+			ID:        43,
+			StoneType: "marble",
+			Form:      "finished",
+			Quantity:  &finishedQuantity,
+			Product: domain.ListingProduct{
+				ID:      8,
+				TitleEN: "Black Marble",
+				TitleFA: "مرمریت مشکی",
+				TitleAR: "رخام أسود",
+			},
+			PublishedAt: time.Date(2026, time.August, 2, 7, 30, 0, 0, time.UTC),
+		},
+	}}
 	handler := NewListingHandler(usecase.NewListingService(repo), nil, nil)
 	router := gin.New()
 	router.GET("/api/ads/live-feed", handler.LiveFeed)
@@ -96,11 +112,15 @@ func TestLiveFeedReturnsLocalizedMinimalPayloadAndCacheHeaders(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if len(response.Data.Items) != 1 {
-		t.Fatalf("expected one response item, got %d", len(response.Data.Items))
+	if len(response.Data.Items) != 2 {
+		t.Fatalf("expected two response items, got %d", len(response.Data.Items))
 	}
 	item := response.Data.Items[0]
 	if item.StoneName != "تراورتن عباس‌آباد" || item.Unit != "ton" || item.ProductType != "block" {
 		t.Fatalf("unexpected response item: %#v", item)
+	}
+	finishedItem := response.Data.Items[1]
+	if finishedItem.Unit != "square_meter" || finishedItem.ProductType != "finished" {
+		t.Fatalf("expected finished listing in square metres: %#v", finishedItem)
 	}
 }

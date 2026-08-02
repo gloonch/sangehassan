@@ -37,3 +37,30 @@ export function getListingCoverImageUrl(ad) {
   }
   return "";
 }
+
+const quantityLocaleByLanguage = {
+  en: "en-US",
+  fa: "fa-IR",
+  ar: "ar-SA"
+};
+
+export function getListingQuantityUnit(form) {
+  return form === "block" ? "ton" : "square_meter";
+}
+
+export function getListingQuantityFieldLabel(form, t) {
+  return t(form === "block" ? "ads.form.quantityBlock" : "ads.form.quantityFinished");
+}
+
+export function formatListingQuantity(ad, lang, t) {
+  if (ad?.tonnage === undefined || ad?.tonnage === null || ad?.tonnage === "") return "—";
+  const value = Number(ad?.tonnage);
+  if (!Number.isFinite(value)) return "—";
+  const unit = getListingQuantityUnit(ad?.form);
+  const unitKey = `ads.liveFeed.units.${unit}`;
+  const unitLabel = t(unitKey);
+  const formattedValue = new Intl.NumberFormat(quantityLocaleByLanguage[lang] || quantityLocaleByLanguage.en, {
+    maximumFractionDigits: 2
+  }).format(value);
+  return `${formattedValue} ${unitLabel === unitKey ? "" : unitLabel}`.trim();
+}

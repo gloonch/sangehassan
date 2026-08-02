@@ -6,7 +6,9 @@ import {
   PRICE_UNIT_VALUES,
   formatPriceUnit,
   formatPriceValue,
+  formatListingQuantity,
   getListingCoverImageUrl,
+  getListingQuantityFieldLabel,
   getListingProductPath,
   getListingProductTitle
 } from "../lib/listings";
@@ -68,7 +70,7 @@ export default function AdDetail() {
       ? [
           ad.form,
           getListingProductTitle(ad, lang),
-          ad.tonnage ? `${ad.tonnage} t` : "",
+          ad.tonnage ? formatListingQuantity(ad, lang, t) : "",
           [ad.province, ad.city].filter(Boolean).join(" / "),
           ad.description
         ]
@@ -288,7 +290,7 @@ export default function AdDetail() {
               )}
             </Info>
             <Info label="Form">{ad.form || "—"}</Info>
-            <Info label="Tonnage">{ad.tonnage ? `${ad.tonnage} t` : "—"}</Info>
+            <Info label={t("profile.meta.quantity")}>{formatListingQuantity(ad, lang, t)}</Info>
             <Info label="Price">
               {formatPriceValue(ad.price_amount, ad.price_unit, t)}
             </Info>
@@ -336,16 +338,23 @@ export default function AdDetail() {
                 <div className="grid grid-cols-2 gap-2">
                   <select
                     value={formState.form || ""}
-                    onChange={(e) => setFormState((p) => ({ ...p, form: e.target.value }))}
+                    onChange={(e) => setFormState((p) => ({
+                      ...p,
+                      form: e.target.value,
+                      price_unit: ["per_ton", "per_meter"].includes(p.price_unit)
+                        ? e.target.value === "block" ? "per_ton" : "per_meter"
+                        : p.price_unit
+                    }))}
                     className={inputClass}
                   >
                     <option value="">—</option>
-                    <option value="block">block</option>
-                    <option value="finished">finished</option>
+                    <option value="block">{t("ads.formOptions.block")}</option>
+                    <option value="finished">{t("ads.formOptions.finished")}</option>
                   </select>
                   <input
                     className={inputClass}
-                    placeholder="tonnage"
+                    aria-label={getListingQuantityFieldLabel(formState.form, t)}
+                    placeholder={getListingQuantityFieldLabel(formState.form, t)}
                     value={formState.tonnage || ""}
                     onChange={(e) => setFormState((p) => ({ ...p, tonnage: e.target.value }))}
                     type="number"

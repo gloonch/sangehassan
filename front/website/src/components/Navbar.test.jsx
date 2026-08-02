@@ -11,7 +11,7 @@ vi.mock("../lib/api", () => ({ fetchJSON: vi.fn() }));
 
 const feedItems = [
   { id: 42, productType: "block", stoneName: "Abbasabad Travertine", quantity: 24, unit: "ton" },
-  { id: 43, productType: "finished", stoneName: "Black Marble", quantity: 12, unit: "ton" }
+  { id: 43, productType: "finished", stoneName: "Black Marble", quantity: 12, unit: "square_meter" }
 ];
 
 const renderNavbar = () => render(
@@ -52,7 +52,7 @@ describe("navbar live offers", () => {
     expect(firstLink).toHaveAttribute("href", "/ads/42");
 
     await act(async () => vi.advanceTimersByTime(6250));
-    expect(screen.getByRole("link", { name: /12 tons.*Black Marble Finished stone/i })).toHaveAttribute("href", "/ads/43");
+    expect(screen.getByRole("link", { name: /12 sq m.*Black Marble Finished stone/i })).toHaveAttribute("href", "/ads/43");
   });
 
   it("pauses rotation while hovered or focused", async () => {

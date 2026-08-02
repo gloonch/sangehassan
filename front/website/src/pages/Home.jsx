@@ -453,7 +453,7 @@ const tradeboardContent = {
         title: "Browse listings",
         imageAlt: "Browse stone sale listings",
         summary:
-          "Review stone sale offers by stone type, form, tonnage, location, images, and initial notes, then follow the option that fits your project."
+          "Review stone sale offers by stone type, form, quantity, location, images, and initial notes, then follow the option that fits your project."
       },
       {
         key: "post",

@@ -29,6 +29,19 @@ describe("live offer messages", () => {
     );
   });
 
+  it("formats finished listings in square metres", () => {
+    const finished = {
+      ...listing,
+      productType: "finished",
+      stoneName: "مرمریت مشکی",
+      quantity: 35,
+      unit: "square_meter"
+    };
+    expect(renderLiveOfferMessage(finished, "fa", translator("fa"))).toBe(
+      "آگهی جدید: ۳۵ مترمربع فرآوری‌شده مرمریت مشکی"
+    );
+  });
+
   it("uses the listing title without guessing unknown codes", () => {
     expect(renderLiveOfferMessage({ title: "Special stone listing", productType: "unknown" }, "en", translator("en"))).toBe(
       "New listing: Special stone listing"

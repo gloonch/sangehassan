@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { formatPriceValue, formatPriceUnit, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
+import { formatListingQuantity, formatPriceValue, formatPriceUnit, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { usePageSeo } from "../lib/seo";
 
@@ -249,8 +249,8 @@ export default function Profile() {
                               <MetaRow label={t("profile.meta.product")} value={formatValue(productTitle || ad.stone_type)} />
                               <MetaRow label={t("profile.meta.form")} value={formatValue(ad.form)} />
                               <MetaRow
-                                label={t("profile.meta.tonnage")}
-                                value={ad.tonnage === undefined || ad.tonnage === null ? "—" : `${ad.tonnage}`}
+                                label={t("profile.meta.quantity")}
+                                value={formatListingQuantity(ad, lang, t)}
                               />
                               <MetaRow label={t("ads.form.province")} value={formatValue(ad.province)} />
                               <MetaRow label={t("ads.form.city")} value={formatValue(ad.city)} />

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchJSON } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import { formatPriceValue, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
+import { formatListingQuantity, formatPriceValue, getListingCoverImageUrl, getListingProductTitle } from "../lib/listings";
 import { resolveImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 
@@ -351,7 +351,7 @@ export default function Ads() {
             min="0"
             value={minTonnageInput}
             onChange={(event) => setMinTonnageInput(event.target.value)}
-            placeholder={t("ads.filters.minTonnage")}
+            placeholder={t("ads.filters.minQuantity")}
             className="h-10 rounded-full border border-primary/20 bg-white/70 px-4 text-sm font-semibold text-primary outline-none transition focus:border-primary/60"
           />
           <input
@@ -359,7 +359,7 @@ export default function Ads() {
             min="0"
             value={maxTonnageInput}
             onChange={(event) => setMaxTonnageInput(event.target.value)}
-            placeholder={t("ads.filters.maxTonnage")}
+            placeholder={t("ads.filters.maxQuantity")}
             className="h-10 rounded-full border border-primary/20 bg-white/70 px-4 text-sm font-semibold text-primary outline-none transition focus:border-primary/60"
           />
         </div>
@@ -374,8 +374,8 @@ export default function Ads() {
             <option value="newest">{t("ads.filters.sortNewest")}</option>
             <option value="price_asc">{t("ads.filters.sortPriceLowToHigh")}</option>
             <option value="price_desc">{t("ads.filters.sortPriceHighToLow")}</option>
-            <option value="tonnage_desc">{t("ads.filters.sortTonnageHighToLow")}</option>
-            <option value="tonnage_asc">{t("ads.filters.sortTonnageLowToHigh")}</option>
+            <option value="tonnage_desc">{t("ads.filters.sortQuantityHighToLow")}</option>
+            <option value="tonnage_asc">{t("ads.filters.sortQuantityLowToHigh")}</option>
           </select>
           <div className="flex items-center gap-3 text-xs font-semibold text-primary/60">
             <span>{t("ads.filters.results").replace("{count}", String(filteredItems.length))}</span>
@@ -423,7 +423,7 @@ export default function Ads() {
                     </span>
                     {ad.tonnage ? (
                       <span className="rounded-full border border-white/90 bg-white/35 px-3 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
-                        {ad.tonnage} t
+                        {formatListingQuantity(ad, lang, t)}
                       </span>
                     ) : null}
                   </div>

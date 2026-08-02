@@ -81,7 +81,11 @@ func (h *ListingHandler) LiveFeed(c *gin.Context) {
 	for _, item := range items {
 		unit := ""
 		if item.Quantity != nil {
-			unit = "ton"
+			if item.Form == domain.ListingFormBlock {
+				unit = "ton"
+			} else {
+				unit = "square_meter"
+			}
 		}
 		result = append(result, liveFeedItemResponse{
 			ID:          item.ID,
