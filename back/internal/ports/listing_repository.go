@@ -25,6 +25,7 @@ type ListingFilter struct {
 
 type ListingRepository interface {
 	List(ctx context.Context, filter ListingFilter) ([]domain.Listing, error)
+	ListLiveFeed(ctx context.Context, limit int) ([]domain.ListingLiveFeedItem, error)
 	GetByID(ctx context.Context, id int64) (domain.Listing, error)
 	Create(ctx context.Context, listing domain.Listing) (domain.Listing, error)
 	Update(ctx context.Context, listing domain.Listing, ownerID *string) (domain.Listing, error)

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
-import { getLiveDealsConfig, renderDealMessage } from "../lib/liveDeals";
+import { renderLiveOfferMessage } from "../lib/liveOffers";
 import LanguageSwitch from "./LanguageSwitch";
 import logoImage from "@shared/assets/logo-240.webp";
 import logoWhiteImage from "@shared/assets/logo-white-240.webp";
@@ -56,15 +56,21 @@ export default function Navbar() {
   const mobileMenuPanelRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [dealIndex, setDealIndex] = useState(0);
-  const [dealVisible, setDealVisible] = useState(true);
+  const [liveAds, setLiveAds] = useState([]);
+  const [liveFeedStatus, setLiveFeedStatus] = useState("loading");
+  const [offerIndex, setOfferIndex] = useState(0);
+  const [offerVisible, setOfferVisible] = useState(true);
+  const [rotationPaused, setRotationPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const isHome = location.pathname === "/";
   const isAbout = location.pathname === "/about";
   const isRTL = lang === "fa" || lang === "ar";
   const navSubline = isHome || isAbout ? t("nav.sinceLine") : t("nav.sinceLineAlt");
-  const liveDealsConfig = getLiveDealsConfig(lang);
-  const liveDeals = liveDealsConfig.deals;
-  const activeDeal = liveDeals.length > 0 ? liveDeals[dealIndex % liveDeals.length] : null;
+  const activeLiveAd = liveAds.length > 0 ? liveAds[offerIndex % liveAds.length] : null;
+  const liveOfferText = activeLiveAd
+    ? renderLiveOfferMessage(activeLiveAd, lang, t)
+    : t(liveFeedStatus === "empty" ? "ads.liveFeed.empty" : "ads.liveFeed.loading");
+  const liveOfferPath = activeLiveAd ? `/ads/${activeLiveAd.id}` : "/ads";
 
   useEffect(() => {
     let active = true;
@@ -145,25 +151,66 @@ export default function Navbar() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!liveDeals.length) return undefined;
+    const controller = new AbortController();
+    let active = true;
+    setLiveFeedStatus("loading");
+    setLiveAds([]);
+    setOfferIndex(0);
+    setOfferVisible(true);
+
+    fetchJSON(`/api/ads/live-feed?limit=10&locale=${encodeURIComponent(lang)}`, {
+      signal: controller.signal
+    })
+      .then((response) => {
+        if (!active) return;
+        const items = response?.data?.items;
+        const nextItems = Array.isArray(items) ? items.filter((item) => item?.id) : [];
+        setLiveAds(nextItems);
+        setLiveFeedStatus(nextItems.length > 0 ? "ready" : "empty");
+      })
+      .catch((error) => {
+        if (!active || error?.name === "AbortError") return;
+        setLiveAds([]);
+        setLiveFeedStatus("error");
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [lang]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updatePreference();
+    mediaQuery.addEventListener?.("change", updatePreference);
+    return () => mediaQuery.removeEventListener?.("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    if (liveAds.length <= 1 || rotationPaused || prefersReducedMotion) {
+      setOfferVisible(true);
+      return undefined;
+    }
 
     let fadeTimer;
-    setDealIndex((current) => current % liveDeals.length);
-    setDealVisible(true);
+    setOfferIndex((current) => current % liveAds.length);
+    setOfferVisible(true);
 
     const interval = window.setInterval(() => {
-      setDealVisible(false);
+      setOfferVisible(false);
       fadeTimer = window.setTimeout(() => {
-        setDealIndex((current) => (current + 1) % liveDeals.length);
-        setDealVisible(true);
-      }, 280);
-    }, 2000);
+        setOfferIndex((current) => (current + 1) % liveAds.length);
+        setOfferVisible(true);
+      }, 250);
+    }, 6000);
 
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(fadeTimer);
     };
-  }, [lang, liveDeals.length]);
+  }, [liveAds.length, prefersReducedMotion, rotationPaused]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -194,6 +241,14 @@ export default function Navbar() {
     : "text-primary/70 hover:text-primary";
   const navActiveClass = useLightHomeNav ? "text-sand" : "text-accent";
   const mobileOverlayBaseClass = "fixed inset-0 z-[9999] bg-[#E5E1DD] text-primary lg:hidden";
+  const handleLiveOfferClick = () => {
+    if (!activeLiveAd || typeof window.gtag !== "function") return;
+    window.gtag("event", "navbar_live_ad_clicked", {
+      adId: String(activeLiveAd.id),
+      position: offerIndex,
+      language: lang
+    });
+  };
 
   const mobileMenu =
     open && typeof document !== "undefined"
@@ -354,16 +409,19 @@ export default function Navbar() {
           <p className={`min-w-[6.75rem] shrink-0 text-[11px] font-semibold sm:min-w-[7.5rem] ${useLightHomeNav ? "text-sand/75" : "text-primary/65"}`}>
             {navSubline}
           </p>
-          {activeDeal ? (
-            <Link
-              to="/ads"
-              className={`mx-2 flex min-w-0 flex-1 items-center justify-center overflow-hidden text-center text-[10px] font-semibold transition-opacity duration-300 ease-out sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:mx-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${dealVisible ? "opacity-100" : "opacity-0"
-                } ${useLightHomeNav ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
-              aria-label={t("ads.title")}
-            >
-              <span className="block truncate">{renderDealMessage(activeDeal, liveDealsConfig)}</span>
-            </Link>
-          ) : null}
+          <Link
+            to={liveOfferPath}
+            onClick={handleLiveOfferClick}
+            onMouseEnter={() => setRotationPaused(true)}
+            onMouseLeave={() => setRotationPaused(false)}
+            onFocus={() => setRotationPaused(true)}
+            onBlur={() => setRotationPaused(false)}
+            className={`mx-2 flex min-w-0 flex-1 items-center justify-center overflow-hidden text-center text-[10px] font-semibold transition-opacity duration-300 ease-out motion-reduce:transition-none sm:text-[11px] lg:absolute lg:left-1/2 lg:top-1/2 lg:mx-0 lg:w-[min(48vw,34rem)] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:justify-center lg:text-center ${offerVisible ? "opacity-100" : "opacity-0"
+              } ${useLightHomeNav ? "text-sand/75 hover:text-sand/75" : "text-primary/70 hover:text-primary"}`}
+            aria-label={liveOfferText}
+          >
+            <span className="block truncate" aria-live="off">{liveOfferText}</span>
+          </Link>
           <div className={`${isRTL ? "mr-auto" : "ml-auto"} hidden shrink-0 lg:block`}>
             <LanguageSwitch tone={useLightHomeNav ? "light" : "default"} />
           </div>

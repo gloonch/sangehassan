@@ -52,6 +52,27 @@
     "privacyNote": "Buyer and seller identities are hidden from users. Only admins can view full identity details.",
     "viewDetails": "View offer",
     "empty": "No sale offers available yet.",
+    "liveFeed": {
+      "loading": "Latest from the stone market",
+      "empty": "View the latest stone market listings",
+      "withQuantity": "New listing: {quantity} {unit} of {product}",
+      "withoutQuantity": "New listing: {product}",
+      "productTemplate": "{stoneName} {productType}",
+      "productTypes": {
+        "block": "Block",
+        "finished": "Finished stone",
+        "slab": "Slab",
+        "tile": "Tile",
+        "accessory": "Accessory"
+      },
+      "units": {
+        "square_meter": "sqm",
+        "ton": "tons",
+        "piece": "pieces",
+        "block": "blocks",
+        "slab": "slabs"
+      }
+    },
     "formOptions": {
       "block": "Block",
       "finished": "Finished"

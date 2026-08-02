@@ -45,6 +45,17 @@ type listingPayload struct {
 	Status      string         `json:"status"`
 }
 
+type liveFeedItemResponse struct {
+	ID          int64     `json:"id"`
+	Title       string    `json:"title,omitempty"`
+	Category    string    `json:"category,omitempty"`
+	ProductType string    `json:"productType,omitempty"`
+	StoneName   string    `json:"stoneName"`
+	Quantity    *float64  `json:"quantity,omitempty"`
+	Unit        string    `json:"unit,omitempty"`
+	PublishedAt time.Time `json:"publishedAt"`
+}
+
 func (h *ListingHandler) List(c *gin.Context) {
 	filter := buildListingFilter(c)
 	items, err := h.listings.List(c.Request.Context(), filter)
@@ -56,6 +67,36 @@ func (h *ListingHandler) List(c *gin.Context) {
 		items[i].CreatedBy = nil // mask owner id
 	}
 	respondOK(c, items)
+}
+
+func (h *ListingHandler) LiveFeed(c *gin.Context) {
+	items, err := h.listings.ListLiveFeed(c.Request.Context(), parseIntDefault(c.Query("limit"), 10))
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "failed to load live listing feed")
+		return
+	}
+
+	locale := normalizeListingLocale(c.Query("locale"))
+	result := make([]liveFeedItemResponse, 0, len(items))
+	for _, item := range items {
+		unit := ""
+		if item.Quantity != nil {
+			unit = "ton"
+		}
+		result = append(result, liveFeedItemResponse{
+			ID:          item.ID,
+			Title:       item.Title,
+			Category:    item.StoneType,
+			ProductType: item.Form,
+			StoneName:   localizedListingProductTitle(item.Product, locale),
+			Quantity:    item.Quantity,
+			Unit:        unit,
+			PublishedAt: item.PublishedAt,
+		})
+	}
+
+	c.Header("Cache-Control", "public, max-age=30, s-maxage=30, stale-while-revalidate=60")
+	respondOK(c, gin.H{"items": result})
 }
 
 // MyListings returns listings created by the authenticated user.
@@ -475,6 +516,31 @@ func buildListingFilter(c *gin.Context) ports.ListingFilter {
 		filter.Status = strings.Split(statusParam, ",")
 	}
 	return filter
+}
+
+func normalizeListingLocale(locale string) string {
+	switch strings.ToLower(strings.TrimSpace(locale)) {
+	case "fa":
+		return "fa"
+	case "ar":
+		return "ar"
+	default:
+		return "en"
+	}
+}
+
+func localizedListingProductTitle(product domain.ListingProduct, locale string) string {
+	localized := map[string]string{
+		"en": product.TitleEN,
+		"fa": product.TitleFA,
+		"ar": product.TitleAR,
+	}
+	for _, candidate := range []string{localized[locale], product.TitleEN, product.TitleFA, product.TitleAR} {
+		if title := strings.TrimSpace(candidate); title != "" {
+			return title
+		}
+	}
+	return ""
 }
 
 func buildListingFromPayload(p listingPayload) domain.Listing {

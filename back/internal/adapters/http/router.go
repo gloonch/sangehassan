@@ -95,6 +95,7 @@ func NewRouter(
 		api.GET("/sample-categories", stoneSampleRequestHandler.SampleCategories)
 		api.GET("/sample-products", stoneSampleRequestHandler.SampleProducts)
 		api.GET("/ads", listingHandler.List)
+		api.GET("/ads/live-feed", listingHandler.LiveFeed)
 		api.GET("/ads/:id", listingHandler.Get)
 
 		adsAuth := api.Group("/ads")

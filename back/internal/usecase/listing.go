@@ -31,6 +31,16 @@ func (s *ListingService) ListAdmin(ctx context.Context, filter ports.ListingFilt
 	return s.repo.List(ctx, filter)
 }
 
+func (s *ListingService) ListLiveFeed(ctx context.Context, limit int) ([]domain.ListingLiveFeedItem, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 10 {
+		limit = 10
+	}
+	return s.repo.ListLiveFeed(ctx, limit)
+}
+
 func (s *ListingService) GetByID(ctx context.Context, id int64) (domain.Listing, error) {
 	return s.repo.GetByID(ctx, id)
 }

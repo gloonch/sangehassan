@@ -191,6 +191,27 @@
     "privacyNote": "هویت خریدار و فروشنده برای کاربران پنهان است و فقط مدیران به اطلاعات هویتی کامل دسترسی دارند.",
     "viewDetails": "مشاهده پیشنهاد",
     "empty": "فعلا پیشنهادی برای فروش سنگ ثبت نشده است.",
+    "liveFeed": {
+      "loading": "تازه‌های بازار سنگ",
+      "empty": "مشاهده آخرین آگهی‌های بازار سنگ",
+      "withQuantity": "آگهی جدید: {quantity} {unit} {product}",
+      "withoutQuantity": "آگهی جدید: {product}",
+      "productTemplate": "{productType} {stoneName}",
+      "productTypes": {
+        "block": "کوپ",
+        "finished": "فرآوری‌شده",
+        "slab": "اسلب",
+        "tile": "تایل",
+        "accessory": "اکسسوری"
+      },
+      "units": {
+        "square_meter": "متر",
+        "ton": "تن",
+        "piece": "عدد",
+        "block": "کوپ",
+        "slab": "ورق"
+      }
+    },
     "formOptions": {
       "block": "کوپ",
       "finished": "فرآوری‌شده"

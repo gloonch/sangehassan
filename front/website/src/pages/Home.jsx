@@ -924,32 +924,6 @@ export default function Home() {
   const teamCards = dynamicTeamCards.length ? dynamicTeamCards : teamContent.cards;
   const whySectionDir = lang === "en" ? "ltr" : "rtl";
 
-  /*
-  const renderDealNotification = (deal) => (
-    <div
-      dir="ltr"
-      className="relative h-full overflow-hidden rounded-[1.15rem] border border-white/35 bg-white/[0.12] px-4 py-3 text-left text-sand shadow-[0_28px_75px_rgba(10,8,5,0.45)] backdrop-blur-[20px] sm:px-5 sm:py-3.5"
-    >
-      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.06)_38%,rgba(255,255,255,0)_100%)]" />
-      <span className="pointer-events-none absolute -left-10 top-0 h-full w-16 rotate-[14deg] bg-white/15 blur-2xl" />
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <img src={miniHeroMessagesIcon} alt="" className="h-5 w-5 rounded-[6px]" />
-            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.18em] text-sand/80 sm:text-[10px]">
-              {liveDealsMessagesLabel}
-            </p>
-          </div>
-          <p className="shrink-0 text-[10px] text-sand/70 sm:text-[11px]">{deal.time}</p>
-        </div>
-        <p className="mt-2 text-[12px] font-semibold text-sand sm:text-[13px]">{liveDealsSenderName}</p>
-        <p className="mt-1 text-[11px] leading-snug text-sand/92 sm:text-[12px]">{renderDealMessage(deal, liveDealsConfig)}</p>
-        <p className="mt-1.5 text-[10px] font-medium text-sand/68 sm:text-[11px]">{liveDealsMoreMessagesText}</p>
-      </div>
-    </div>
-  );
-  */
-
   return (
     <>
       <div className="relative h-[100dvh] w-full overflow-hidden">

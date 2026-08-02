@@ -191,6 +191,27 @@
     "privacyNote": "هوية البائع والمشتري مخفية عن المستخدمين. يمكن للمشرفين فقط رؤية بيانات الهوية الكاملة.",
     "viewDetails": "عرض التفاصيل",
     "empty": "لا توجد عروض بيع حالياً.",
+    "liveFeed": {
+      "loading": "أحدث عروض سوق الحجر",
+      "empty": "عرض أحدث إعلانات سوق الحجر",
+      "withQuantity": "عرض جديد: {quantity} {unit} من {product}",
+      "withoutQuantity": "عرض جديد: {product}",
+      "productTemplate": "{productType} {stoneName}",
+      "productTypes": {
+        "block": "بلوك",
+        "finished": "حجر معالج",
+        "slab": "لوح",
+        "tile": "بلاط",
+        "accessory": "إكسسوار"
+      },
+      "units": {
+        "square_meter": "متر مربع",
+        "ton": "طن",
+        "piece": "قطعة",
+        "block": "بلوك",
+        "slab": "لوح"
+      }
+    },
     "formOptions": {
       "block": "بلوك",
       "finished": "معالج"

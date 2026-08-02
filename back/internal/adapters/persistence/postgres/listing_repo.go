@@ -147,6 +147,62 @@ func (r *ListingRepository) List(ctx context.Context, filter ports.ListingFilter
 	return listings, nil
 }
 
+func (r *ListingRepository) ListLiveFeed(ctx context.Context, limit int) ([]domain.ListingLiveFeedItem, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT l.id, COALESCE(l.title, ''), COALESCE(l.stone_type, ''), COALESCE(l.form, ''),
+		       l.tonnage, l.created_at,
+		       p.id, COALESCE(p.title_en, ''), COALESCE(p.title_fa, ''),
+		       COALESCE(p.title_ar, ''), COALESCE(p.slug, '')
+		FROM listings l
+		JOIN products p ON p.id = l.product_id
+		WHERE l.status = $1
+		  AND p.is_active = TRUE
+		  AND COALESCE(
+		        NULLIF(BTRIM(l.title), ''),
+		        NULLIF(BTRIM(p.title_en), ''),
+		        NULLIF(BTRIM(p.title_fa), ''),
+		        NULLIF(BTRIM(p.title_ar), '')
+		      ) IS NOT NULL
+		ORDER BY l.created_at DESC, l.id DESC
+		LIMIT $2
+	`, domain.ListingStatusActive, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.ListingLiveFeedItem, 0, limit)
+	for rows.Next() {
+		var (
+			item     domain.ListingLiveFeedItem
+			quantity sql.NullFloat64
+		)
+		if err := rows.Scan(
+			&item.ID,
+			&item.Title,
+			&item.StoneType,
+			&item.Form,
+			&quantity,
+			&item.PublishedAt,
+			&item.Product.ID,
+			&item.Product.TitleEN,
+			&item.Product.TitleFA,
+			&item.Product.TitleAR,
+			&item.Product.Slug,
+		); err != nil {
+			return nil, err
+		}
+		if quantity.Valid {
+			item.Quantity = &quantity.Float64
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 func (r *ListingRepository) GetByID(ctx context.Context, id int64) (domain.Listing, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT l.id, l.created_by, l.product_id, l.title, l.stone_type, l.form, l.tonnage,

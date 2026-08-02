@@ -49,6 +49,17 @@ type ListingProduct struct {
 	ImageURL string `json:"image_url,omitempty"`
 }
 
+// ListingLiveFeedItem is the minimal public projection used by the navbar feed.
+type ListingLiveFeedItem struct {
+	ID          int64
+	Title       string
+	StoneType   string
+	Form        string
+	Quantity    *float64
+	Product     ListingProduct
+	PublishedAt time.Time
+}
+
 // ListingImage is intentionally kept for future listing-specific/admin media.
 // User-submitted offers currently render the selected product cover instead.
 type ListingImage struct {
