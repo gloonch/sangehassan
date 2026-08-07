@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { getProductSeo, productAdditionalProperties } from "../src/lib/productSeo.js";
 import { getProductOfferStructuredData } from "../src/lib/productOffers.js";
+import { blogHubAlternates } from "../src/lib/blogLocales.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -168,9 +169,12 @@ const staticRoutes = [
     image: defaultShareImage,
     lang,
     locale: blogLocaleMeta[lang].locale,
-    alternates: [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }],
+    robots: lang === "fa" ? "index,follow" : "noindex,follow",
+    sitemap: lang === "fa",
+    alternates: blogHubAlternates(["fa"]),
     changefreq: "weekly",
-    priority: 0.75
+    priority: 0.75,
+    prerenderData: { blogPage: { items: [], total: lang === "fa" ? 1 : 0, limit: 9, offset: 0, availableLocales: ["fa"] } }
   })),
   {
     path: "/blogs",
@@ -667,23 +671,7 @@ function sitemapXml(routes) {
 
 function robotsTxt() {
   return [
-    "User-agent: OAI-SearchBot",
-    "Allow: /",
-    "",
-    "User-agent: GPTBot",
-    "Allow: /",
-    "",
-    "User-agent: ChatGPT-User",
-    "Allow: /",
-    "",
-    "User-agent: ClaudeBot",
-    "Allow: /",
-    "",
-    "User-agent: PerplexityBot",
-    "Allow: /",
-    "",
     "User-agent: *",
-    "Allow: /",
     "Disallow: /api/",
     "Disallow: /panel/",
     "Disallow: /login",
@@ -720,7 +708,7 @@ function llmsTxt(routes) {
     ...catalogRoutes.slice(0, 20).map((route) => `- [${stripHTML(route.title.replace(/\s*\|\s*SangeHassan.*$/i, ""))}](${absoluteUrl(route.path)})`),
     "",
     "## راهنماهای تخصصی",
-    ...blogRoutes.slice(0, 40).map((route) => `- [${stripHTML(route.headline || route.title)}](${absoluteUrl(route.path)}): ${stripHTML(route.description)}`),
+    ...blogRoutes.map((route) => `- [${stripHTML(route.headline || route.title)}](${absoluteUrl(route.path)}): ${stripHTML(route.description)}`),
     "",
     "## تماس",
     `- Website: ${siteUrl}`,
@@ -1340,6 +1328,7 @@ function blogRoute(blog, locale, summaries = []) {
 async function loadBlogRoutes() {
   const routes = [];
   const seenDetailKeys = new Set();
+  const blogsByLocale = new Map();
 
   const addBlogRoute = (blog, locale, summaries) => {
     const route = blogRoute(blog, locale, summaries);
@@ -1358,11 +1347,28 @@ async function loadBlogRoutes() {
         const nextPage = await fetchApi(`/api/blogs?locale=${locale}&limit=100&offset=${offset}`);
         blogs.push(...(Array.isArray(nextPage?.items) ? nextPage.items : []));
       }
+      blogsByLocale.set(locale, blogs);
+    } catch (error) {
+      if (strictBlogPrerender) {
+        throw strictPrerenderError(`prerender: ${locale} blogs failed: ${error.message}`);
+      }
+      console.warn(`prerender: ${locale} blogs skipped: ${error.message}`);
+      blogsByLocale.set(locale, []);
+    }
+  }
+
+  const availableBlogLocales = catalogLocales.filter((locale) => (blogsByLocale.get(locale) || []).length > 0);
+  const hubAlternates = blogHubAlternates(availableBlogLocales);
+
+  for (const locale of catalogLocales) {
+    const blogs = blogsByLocale.get(locale) || [];
+    try {
       const meta = blogLocaleMeta[locale];
       const blogBaseTitle = meta.title.replace(/\s*\|.*$/, "");
       const blogBrand = locale === "fa" ? "سنگ حسن" : locale === "ar" ? "سانج حسن" : "SangeHassan";
       const pageSize = 9;
       const pageCount = Math.max(1, Math.ceil(blogs.length / pageSize));
+      const indexable = blogs.length > 0;
       for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
         const offset = (pageNumber - 1) * pageSize;
         const pageItems = blogs.slice(offset, offset + pageSize);
@@ -1378,9 +1384,9 @@ async function loadBlogRoutes() {
           image: pageItems.find((blog) => blog.cover_image_url)?.cover_image_url || defaultShareImage,
           lang: locale,
           locale: meta.locale,
-          alternates: pageNumber === 1
-            ? [...catalogLocales.map((code) => ({ lang: code, path: `/${code}/blogs` })), { lang: "x-default", path: "/en/blogs" }]
-            : [],
+          robots: indexable ? "index,follow" : "noindex,follow",
+          sitemap: indexable,
+          alternates: pageNumber === 1 ? hubAlternates : [],
           previousPath: pageNumber === 2 ? `/${locale}/blogs` : pageNumber > 2 ? `/${locale}/blogs/page/${pageNumber - 1}` : "",
           nextPath: pageNumber < pageCount ? `/${locale}/blogs/page/${pageNumber + 1}` : "",
           breadcrumbs: [
@@ -1390,7 +1396,7 @@ async function loadBlogRoutes() {
           changefreq: "weekly",
           priority: pageNumber === 1 ? 0.75 : 0.6,
           lastmod: pageItems[0]?.updated_at || pageItems[0]?.published_at,
-          prerenderData: { blogPage: { items: pageItems, total: blogs.length, limit: pageSize, offset } }
+          prerenderData: { blogPage: { items: pageItems, total: blogs.length, limit: pageSize, offset, availableLocales: availableBlogLocales } }
         });
       }
       const skipped = [];

@@ -71,6 +71,7 @@ async function verifyUrl(url) {
       h1Count,
       missingJsonLd: jsonLdBlocks.length === 0,
       invalidJsonLd,
+      alternates,
       missingSelfAlternate,
       missingDefaultAlternate,
       missingPaginationPrev,
@@ -94,6 +95,66 @@ async function verifyUrl(url) {
   }
 }
 
+async function verifyBlogLocaleHubs(origin, sitemapUrls) {
+  const locales = ["en", "fa", "ar"];
+  const localeData = await Promise.all(locales.map(async (locale) => {
+    const apiUrl = `${origin}/api/blogs?locale=${locale}&limit=1&offset=0`;
+    const hubUrl = `${origin}/${locale}/blogs`;
+    try {
+      const [{ response: apiResponse, text: apiText }, hubResult, { text: hubHtml }] = await Promise.all([
+        fetchText(apiUrl),
+        verifyUrl(hubUrl),
+        fetchText(hubUrl)
+      ]);
+      if (!apiResponse.ok) throw new Error(`blog API returned ${apiResponse.status}`);
+      const payload = JSON.parse(apiText);
+      const page = payload?.data ?? payload;
+      return { locale, total: Number(page?.total || 0), hubUrl, hubResult, hubHtml };
+    } catch (error) {
+      return { locale, total: 0, hubUrl, error: error.message };
+    }
+  }));
+
+  const activeLocales = localeData.filter((item) => !item.error && item.total > 0).map((item) => item.locale);
+  const defaultLocale = activeLocales.includes("en") ? "en" : activeLocales.includes("fa") ? "fa" : activeLocales[0];
+  const issues = [];
+
+  for (const item of localeData) {
+    if (item.error) {
+      issues.push(`${item.locale}: ${item.error}`);
+      continue;
+    }
+
+    const localeBlogPrefix = `${origin}/${item.locale}/blogs`;
+    const localeSitemapUrls = sitemapUrls.filter((url) => url === localeBlogPrefix || url.startsWith(`${localeBlogPrefix}/`));
+    if (item.total === 0) {
+      if (!item.hubResult.noindex) issues.push(`${item.hubUrl}: empty locale must be noindex,follow`);
+      if (localeSitemapUrls.length) issues.push(`${item.hubUrl}: empty locale appears in sitemap (${localeSitemapUrls.length} URL(s))`);
+      if (activeLocales.includes("fa") && item.locale !== "fa" && !/href=["']\/fa\/blogs["']/i.test(item.hubHtml)) {
+        issues.push(`${item.hubUrl}: missing visible link to /fa/blogs`);
+      }
+      continue;
+    }
+
+    if (item.hubResult.status !== 200) issues.push(`${item.hubUrl}: returned ${item.hubResult.status}`);
+    if (item.hubResult.noindex) issues.push(`${item.hubUrl}: published locale is noindex`);
+    if (!sitemapUrls.includes(item.hubUrl)) issues.push(`${item.hubUrl}: published locale hub is absent from sitemap`);
+    if (!item.hubResult.alternates?.some((alternate) => alternate.lang === item.locale && alternate.href === item.hubUrl)) {
+      issues.push(`${item.hubUrl}: missing self hreflang`);
+    }
+    if (defaultLocale && !item.hubResult.alternates?.some((alternate) => alternate.lang === "x-default" && alternate.href === `${origin}/${defaultLocale}/blogs`)) {
+      issues.push(`${item.hubUrl}: x-default must target /${defaultLocale}/blogs`);
+    }
+    for (const emptyLocale of locales.filter((locale) => !activeLocales.includes(locale))) {
+      if (item.hubResult.alternates?.some((alternate) => alternate.lang === emptyLocale)) {
+        issues.push(`${item.hubUrl}: hreflang includes empty locale ${emptyLocale}`);
+      }
+    }
+  }
+
+  return issues;
+}
+
 async function mapLimit(items, limit, mapper) {
   const results = [];
   let index = 0;
@@ -113,6 +174,7 @@ async function mapLimit(items, limit, mapper) {
 const { text: sitemapXml } = await fetchText(sitemapUrl);
 const urls = parseSitemap(sitemapXml);
 const results = await mapLimit(urls, concurrency, verifyUrl);
+const blogLocaleIssues = await verifyBlogLocaleHubs(new URL(sitemapUrl).origin, urls);
 
 const non200 = results.filter((item) => item.status !== 200);
 const noindex = results.filter((item) => item.noindex);
@@ -160,7 +222,9 @@ printGroup("URLهای دارای بایت NUL", nullBytePages, (item) => item.ur
 console.log(`\nگروه‌های title تکراری: ${duplicateTitles.length}`);
 console.log(`گروه‌های description تکراری: ${duplicateDescriptions.length}`);
 
+printGroup("Blog locale errors", blogLocaleIssues, (item) => item);
+
 const strictDuplicates = process.env.SEO_VERIFY_STRICT_DUPLICATES === "1";
-if (noindex.length || canonicalMismatch.length || non200.length || missingMeta.length || invalidH1.length || invalidStructuredData.length || invalidAlternates.length || invalidPagination.length || genericDescriptions.length || nullBytePages.length || (strictDuplicates && (duplicateTitles.length || duplicateDescriptions.length))) {
+if (noindex.length || canonicalMismatch.length || non200.length || missingMeta.length || invalidH1.length || invalidStructuredData.length || invalidAlternates.length || invalidPagination.length || genericDescriptions.length || nullBytePages.length || blogLocaleIssues.length || (strictDuplicates && (duplicateTitles.length || duplicateDescriptions.length))) {
   process.exitCode = 1;
 }

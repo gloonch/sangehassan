@@ -6,11 +6,12 @@ import { fetchJSON } from "../lib/api";
 import { resolveVersionedImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import { blogHubAlternates, defaultBlogLocale, normalizeBlogLocales } from "../lib/blogLocales";
 
 const localeContent = {
-  fa: { title: "مقالات سنگ طبیعی", intro: "راهنماهای کاربردی برای انتخاب، فرآوری، اجرا و نگهداری سنگ طبیعی.", empty: "مقاله‌ای پیدا نشد.", read: "مطالعه مقاله", min: "دقیقه", locale: "fa_IR" },
-  en: { title: "Natural stone articles", intro: "Practical guidance for choosing, processing, installing and maintaining natural stone.", empty: "No articles found.", read: "Read article", min: "min read", locale: "en_US" },
-  ar: { title: "مقالات الحجر الطبيعي", intro: "أدلة عملية لاختيار الحجر الطبيعي ومعالجته وتركيبه وصيانته.", empty: "لم يتم العثور على مقالات.", read: "قراءة المقال", min: "دقيقة", locale: "ar_SA" }
+  fa: { title: "مقالات سنگ طبیعی", intro: "راهنماهای کاربردی برای انتخاب، فرآوری، اجرا و نگهداری سنگ طبیعی.", empty: "مقاله‌ای پیدا نشد.", read: "مطالعه مقاله", min: "دقیقه", locale: "fa_IR", persianArticles: "مقالات فارسی" },
+  en: { title: "Natural stone articles", intro: "Practical guidance for choosing, processing, installing and maintaining natural stone.", empty: "No articles have been published in English yet.", read: "Read article", min: "min read", locale: "en_US", persianArticles: "View published Persian articles" },
+  ar: { title: "مقالات الحجر الطبيعي", intro: "أدلة عملية لاختيار الحجر الطبيعي ومعالجته وتركيبه وصيانته.", empty: "لم تنشر مقالات باللغة العربية بعد.", read: "قراءة المقال", min: "دقيقة", locale: "ar_SA", persianArticles: "عرض المقالات المنشورة بالفارسية" }
 };
 
 const pageSize = 9;
@@ -36,7 +37,7 @@ export default function Blogs() {
   const initialPage = usePrerenderData("blogPage");
   const page = Math.max(1, Number(pageNumber) || 1);
   const offset = (page - 1) * pageSize;
-  const [blogPage, setBlogPage] = useState(() => initialPage || { items: [], total: 0, limit: pageSize, offset });
+  const [blogPage, setBlogPage] = useState(() => initialPage || { items: [], total: 0, limit: pageSize, offset, availableLocales: [] });
   const [loading, setLoading] = useState(!initialPage);
   const basePath = `/${locale}/blogs`;
   const isRTL = locale === "fa" || locale === "ar";
@@ -47,8 +48,18 @@ export default function Blogs() {
     const loadFreshBlogs = (showLoading = false) => {
       if (showLoading) setLoading(true);
       fetchJSON(`/api/blogs?locale=${locale}&limit=${pageSize}&offset=${offset}&_=${Date.now()}`, freshRequest())
-        .then((response) => { if (active) setBlogPage(response.data || { items: [], total: 0, limit: pageSize, offset }); })
-        .catch(() => { if (active) setBlogPage({ items: [], total: 0, limit: pageSize, offset }); })
+        .then((response) => {
+          if (!active) return;
+          setBlogPage((current) => ({
+            ...(response.data || { items: [], total: 0, limit: pageSize, offset }),
+            availableLocales: current.availableLocales?.length
+              ? current.availableLocales
+              : initialPage?.availableLocales || ((response.data?.total || 0) > 0 ? [locale] : [])
+          }));
+        })
+        .catch(() => {
+          if (active) setBlogPage((current) => ({ items: [], total: 0, limit: pageSize, offset, availableLocales: current.availableLocales || [] }));
+        })
         .finally(() => { if (active) setLoading(false); });
     };
 
@@ -68,14 +79,32 @@ export default function Blogs() {
     };
   }, [initialPage, locale, offset]);
 
+  useEffect(() => {
+    if (initialPage?.availableLocales?.length) return undefined;
+    let active = true;
+    Promise.all(Object.keys(localeContent).map(async (code) => {
+      try {
+        const response = await fetchJSON(`/api/blogs?locale=${code}&limit=1&offset=0`, freshRequest());
+        return (response.data?.total || 0) > 0 ? code : "";
+      } catch (_) {
+        return "";
+      }
+    })).then((locales) => {
+      if (active) setBlogPage((current) => ({ ...current, availableLocales: locales.filter(Boolean) }));
+    });
+    return () => { active = false; };
+  }, [initialPage?.availableLocales]);
+
   const blogs = Array.isArray(blogPage.items) ? blogPage.items : [];
   const pageCount = Math.max(1, Math.ceil((blogPage.total || 0) / pageSize));
   const coverBlog = blogs.find((blog) => blog.cover_image_url);
   const coverImage = coverBlog?.cover_image_url || "";
   const coverImageVersion = coverBlog?.updated_at || coverBlog?.published_at || "";
   const path = page > 1 ? `${basePath}/page/${page}` : basePath;
-  const alternates = page === 1 ? ["fa", "en", "ar"].map((code) => ({ lang: code, path: `/${code}/blogs` })) : [];
-  if (page === 1) alternates.push({ lang: "x-default", path: "/en/blogs" });
+  const availableLocales = normalizeBlogLocales(blogPage.availableLocales || []);
+  const isIndexable = availableLocales.includes(locale) || (blogPage.total || 0) > 0;
+  const alternates = page === 1 ? blogHubAlternates(availableLocales) : [];
+  const fallbackLocale = defaultBlogLocale(availableLocales);
   const pageTitle = page > 1 ? `${copy.title} - ${page} | SangeHassan` : `${copy.title} | SangeHassan`;
   const description = pageDescription(copy, locale, page);
 
@@ -86,7 +115,7 @@ export default function Blogs() {
     lang: locale,
     locale: copy.locale,
     image: coverImage ? resolveVersionedImageUrl(coverImage, coverImageVersion) : "",
-    robots: "index,follow",
+    robots: isIndexable ? "index,follow" : "noindex,follow",
     alternates,
     previousPath: page === 2 ? basePath : page > 2 ? `${basePath}/page/${page - 1}` : "",
     nextPath: page < pageCount ? `${basePath}/page/${page + 1}` : "",
@@ -101,7 +130,20 @@ export default function Blogs() {
         <p className="mt-4 max-w-2xl text-base leading-8 text-primary/65">{copy.intro}</p>
       </header>
 
-      {loading ? <p className="py-16 text-sm text-primary/60">...</p> : blogs.length === 0 ? <p className="py-16 text-sm text-primary/60">{copy.empty}</p> : (
+      {loading ? <p className="py-16 text-sm text-primary/60">...</p> : blogs.length === 0 ? (
+        <div className="py-16 text-sm leading-7 text-primary/60">
+          <p>{copy.empty}</p>
+          {locale !== "fa" && availableLocales.includes("fa") ? (
+            <Link className="mt-3 inline-flex font-semibold text-accent underline underline-offset-4" to="/fa/blogs">
+              {copy.persianArticles}
+            </Link>
+          ) : fallbackLocale && fallbackLocale !== locale ? (
+            <Link className="mt-3 inline-flex font-semibold text-accent underline underline-offset-4" to={`/${fallbackLocale}/blogs`}>
+              {localeContent[fallbackLocale]?.title || copy.persianArticles}
+            </Link>
+          ) : null}
+        </div>
+      ) : (
         <div className="grid gap-x-7 gap-y-10 py-10 md:grid-cols-2 lg:grid-cols-3">
           {blogs.map((blog) => (
             <article key={blog.id} className="group flex min-w-0 flex-col border-b border-primary/15 pb-7">

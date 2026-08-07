@@ -224,8 +224,13 @@ export default function BlogDetail() {
 
   useEffect(() => {
     if (!blog?.translations || typeof window === "undefined") return undefined;
-    window.__SH_BLOG_ALTERNATES__ = Object.fromEntries(blog.translations.map((item) => [item.locale, `/${item.locale}/blogs/${item.slug}`]));
-    return () => { delete window.__SH_BLOG_ALTERNATES__; };
+    const blogAlternates = Object.fromEntries(blog.translations.map((item) => [item.locale, `/${item.locale}/blogs/${item.slug}`]));
+    window.__SH_BLOG_ALTERNATES__ = blogAlternates;
+    window.dispatchEvent(new CustomEvent("sh:blog-alternates", { detail: blogAlternates }));
+    return () => {
+      delete window.__SH_BLOG_ALTERNATES__;
+      window.dispatchEvent(new CustomEvent("sh:blog-alternates", { detail: {} }));
+    };
   }, [blog?.translations]);
 
   if (loading) return <div className="section-shell min-h-[55vh] py-16 text-sm text-primary/55">...</div>;

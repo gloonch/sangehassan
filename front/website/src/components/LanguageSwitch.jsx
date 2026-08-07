@@ -1,5 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
-import { useLocation, useNavigate } from "react-router-dom";
+import { getLanguageTarget } from "../lib/languageRoutes";
+import { usePrerenderData } from "../lib/prerenderData";
 
 const options = [
   { code: "fa", label: "fa" },
@@ -10,35 +13,23 @@ const options = [
 export default function LanguageSwitch({ tone = "default" }) {
   const { lang, setLang, t } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
+  const prerenderBlog = usePrerenderData("blog");
+  const prerenderAlternates = useMemo(
+    () => Object.fromEntries((prerenderBlog?.translations || []).map((item) => [item.locale, `/${item.locale}/blogs/${item.slug}`])),
+    [prerenderBlog?.translations]
+  );
+  const [runtimeAlternates, setRuntimeAlternates] = useState({});
   const isLightTone = tone === "light";
   const isMenuTone = tone === "menu";
 
-  const changeLanguage = (nextLang) => {
-    setLang(nextLang);
-    if (typeof window !== "undefined" && window.__SH_BLOG_ALTERNATES__?.[nextLang]) {
-      navigate(window.__SH_BLOG_ALTERNATES__[nextLang]);
-      return;
-    }
-    const blogMatch = location.pathname.match(/^\/(?:en|fa|ar)\/blogs(?:\/.*)?$/);
-    if (blogMatch) {
-      navigate(`/${nextLang}/blogs`);
-      return;
-    }
-    const catalogMatch = location.pathname.match(/^\/(?:en|fa|ar)\/products(\/.*)?$/);
-    if (catalogMatch) {
-      navigate(`/${nextLang}/products${catalogMatch[1] || ""}${location.search}`, { state: location.state });
-      return;
-    }
-    const legacyProductMatch = location.pathname.match(/^\/products\/([^/]+)$/);
-    if (legacyProductMatch) {
-      navigate(`/${nextLang}/products/${legacyProductMatch[1]}`, { state: { catalogRouteKind: "product" } });
-      return;
-    }
-    if (location.pathname === "/products") {
-      navigate(`/${nextLang}/products`);
-    }
-  };
+  useEffect(() => {
+    const updateAlternates = (event) => setRuntimeAlternates(event.detail || {});
+    setRuntimeAlternates(typeof window !== "undefined" ? window.__SH_BLOG_ALTERNATES__ || {} : {});
+    window.addEventListener("sh:blog-alternates", updateAlternates);
+    return () => window.removeEventListener("sh:blog-alternates", updateAlternates);
+  }, [location.pathname]);
+
+  const blogAlternates = Object.keys(runtimeAlternates).length ? runtimeAlternates : prerenderAlternates;
 
   return (
     <div
@@ -52,18 +43,37 @@ export default function LanguageSwitch({ tone = "default" }) {
     >
       {options.map((option, index) => {
         const isActive = lang === option.code;
+        const target = getLanguageTarget({
+          pathname: location.pathname,
+          search: location.search,
+          nextLang: option.code,
+          blogAlternates
+        });
+        const controlClass = `px-1 leading-none transition ${isActive ? "opacity-100" : "opacity-60 hover:opacity-100"}`;
         return (
           <span key={option.code} className="inline-flex items-center">
-            <button
-              type="button"
-              onClick={() => changeLanguage(option.code)}
-              className={`px-1 leading-none transition ${isActive ? "opacity-100" : "opacity-60 hover:opacity-100"
-                }`}
-              aria-label={t(`language.${option.code}`)}
-              aria-pressed={isActive}
-            >
-              {option.label}
-            </button>
+            {target ? (
+              <Link
+                to={target}
+                state={location.pathname.match(/^\/products\/[^/]+$/) ? { catalogRouteKind: "product" } : location.state}
+                onClick={() => setLang(option.code)}
+                className={controlClass}
+                aria-label={t(`language.${option.code}`)}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {option.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLang(option.code)}
+                className={controlClass}
+                aria-label={t(`language.${option.code}`)}
+                aria-pressed={isActive}
+              >
+                {option.label}
+              </button>
+            )}
             {index < options.length - 1 ? <span className="px-1 opacity-45">|</span> : null}
           </span>
         );
