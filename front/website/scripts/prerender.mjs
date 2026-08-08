@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { getProductSeo, productAdditionalProperties } from "../src/lib/productSeo.js";
-import { getProductOfferStructuredData } from "../src/lib/productOffers.js";
+import { getProductOfferStructuredData, getProductSku } from "../src/lib/productOffers.js";
 import { blogHubAlternates } from "../src/lib/blogLocales.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -840,6 +840,7 @@ function productRoute(product) {
         "@type": "Product",
         "@id": `${absoluteUrl(routePath)}#product`,
         name: title,
+        sku: getProductSku(product) || undefined,
         description,
         image: firstImage(product) ? absoluteUrl(productShareImage(product)) : undefined,
         url: absoluteUrl(routePath),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatOfferPrice, getProductOfferStructuredData } from "./productOffers";
+import { formatOfferPrice, getProductOfferStructuredData, getProductSku } from "./productOffers";
 
 describe("product offers", () => {
   it("formats a starting square-metre price", () => {
@@ -12,11 +12,21 @@ describe("product offers", () => {
       "@type": "Offer",
       price: "4500000",
       priceCurrency: "IRR",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: "SangeHassan"
+      },
       url: "https://sangehassan.com/fa/products/sample",
       priceSpecification: {
         unitCode: "MTK",
         price: "4500000"
       }
     });
+  });
+
+  it("uses the stable product identifier as sku", () => {
+    expect(getProductSku({ id: 1431, slug: "abbasabad-travertine" })).toBe("1431");
+    expect(getProductSku({ slug: "abbasabad-travertine" })).toBe("abbasabad-travertine");
   });
 });

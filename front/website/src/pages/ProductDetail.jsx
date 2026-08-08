@@ -9,7 +9,7 @@ import { usePrerenderData } from "../lib/prerenderData";
 import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
-import { formatOfferPrice, getProductOfferPrice, getProductOfferStructuredData } from "../lib/productOffers";
+import { formatOfferPrice, getProductOfferPrice, getProductOfferStructuredData, getProductSku } from "../lib/productOffers";
 import { getContactPhoneItems } from "../lib/contact";
 import NotFound from "./NotFound";
 
@@ -218,6 +218,7 @@ export default function ProductDetail() {
       "@type": "Product",
       "@id": `${pageUrl}#product`,
       name: localizedTitle,
+      sku: getProductSku(product) || undefined,
       description: seoDescription,
       image: imageUrl,
       url: pageUrl,

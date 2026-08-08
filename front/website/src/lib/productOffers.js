@@ -35,6 +35,12 @@ export const getProductOfferPrice = (product) => {
   return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
 };
 
+export const getProductSku = (product) => {
+  const id = String(product?.id || "").trim();
+  if (id) return id;
+  return String(product?.slug || "").trim();
+};
+
 export const formatOfferPrice = (price, lang = "en", options = {}) => {
   const value = typeof price === "number" ? price : Number(price);
   if (!Number.isFinite(value) || value <= 0) return "";
@@ -61,6 +67,11 @@ export const getProductOfferStructuredData = (product, url = "") => {
     "@type": "Offer",
     price: String(priceRial),
     priceCurrency: "IRR",
+    itemCondition: "https://schema.org/NewCondition",
+    seller: {
+      "@type": "Organization",
+      name: "SangeHassan"
+    },
     priceSpecification: {
       "@type": "UnitPriceSpecification",
       price: String(priceRial),
