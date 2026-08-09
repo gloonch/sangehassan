@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { LanguageProvider } from "./lib/i18n";
+import { DEFAULT_LANGUAGE, LanguageProvider } from "./lib/i18n";
 import { getBrowserPrerenderData, PrerenderDataProvider } from "./lib/prerenderData";
 import "./styles.css";
 
@@ -10,7 +10,7 @@ const prerenderData = getBrowserPrerenderData();
 
 const app = (
   <React.StrictMode>
-    <LanguageProvider initialLang={typeof window !== "undefined" ? undefined : "en"}>
+    <LanguageProvider initialLang={typeof window !== "undefined" ? undefined : DEFAULT_LANGUAGE}>
       <PrerenderDataProvider data={prerenderData}>
         <BrowserRouter>
           <App />

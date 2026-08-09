@@ -1,3 +1,5 @@
+import { DEFAULT_LANGUAGE } from "./languageConfig.js";
+
 export const catalogLocales = ["en", "fa", "ar"];
 
 export const catalogLocaleConfig = {
@@ -33,7 +35,7 @@ export const catalogCopy = {
   }
 };
 
-export const catalogBasePath = (lang) => `/${catalogLocales.includes(lang) ? lang : "en"}/products`;
+export const catalogBasePath = (lang) => `/${catalogLocales.includes(lang) ? lang : DEFAULT_LANGUAGE}/products`;
 
 export const localizedField = (item, field, lang) => {
   if (!item) return "";
@@ -44,5 +46,5 @@ export const catalogAlternates = (suffix = "") => [
   { lang: "en", path: `/en/products${suffix}` },
   { lang: "fa", path: `/fa/products${suffix}` },
   { lang: "ar", path: `/ar/products${suffix}` },
-  { lang: "x-default", path: `/en/products${suffix}` }
+  { lang: "x-default", path: `/${DEFAULT_LANGUAGE}/products${suffix}` }
 ];

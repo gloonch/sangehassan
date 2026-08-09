@@ -5,6 +5,7 @@ import { createServer } from "vite";
 import { getProductSeo, productAdditionalProperties } from "../src/lib/productSeo.js";
 import { getProductOfferStructuredData, getProductSku } from "../src/lib/productOffers.js";
 import { blogHubAlternates } from "../src/lib/blogLocales.js";
+import { DEFAULT_LANGUAGE, DEFAULT_LOCALE } from "../src/lib/languageConfig.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -88,7 +89,7 @@ function catalogPath(locale, suffix = "") {
 function catalogAlternates(suffix = "") {
   return [
     ...catalogLocales.map((lang) => ({ lang, path: catalogPath(lang, suffix) })),
-    { lang: "x-default", path: catalogPath("en", suffix) }
+    { lang: "x-default", path: catalogPath(DEFAULT_LANGUAGE, suffix) }
   ];
 }
 
@@ -99,10 +100,12 @@ function localizedField(item, field, locale) {
 const staticRoutes = [
   {
     path: "/",
-    title: "SangeHassan | Natural Stone Supply & Production",
+    title: "سنگ حسن | تأمین و تولید سنگ طبیعی",
     description:
-      "Integrated natural stone supply and production network, from quarry blocks to finished stone products for professional projects, B2B, and export.",
+      "شبکه یکپارچه تأمین و تولید سنگ طبیعی، از کوپ معدن تا محصولات فرآوری‌شده برای پروژه‌های حرفه‌ای، خرید عمده و صادرات.",
     schemaType: "WebPage",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     preloads: [
       { href: sharedAssetUrl("../shared/assets/landing_page/products/finish-slide-01-mobile.webp"), media: "(max-width: 767px)" },
@@ -113,12 +116,13 @@ const staticRoutes = [
   },
   {
     path: "/products",
-    canonical: "/en/products",
-    title: "Natural Stone Products | SangeHassan",
-    description:
-      "Browse SangeHassan natural stone products, including slabs, tiles, and finished stones for building projects, B2B supply, and export.",
+    canonical: "/fa/products",
+    title: "محصولات سنگ طبیعی | سنگ حسن",
+    description: "انواع سنگ طبیعی، اسلب، تایل و سنگ‌های فرآوری‌شده را برای پروژه‌های ساختمانی، خرید عمده و صادرات بررسی کنید.",
     schemaType: "CollectionPage",
-    breadcrumbName: "Products",
+    breadcrumbName: "محصولات",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     robots: "noindex,follow",
     sitemap: false,
@@ -140,22 +144,24 @@ const staticRoutes = [
   })),
   {
     path: "/blocks",
-    title: "Stone Blocks | SangeHassan",
-    description:
-      "Browse SangeHassan natural stone blocks for project supply, slab production, and wholesale B2B sourcing.",
+    title: "کوپ سنگ طبیعی | سنگ حسن",
+    description: "کوپ‌های سنگ طبیعی سنگ حسن را برای تأمین پروژه، تولید اسلب و خرید عمده بررسی کنید.",
     schemaType: "CollectionPage",
-    breadcrumbName: "Stone Blocks",
+    breadcrumbName: "کوپ سنگ",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.85
   },
   {
     path: "/projects",
-    title: "Projects | SangeHassan",
-    description:
-      "Explore SangeHassan's completed stone projects across facade and interior applications with real-world execution results.",
+    title: "پروژه‌های سنگ طبیعی | سنگ حسن",
+    description: "پروژه‌های اجراشده سنگ حسن در نمای ساختمان و فضاهای داخلی را همراه با تصاویر واقعی بررسی کنید.",
     schemaType: "CollectionPage",
-    breadcrumbName: "Projects",
+    breadcrumbName: "پروژه‌ها",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     changefreq: "weekly",
     priority: 0.8
@@ -178,48 +184,56 @@ const staticRoutes = [
   })),
   {
     path: "/blogs",
-    canonical: "/en/blogs",
-    title: blogLocaleMeta.en.title,
-    description: blogLocaleMeta.en.description,
+    canonical: "/fa/blogs",
+    title: blogLocaleMeta.fa.title,
+    description: blogLocaleMeta.fa.description,
     schemaType: "Blog",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     robots: "noindex,follow",
     sitemap: false
   },
   {
     path: "/about",
-    title: "About Us | SangeHassan",
-    description:
-      "SangeHassan is an integrated natural stone supply and production network, from quarry blocks to finished products with B2B reliability and export focus.",
+    title: "درباره سنگ حسن | تأمین و تولید سنگ طبیعی",
+    description: "سنگ حسن شبکه یکپارچه تأمین و تولید سنگ طبیعی، از کوپ معدن تا محصول فرآوری‌شده برای پروژه‌ها، خرید عمده و صادرات است.",
     schemaType: "AboutPage",
-    breadcrumbName: "About Us",
+    breadcrumbName: "درباره ما",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     changefreq: "monthly",
     priority: 0.7
   },
   {
     path: "/ads",
-    title: "Trade Board | SangeHassan",
-    description: "Private members-only space for posting and browsing stone sale offers.",
+    title: "بازار خرید و فروش سنگ | سنگ حسن",
+    description: "آگهی‌های تأییدشده خرید و فروش سنگ طبیعی را در تابلوی معاملات سنگ حسن مشاهده کنید.",
     schemaType: "CollectionPage",
-    breadcrumbName: "Trade Board",
+    breadcrumbName: "بازار خرید و فروش",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     image: defaultShareImage,
     changefreq: "daily",
     priority: 0.65
   },
   {
     path: "/stone-sample-request",
-    title: "Stone Sample Request | SangeHassan",
-    description: "Request natural stone samples for material review before a project order.",
+    title: "درخواست نمونه سنگ | سنگ حسن",
+    description: "برای بررسی متریال پیش از سفارش پروژه، نمونه سنگ طبیعی درخواست کنید.",
     schemaType: "WebPage",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     robots: "noindex,nofollow",
     sitemap: false
   },
   {
     path: "/404",
-    title: "Page not found | SangeHassan",
-    description:
-      "The requested page was not found. Return to the SangeHassan homepage and continue from a verified route.",
+    title: "صفحه پیدا نشد | سنگ حسن",
+    description: "صفحه درخواستی پیدا نشد. به صفحه اصلی سنگ حسن بازگردید و از مسیرهای معتبر ادامه دهید.",
     schemaType: "WebPage",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     robots: "noindex,follow,noarchive",
     sitemap: false
   }
@@ -372,7 +386,7 @@ function organizationJsonLd() {
   };
 }
 
-function websiteJsonLd(lang = "en") {
+function websiteJsonLd(lang = DEFAULT_LANGUAGE) {
   return {
     "@type": "WebSite",
     "@id": websiteId,
@@ -386,7 +400,8 @@ function websiteJsonLd(lang = "en") {
 }
 
 function routeBreadcrumbs(route) {
-  const homeName = route.lang === "fa" ? "خانه" : route.lang === "ar" ? "الرئيسية" : "Home";
+  const routeLang = route.lang || DEFAULT_LANGUAGE;
+  const homeName = routeLang === "fa" ? "خانه" : routeLang === "ar" ? "الرئيسية" : "Home";
   if (route.path === "/") {
     return [{ name: homeName, path: "/" }];
   }
@@ -426,7 +441,7 @@ function pageJsonLd(route) {
     url: canonical,
     name: route.title,
     description: route.description,
-    inLanguage: route.lang || "en",
+    inLanguage: route.lang || DEFAULT_LANGUAGE,
     isPartOf: {
       "@id": websiteId
     },
@@ -449,12 +464,12 @@ function pageJsonLd(route) {
     page.headline = route.headline || route.title;
     page.author = {
       "@type": "Organization",
-      name: route.lang === "fa" ? "تیم محتوای سنگ حسن" : route.lang === "ar" ? "فريق محتوى سانج حسن" : "SangeHassan content team",
+      name: (route.lang || DEFAULT_LANGUAGE) === "fa" ? "تیم محتوای سنگ حسن" : route.lang === "ar" ? "فريق محتوى سانج حسن" : "SangeHassan content team",
       url: siteUrl
     };
     page.reviewedBy = {
       "@type": "Organization",
-      name: route.lang === "fa" ? "تیم فروش و تأمین سنگ حسن" : route.lang === "ar" ? "فريق المبيعات والتوريد في سانج حسن" : "SangeHassan sales and sourcing team"
+      name: (route.lang || DEFAULT_LANGUAGE) === "fa" ? "تیم فروش و تأمین سنگ حسن" : route.lang === "ar" ? "فريق المبيعات والتوريد في سانج حسن" : "SangeHassan sales and sourcing team"
     };
     page.publisher = {
       "@id": organizationId
@@ -490,7 +505,7 @@ function routeJsonLd(route) {
     "@context": "https://schema.org",
     "@graph": [
       organizationJsonLd(),
-      websiteJsonLd(route.lang || "en"),
+      websiteJsonLd(route.lang || DEFAULT_LANGUAGE),
       pageJsonLd(route),
       breadcrumbJsonLd(route),
       ...(route.structuredData || [])
@@ -502,7 +517,7 @@ function buildHead(route) {
   const canonical = absoluteUrl(route.canonical || route.path);
   const image = route.image ? absoluteUrl(route.image) : "";
   const robots = route.robots || defaultRobots;
-  const locale = route.locale || "en_US";
+  const locale = route.locale || DEFAULT_LOCALE;
   const type = route.type || "website";
   const tags = [
     `<title>${escapeAttr(route.title)}</title>`,
@@ -551,7 +566,7 @@ function injectRouteHtml(template, route, appHtml) {
     : "";
 
   const html = template
-    .replace(/<html[^>]*>/i, `<html lang="${escapeAttr(route.lang || "en")}" dir="${route.lang === "fa" || route.lang === "ar" ? "rtl" : "ltr"}">`)
+    .replace(/<html[^>]*>/i, `<html lang="${escapeAttr(route.lang || DEFAULT_LANGUAGE)}" dir="${(route.lang || DEFAULT_LANGUAGE) === "fa" || route.lang === "ar" ? "rtl" : "ltr"}">`)
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace("</head>", `  ${buildHead(route)}\n</head>`)
     .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)
@@ -856,13 +871,13 @@ function productRoute(product) {
     };
   });
 
-  const englishRoute = localizedRoutes[0];
+  const defaultRoute = localizedRoutes.find((route) => route.lang === DEFAULT_LANGUAGE) || localizedRoutes[0];
   return [
     ...localizedRoutes,
     {
-      ...englishRoute,
+      ...defaultRoute,
       path: `/products/${slug}`,
-      canonical: englishRoute.path,
+      canonical: defaultRoute.path,
       robots: "noindex,follow",
       sitemap: false
     }
@@ -1174,24 +1189,26 @@ function blockRoute(block) {
   const slug = block?.slug;
   if (!slug) return null;
 
-  const title = block.title_en || block.title_fa || block.title_ar || slug;
+  const title = block.title_fa || block.title_en || block.title_ar || slug;
   const details = [block.stone_type, block.quarry, block.dimensions, block.description].filter(Boolean).join(" | ");
   const description =
     truncate(details) ||
-    "Natural stone block detail from SangeHassan with quarry, dimensions, weight, and availability information.";
+    "جزئیات کوپ سنگ طبیعی شامل معدن، ابعاد، وزن و وضعیت موجودی در سنگ حسن.";
 
   return {
     path: `/blocks/${slug}`,
-    title: `${title} | Stone Blocks | SangeHassan`,
+    title: `${title} | کوپ سنگ | سنگ حسن`,
     description,
     image: shareImage(block),
     type: "product",
     schemaType: "ItemPage",
     breadcrumbs: [
-      { name: "Stone Blocks", path: "/blocks" },
+      { name: "کوپ سنگ", path: "/blocks" },
       { name: title, path: `/blocks/${slug}` }
     ],
     changefreq: "weekly",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     priority: 0.7,
     lastmod: block.updated_at || block.updatedAt || block.created_at,
     mainEntity: {
@@ -1213,23 +1230,25 @@ function projectRoute(project) {
   const id = project?.id;
   if (!id) return null;
 
-  const title = project.title_en || project.title_fa || project.title_ar || `Project ${id}`;
+  const title = project.title_fa || project.title_en || project.title_ar || `پروژه ${id}`;
   const description =
-    truncate(project.description_en || project.description || project.description_fa || project.description_ar || "") ||
-    truncate(`Explore ${title}, SangeHassan project ${id}, with completed-work images, natural stone references, and project sourcing details.`);
+    truncate(project.description_fa || project.description || project.description_en || project.description_ar || "") ||
+    truncate(`پروژه ${title} را همراه با تصاویر اجرا، سنگ‌های طبیعی استفاده‌شده و جزئیات تأمین در سنگ حسن بررسی کنید.`);
 
   return {
     path: `/projects/${id}`,
-    title: `${title} | Projects | SangeHassan`,
+    title: `${title} | پروژه‌های سنگ حسن`,
     description,
     image: project.cover_image_url || defaultShareImage,
     type: "article",
     schemaType: "Article",
     breadcrumbs: [
-      { name: "Projects", path: "/projects" },
+      { name: "پروژه‌ها", path: "/projects" },
       { name: title, path: `/projects/${id}` }
     ],
     changefreq: "monthly",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     priority: 0.65,
     lastmod: project.updated_at || project.updatedAt || project.created_at
   };
@@ -1239,21 +1258,23 @@ function adRoute(ad) {
   const id = ad?.id;
   if (!id) return null;
 
-  const title = ad.title || ad.stone_type || `Stone offer ${id}`;
-  const description = truncate(ad.description || "Stone sale offer on the SangeHassan trade board.");
+  const title = ad.title || ad.stone_type || `آگهی سنگ ${id}`;
+  const description = truncate(ad.description || "آگهی خرید یا فروش سنگ طبیعی در بازار سنگ حسن.");
 
   return {
     path: `/ads/${id}`,
-    title: `${title} | Trade Board | SangeHassan`,
+    title: `${title} | بازار سنگ حسن`,
     description,
     image: shareImage(ad),
     type: "article",
     schemaType: "ItemPage",
     breadcrumbs: [
-      { name: "Trade Board", path: "/ads" },
+      { name: "بازار خرید و فروش", path: "/ads" },
       { name: title, path: `/ads/${id}` }
     ],
     changefreq: "daily",
+    lang: DEFAULT_LANGUAGE,
+    locale: DEFAULT_LOCALE,
     priority: 0.55,
     lastmod: ad.updated_at || ad.updatedAt || ad.created_at,
     mainEntity: {

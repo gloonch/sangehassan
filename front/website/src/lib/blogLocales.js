@@ -1,3 +1,5 @@
+import { DEFAULT_LANGUAGE } from "./languageConfig.js";
+
 export const BLOG_LOCALES = ["en", "fa", "ar"];
 
 export function normalizeBlogLocales(locales = []) {
@@ -7,8 +9,7 @@ export function normalizeBlogLocales(locales = []) {
 
 export function defaultBlogLocale(locales = []) {
   const available = normalizeBlogLocales(locales);
-  if (available.includes("en")) return "en";
-  if (available.includes("fa")) return "fa";
+  if (available.includes(DEFAULT_LANGUAGE)) return DEFAULT_LANGUAGE;
   return available[0] || "";
 }
 

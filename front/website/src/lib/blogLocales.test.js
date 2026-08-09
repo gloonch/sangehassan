@@ -14,11 +14,11 @@ describe("blog locale SEO helpers", () => {
     ]);
   });
 
-  it("activates a locale and prefers English after its first translation is published", () => {
+  it("keeps Persian as x-default when English translations are published", () => {
     expect(blogHubAlternates(["fa", "en"])).toEqual([
       { lang: "en", path: "/en/blogs" },
       { lang: "fa", path: "/fa/blogs" },
-      { lang: "x-default", path: "/en/blogs" }
+      { lang: "x-default", path: "/fa/blogs" }
     ]);
   });
 });

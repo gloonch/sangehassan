@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_LANGUAGE, getLanguageFromPath } from "./i18n";
 
 describe("website language selection", () => {
-  it("uses English for routes without an explicit locale", () => {
-    expect(DEFAULT_LANGUAGE).toBe("en");
-    expect(getLanguageFromPath("/")).toBe("en");
-    expect(getLanguageFromPath("/products")).toBe("en");
-    expect(getLanguageFromPath("/blogs")).toBe("en");
+  it("uses Persian for routes without an explicit locale", () => {
+    expect(DEFAULT_LANGUAGE).toBe("fa");
+    expect(getLanguageFromPath("/")).toBe("fa");
+    expect(getLanguageFromPath("/products")).toBe("fa");
+    expect(getLanguageFromPath("/blogs")).toBe("fa");
   });
 
   it("keeps the locale declared by localized routes", () => {

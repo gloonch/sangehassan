@@ -2,10 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import en from "@shared/i18n/en.json";
 import fa from "@shared/i18n/fa.json";
 import ar from "@shared/i18n/ar.json";
+import { DEFAULT_LANGUAGE } from "./languageConfig.js";
+
+export { DEFAULT_LANGUAGE } from "./languageConfig.js";
 
 const dictionaries = { en, fa, ar };
 const supportedLangs = Object.keys(dictionaries);
-export const DEFAULT_LANGUAGE = "en";
 const LanguageContext = createContext({
   lang: DEFAULT_LANGUAGE,
   setLang: () => {},

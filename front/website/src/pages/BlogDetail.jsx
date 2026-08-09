@@ -6,6 +6,7 @@ import { appendImageVersion, resolveVersionedImageUrl } from "../lib/assets";
 import { getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
 import { getLanguageFromPath } from "../lib/i18n";
+import { DEFAULT_LANGUAGE } from "../lib/languageConfig.js";
 import NotFound from "./NotFound";
 
 const localeMeta = {
@@ -200,8 +201,8 @@ export default function BlogDetail() {
   const prepared = useMemo(() => articleHTML(blog?.content_html || "", imageVersion), [blog?.content_html, imageVersion]);
   const alternates = useMemo(() => {
     const items = (blog?.translations || []).map((item) => ({ lang: item.locale, path: `/${item.locale}/blogs/${item.slug}` }));
-    const english = items.find((item) => item.lang === "en") || items[0];
-    return english ? [...items, { lang: "x-default", path: english.path }] : items;
+    const defaultTranslation = items.find((item) => item.lang === DEFAULT_LANGUAGE) || items[0];
+    return defaultTranslation ? [...items, { lang: "x-default", path: defaultTranslation.path }] : items;
   }, [blog?.translations]);
   const seoOverride = getArticleSeoOverride(locale, blog?.slug || slug);
   const path = seoOverride?.canonical || blog?.canonical_url || `${basePath}/${blog?.slug || slug}`;
