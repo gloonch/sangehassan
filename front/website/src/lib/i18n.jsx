@@ -5,10 +5,9 @@ import ar from "@shared/i18n/ar.json";
 
 const dictionaries = { en, fa, ar };
 const supportedLangs = Object.keys(dictionaries);
-const configuredDefaultLang = String(import.meta.env.VITE_DEFAULT_LANG || "en").toLowerCase();
-const defaultLang = supportedLangs.includes(configuredDefaultLang) ? configuredDefaultLang : "en";
+export const DEFAULT_LANGUAGE = "en";
 const LanguageContext = createContext({
-  lang: defaultLang,
+  lang: DEFAULT_LANGUAGE,
   setLang: () => {},
   t: (key) => key
 });
@@ -19,17 +18,17 @@ const getValue = (obj, path) => {
 
 export const getLanguageFromPath = (pathname = "") => {
   const match = String(pathname).match(/^\/(en|fa|ar)(?:\/|$)/);
-  return match?.[1] || defaultLang;
+  return match?.[1] || DEFAULT_LANGUAGE;
 };
 
 export const LanguageProvider = ({ children, initialLang }) => {
   const [lang, setLang] = useState(() => {
     if (supportedLangs.includes(initialLang)) return initialLang;
     if (typeof window !== "undefined") return getLanguageFromPath(window.location.pathname);
-    return defaultLang;
+    return DEFAULT_LANGUAGE;
   });
   const setSafeLang = useCallback((nextLang) => {
-    setLang(supportedLangs.includes(nextLang) ? nextLang : defaultLang);
+    setLang(supportedLangs.includes(nextLang) ? nextLang : DEFAULT_LANGUAGE);
   }, []);
 
   useEffect(() => {
