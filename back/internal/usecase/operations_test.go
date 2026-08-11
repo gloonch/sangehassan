@@ -43,6 +43,50 @@ func TestValidateNewPasswordUsesCharacterCountAndBcryptLimit(t *testing.T) {
 	}
 }
 
+func TestSuperAdminCanResetAnotherSuperAdminPassword(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT EXISTS").WithArgs("target-super", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery("SELECT EXISTS").WithArgs("actor-super", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery("SELECT EXISTS").WithArgs("target-super", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE users SET password_hash").WithArgs("target-super", sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("DELETE FROM refresh_tokens").WithArgs("target-super").WillReturnResult(sqlmock.NewResult(0, 2))
+	mock.ExpectExec("INSERT INTO audit_logs").WithArgs("actor-super", "users.reset_password", "user", "target-super", "null", sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	service := NewOperationsService(db)
+	if err = service.ResetPassword(context.Background(), "actor-super", "target-super", "Temporary2!"); err != nil {
+		t.Fatalf("super admin reset failed: %v", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAdminCannotResetSuperAdminPassword(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT EXISTS").WithArgs("target-super", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery("SELECT EXISTS").WithArgs("actor-admin", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
+
+	service := NewOperationsService(db)
+	if err = service.ResetPassword(context.Background(), "actor-admin", "target-super", "Temporary2!"); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected forbidden, got %v", err)
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRandomDigits(t *testing.T) {
 	value := randomDigits(6)
 	if len(value) != 6 {

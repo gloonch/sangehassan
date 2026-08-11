@@ -472,24 +472,42 @@ func (s *OperationsService) SetUserStatus(ctx context.Context, actor, userID, st
 	return err
 }
 func (s *OperationsService) ResetPassword(ctx context.Context, actor, userID, password string) error {
-	if s.userHasRole(ctx, userID, "SUPER_ADMIN") {
-		return ErrProtectedRole
+	if err := validateNewPassword(password); err != nil {
+		return err
 	}
-	if s.userHasRole(ctx, userID, "ADMIN") && !s.HasPermission(ctx, actor, "administrators.update") {
+	targetIsSuperAdmin := s.userHasRole(ctx, userID, "SUPER_ADMIN")
+	actorIsSuperAdmin := s.userHasRole(ctx, actor, "SUPER_ADMIN")
+	if targetIsSuperAdmin && !actorIsSuperAdmin {
 		return ErrForbidden
 	}
-	if len(password) < 8 {
-		return errors.New("password too short")
+	if s.userHasRole(ctx, userID, "ADMIN") && !actorIsSuperAdmin && !s.HasPermission(ctx, actor, "administrators.update") {
+		return ErrForbidden
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, `UPDATE users SET password_hash=$2,must_change_password=TRUE,updated_at=NOW() WHERE id=$1`, userID, string(hash))
-	if err == nil {
-		s.audit(ctx, actor, "users.reset_password", "user", userID, nil)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
 	}
-	return err
+	defer tx.Rollback()
+	result, err := tx.ExecContext(ctx, `UPDATE users SET password_hash=$2,must_change_password=TRUE,updated_at=NOW() WHERE id=$1`, userID, string(hash))
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows != 1 {
+		return ErrUserNotFound
+	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id=$1`, userID); err != nil {
+		return err
+	}
+	s.auditTx(ctx, tx, actor, "users.reset_password", "user", userID, nil, map[string]any{"must_change_password": true, "sessions_revoked": true})
+	return tx.Commit()
 }
 
 func (s *OperationsService) AvailableWorkflows(ctx context.Context, userID string) ([]WorkflowTemplate, error) {
