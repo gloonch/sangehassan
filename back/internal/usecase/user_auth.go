@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
@@ -21,14 +22,16 @@ import (
 )
 
 var (
-	ErrEmailExists    = errors.New("email already exists")
-	ErrPhoneExists    = errors.New("phone already exists")
-	ErrPhoneRequired  = errors.New("phone is required")
-	ErrUserNotFound   = errors.New("user not found")
-	ErrRefreshInvalid = errors.New("invalid refresh token")
-	ErrRefreshExpired = errors.New("refresh token expired")
-	ErrRefreshRevoked = errors.New("refresh token revoked")
-	ErrInactiveUser   = errors.New("user inactive")
+	ErrEmailExists      = errors.New("email already exists")
+	ErrPhoneExists      = errors.New("phone already exists")
+	ErrPhoneRequired    = errors.New("phone is required")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrRefreshInvalid   = errors.New("invalid refresh token")
+	ErrRefreshExpired   = errors.New("refresh token expired")
+	ErrRefreshRevoked   = errors.New("refresh token revoked")
+	ErrInactiveUser     = errors.New("user inactive")
+	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
+	ErrPasswordTooLong  = errors.New("password exceeds bcrypt's 72-byte limit")
 )
 
 const userJWTIssuer = "sangehassan-user"
@@ -225,8 +228,8 @@ func (s *UserAuthService) GetMe(ctx context.Context, userID string) (domain.User
 }
 
 func (s *UserAuthService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
-	if len(newPassword) < 8 {
-		return errors.New("password must be at least 8 characters")
+	if err := validateNewPassword(newPassword); err != nil {
+		return err
 	}
 	user, err := s.users.GetByID(ctx, userID)
 	if err != nil {
@@ -240,6 +243,18 @@ func (s *UserAuthService) ChangePassword(ctx context.Context, userID, currentPas
 		return err
 	}
 	return s.users.UpdatePassword(ctx, userID, string(hash), false)
+}
+
+func validateNewPassword(password string) error {
+	if utf8.RuneCountInString(password) < 8 {
+		return ErrPasswordTooShort
+	}
+	// bcrypt rejects inputs longer than 72 bytes. Checking explicitly gives the
+	// client a stable error instead of exposing an implementation error.
+	if len([]byte(password)) > 72 {
+		return ErrPasswordTooLong
+	}
+	return nil
 }
 
 func (s *UserAuthService) UpdateMe(ctx context.Context, userID string, fullName, phone, email *string) (domain.UserInfo, error) {

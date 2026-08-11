@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -189,7 +190,16 @@ func (h *UserAuthHandler) ChangePassword(c *gin.Context) {
 	}
 	id, _ := c.Get("user_id")
 	if err := h.service.ChangePassword(c.Request.Context(), id.(string), payload.CurrentPassword, payload.NewPassword); err != nil {
-		respondError(c, http.StatusBadRequest, "password change failed")
+		switch {
+		case errors.Is(err, usecase.ErrPasswordTooShort):
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "new password must be at least 8 characters", "code": "PASSWORD_TOO_SHORT"})
+		case errors.Is(err, usecase.ErrPasswordTooLong):
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "new password must not exceed 72 bytes", "code": "PASSWORD_TOO_LONG"})
+		case errors.Is(err, usecase.ErrInvalidCredentials):
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "current password is incorrect", "code": "CURRENT_PASSWORD_INVALID"})
+		default:
+			respondError(c, http.StatusInternalServerError, "password change failed")
+		}
 		return
 	}
 	respondOK(c, gin.H{"changed": true})

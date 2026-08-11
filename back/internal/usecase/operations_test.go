@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -24,6 +25,21 @@ func TestNormalizePhone(t *testing.T) {
 		if got := NormalizePhone(input); got != want {
 			t.Errorf("NormalizePhone(%q)=%q, want %q", input, got, want)
 		}
+	}
+}
+
+func TestValidateNewPasswordUsesCharacterCountAndBcryptLimit(t *testing.T) {
+	if !errors.Is(validateNewPassword("Ab1!xyz"), ErrPasswordTooShort) {
+		t.Fatal("seven-character password must be rejected")
+	}
+	if err := validateNewPassword("Ab1!xyza"); err != nil {
+		t.Fatalf("valid password rejected: %v", err)
+	}
+	if err := validateNewPassword("رمزعبور۱"); err != nil {
+		t.Fatalf("eight-character Unicode password rejected: %v", err)
+	}
+	if !errors.Is(validateNewPassword(strings.Repeat("a", 73)), ErrPasswordTooLong) {
+		t.Fatal("password above bcrypt's 72-byte limit must be rejected")
 	}
 }
 
