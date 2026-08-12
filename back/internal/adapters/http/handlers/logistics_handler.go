@@ -81,7 +81,7 @@ func (h *OperationsHandler) OrderProgress(c *gin.Context) {
 	okOrError(c, operationResult(h.service.OrderProgress(c.Request.Context(), actorID(c), c.Param("id"), false)))
 }
 func (h *OperationsHandler) AccountOrderProgress(c *gin.Context) {
-	okOrError(c, operationResult(h.service.OrderProgress(c.Request.Context(), actorID(c), c.Param("orderId"), true)))
+	okOrError(c, operationResult(h.service.OrderProgress(c.Request.Context(), actorID(c), c.Param("id"), true)))
 }
 
 func (h *OperationsHandler) Batches(c *gin.Context) {
@@ -340,17 +340,21 @@ func (h *OperationsHandler) shipmentOperation(c *gin.Context, operation string, 
 	if !ok {
 		return
 	}
+	shipmentID := c.Param("id")
+	if customer {
+		shipmentID = c.Param("shipmentId")
+	}
 	var value any
 	var err error
 	switch operation {
 	case "load":
-		value, err = h.service.LoadShipment(c.Request.Context(), actorID(c), c.Param("id"), key, p)
+		value, err = h.service.LoadShipment(c.Request.Context(), actorID(c), shipmentID, key, p)
 	case "dispatch":
-		value, err = h.service.DispatchShipment(c.Request.Context(), actorID(c), c.Param("id"), key, p)
+		value, err = h.service.DispatchShipment(c.Request.Context(), actorID(c), shipmentID, key, p)
 	case "arrive":
-		value, err = h.service.ArriveShipment(c.Request.Context(), actorID(c), c.Param("id"), key, p)
+		value, err = h.service.ArriveShipment(c.Request.Context(), actorID(c), shipmentID, key, p)
 	case "deliver":
-		value, err = h.service.DeliverShipment(c.Request.Context(), actorID(c), c.Param("id"), key, p, customer)
+		value, err = h.service.DeliverShipment(c.Request.Context(), actorID(c), shipmentID, key, p, customer)
 	}
 	okOrError(c, operationResult(value, err))
 }
@@ -381,7 +385,7 @@ func (h *OperationsHandler) CancelShipment(c *gin.Context) {
 	respondOK(c, gin.H{"cancelled": true})
 }
 func (h *OperationsHandler) AccountShipments(c *gin.Context) {
-	okOrError(c, operationResult(h.service.ListShipments(c.Request.Context(), actorID(c), "", c.Param("orderId"), true)))
+	okOrError(c, operationResult(h.service.ListShipments(c.Request.Context(), actorID(c), "", c.Param("id"), true)))
 }
 
 func (h *OperationsHandler) Packaging(c *gin.Context) {
