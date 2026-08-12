@@ -17,17 +17,21 @@ func NewOperationsMiddleware(auth *usecase.UserAuthService, operations *usecase.
 func (m *OperationsMiddleware) authenticate(c *gin.Context) bool {
 	token, err := c.Cookie("access_token")
 	if err != nil || token == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "unauthorized"})
+		abortAPIError(c, http.StatusUnauthorized, "AUTHENTICATION_REQUIRED", "برای ادامه وارد حساب شوید.")
 		return false
 	}
-	id, err := m.auth.ParseAccess(token)
+	id, issuedAt, err := m.auth.ParseAccessDetails(token)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "unauthorized"})
+		abortAPIError(c, http.StatusUnauthorized, "SESSION_INVALID", "نشست شما معتبر نیست؛ دوباره وارد شوید.")
+		return false
+	}
+	if !m.operations.AccessAllowed(c.Request.Context(), id, issuedAt) {
+		abortAPIError(c, http.StatusUnauthorized, "SESSION_REVOKED", "نشست شما منقضی یا باطل شده است.")
 		return false
 	}
 	u, err := m.operations.GetOperationalUser(c.Request.Context(), id)
 	if err != nil || u.Status != "ACTIVE" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "unauthorized"})
+		abortAPIError(c, http.StatusUnauthorized, "ACCOUNT_INACTIVE", "این حساب فعال نیست.")
 		return false
 	}
 	c.Set("user_id", id)
@@ -42,11 +46,11 @@ func (m *OperationsMiddleware) RequireInternal(c *gin.Context) {
 	id, _ := c.Get("user_id")
 	u, _ := c.Get("operational_user")
 	if u.(usecase.OperationalUser).MustChangePassword {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "password change required"})
+		abortAPIError(c, http.StatusForbidden, "PASSWORD_CHANGE_REQUIRED", "قبل از ادامه رمز عبور موقت را تغییر دهید.")
 		return
 	}
 	if !m.operations.IsInternal(c.Request.Context(), id.(string)) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "forbidden"})
+		abortAPIError(c, http.StatusForbidden, "PERMISSION_DENIED", "شما دسترسی لازم برای این بخش را ندارید.")
 		return
 	}
 }
@@ -58,11 +62,11 @@ func (m *OperationsMiddleware) RequirePermission(code string) gin.HandlerFunc {
 		id, _ := c.Get("user_id")
 		u, _ := c.Get("operational_user")
 		if u.(usecase.OperationalUser).MustChangePassword {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "password change required"})
+			abortAPIError(c, http.StatusForbidden, "PASSWORD_CHANGE_REQUIRED", "قبل از ادامه رمز عبور موقت را تغییر دهید.")
 			return
 		}
 		if !m.operations.HasPermission(c.Request.Context(), id.(string), code) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "forbidden"})
+			abortAPIError(c, http.StatusForbidden, "PERMISSION_DENIED", "شما دسترسی لازم برای این عملیات را ندارید.")
 			return
 		}
 	}
@@ -76,7 +80,7 @@ func (m *OperationsMiddleware) RequireAnyPermission(codes ...string) gin.Handler
 		id, _ := c.Get("user_id")
 		u, _ := c.Get("operational_user")
 		if u.(usecase.OperationalUser).MustChangePassword {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "password change required"})
+			abortAPIError(c, http.StatusForbidden, "PASSWORD_CHANGE_REQUIRED", "قبل از ادامه رمز عبور موقت را تغییر دهید.")
 			return
 		}
 		for _, code := range codes {
@@ -84,6 +88,17 @@ func (m *OperationsMiddleware) RequireAnyPermission(codes ...string) gin.Handler
 				return
 			}
 		}
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "forbidden"})
+		abortAPIError(c, http.StatusForbidden, "PERMISSION_DENIED", "شما دسترسی لازم برای این عملیات را ندارید.")
+	}
+}
+
+// RequireFeature is used only on creation/mutation routes. Existing records
+// remain readable while an optional module is disabled.
+func (m *OperationsMiddleware) RequireFeature(settingKey string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !m.operations.FeatureEnabled(c.Request.Context(), settingKey) {
+			abortAPIError(c, http.StatusConflict, "MODULE_DISABLED", "این ماژول در تنظیمات سیستم غیرفعال است.")
+			return
+		}
 	}
 }

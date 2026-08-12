@@ -206,6 +206,10 @@ func (s *OperationsService) CloneWorkflowTemplate(ctx context.Context, actor str
 	if err != nil {
 		return WorkflowTemplateVersion{}, err
 	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO workflow_template_document_requirements(workflow_template_id,workflow_template_step_id,document_type,title_fa,is_required,is_blocking,customer_visible,sort_order) SELECT $1,ns.id,r.document_type,r.title_fa,r.is_required,r.is_blocking,r.customer_visible,r.sort_order FROM workflow_template_document_requirements r LEFT JOIN workflow_template_steps os ON os.id=r.workflow_template_step_id LEFT JOIN workflow_template_steps ns ON ns.workflow_template_id=$1 AND ns.step_code=os.step_code WHERE r.workflow_template_id=$2`, id, sourceID)
+	if err != nil {
+		return WorkflowTemplateVersion{}, err
+	}
 	s.auditTx(ctx, tx, actor, "workflow_templates.clone", "workflow_template", fmt.Sprint(id), nil, map[string]any{"source_id": sourceID})
 	if err = tx.Commit(); err != nil {
 		return WorkflowTemplateVersion{}, err
@@ -263,6 +267,14 @@ func (s *OperationsService) validateTemplateReferences(ctx context.Context, temp
 	}
 	if invalidTasks > 0 {
 		return errors.New("template contains a task with an invalid role or permission")
+	}
+	var invalidDocuments int
+	err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workflow_template_document_requirements r LEFT JOIN workflow_template_steps st ON st.id=r.workflow_template_step_id AND st.workflow_template_id=r.workflow_template_id AND st.is_active WHERE r.workflow_template_id=$1 AND (TRIM(r.title_fa)='' OR r.document_type NOT IN ('PROFORMA','SALES_INVOICE','PAYMENT_RECEIPT','ORDER_SUMMARY','PACKING_LIST','DELIVERY_NOTE','TRANSPORT_RECEIPT','INSTALLATION_REPORT','QUALITY_REPORT','CUSTOMER_ACCEPTANCE','COMMERCIAL_INVOICE','EXPORT_PACKING_LIST','CUSTOMS_DOCUMENT','CERTIFICATE_OF_ORIGIN','CUSTOMS_DECLARATION','BILL_OF_LADING','CERTIFICATE','OTHER') OR (r.workflow_template_step_id IS NOT NULL AND st.id IS NULL))`, templateID).Scan(&invalidDocuments)
+	if err != nil {
+		return err
+	}
+	if invalidDocuments > 0 {
+		return errors.New("template contains an invalid document requirement")
 	}
 	return s.validateWorkflowTransitions(ctx, templateID)
 }

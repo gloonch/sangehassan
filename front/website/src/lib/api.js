@@ -15,9 +15,12 @@ export async function fetchJSON(path, options = {}) {
   const data = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
-    const message = data?.error || data?.message || response.statusText || "Request failed";
+    const body = data?.error;
+    const message = (body && typeof body === "object" ? body.message : body) || data?.message || response.statusText || "ارتباط با سرور انجام نشد.";
     const err = new Error(message);
     err.status = response.status;
+    err.code = body && typeof body === "object" ? body.code : data?.code;
+    err.requestId = body && typeof body === "object" ? body.requestId : response.headers.get("X-Request-ID");
     err.body = data;
     throw err;
   }

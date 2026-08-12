@@ -19,13 +19,13 @@ func NewUserAuthMiddleware(auth *usecase.UserAuthService) *UserAuthMiddleware {
 func (m *UserAuthMiddleware) RequireUser(c *gin.Context) {
 	token, err := c.Cookie("access_token")
 	if err != nil || token == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "missing token"})
+		abortAPIError(c, http.StatusUnauthorized, "AUTHENTICATION_REQUIRED", "برای ادامه وارد حساب شوید.")
 		return
 	}
 
-	userID, err := m.auth.ParseAccess(token)
+	userID, err := m.auth.ValidateAccess(c.Request.Context(), token)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "invalid token"})
+		abortAPIError(c, http.StatusUnauthorized, "SESSION_INVALID", "نشست شما معتبر نیست؛ دوباره وارد شوید.")
 		return
 	}
 

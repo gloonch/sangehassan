@@ -1,0 +1,2 @@
+import { Link } from "react-router-dom";
+export default function AccessDenied(){return <main className="panel-shell py-20 text-center" dir="rtl"><section className="panel-card mx-auto max-w-xl"><h1 className="font-display text-3xl">دسترسی مجاز نیست</h1><p className="mt-4 text-primary/65">شما دسترسی لازم برای مشاهده این بخش را ندارید.</p><Link to="/dashboard" className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sand">بازگشت به داشبورد</Link></section></main>}

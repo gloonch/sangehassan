@@ -39,6 +39,19 @@ export default function DynamicFieldRenderer({ field, value, onChange, onUpload,
   else if (field.field_type === "MULTI_SELECT") control = <div className="flex flex-wrap gap-3">{options.map(option=>{const optionKey=optionValue(option);return <label key={optionKey} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={(value||[]).includes(optionKey)} onChange={event=>onChange(event.target.checked?[...(value||[]),optionKey]:(value||[]).filter(item=>item!==optionKey))}/>{optionLabel(option)}</label>})}</div>;
   else if (measurementTypes.has(field.field_type)) control = <div className="flex"><input {...common} className="w-full rounded-r-xl border p-3" type="number" step="any" value={value?.value ?? ""} onChange={event=>onChange({value:event.target.value===""?"":Number(event.target.value),unit:field.unit_code})}/><span className="rounded-l-xl border border-r-0 bg-primary/5 px-4 py-3">{field.unit_code}</span></div>;
   else if (field.field_type === "MONEY") control = <div className="flex"><input {...common} className="w-full rounded-r-xl border p-3" type="number" step="any" value={value?.amount ?? ""} onChange={event=>onChange({amount:event.target.value===""?"":Number(event.target.value),currency:field.currency_code||"IRR"})}/><span className="rounded-l-xl border border-r-0 bg-primary/5 px-4 py-3">{field.currency_code||"IRR"}</span></div>;
+  else if (field.field_type === "QC_CHECK") {
+    const qc = value && typeof value === "object" ? value : {};
+    const updateQC = (changes) => onChange({ ...qc, ...changes });
+    control = <div className="space-y-3 rounded-xl border bg-primary/5 p-3">
+      <select disabled={disabled} required={field.is_required} className="w-full rounded-xl border bg-white p-3" value={qc.result || ""} onChange={event=>updateQC({result:event.target.value})}>
+        <option value="">نتیجه را انتخاب کنید</option><option value="PASS">قبول</option><option value="FAIL">رد</option><option value="NOT_APPLICABLE">قابل اعمال نیست</option>
+      </select>
+      <div className="grid gap-2 sm:grid-cols-2"><input disabled={disabled} className="rounded-xl border bg-white p-3" inputMode="decimal" placeholder="مقدار اندازه‌گیری" value={qc.measuredValue ?? ""} onChange={event=>updateQC({measuredValue:event.target.value})}/><input disabled={disabled} className="rounded-xl border bg-white p-3" placeholder="واحد" value={qc.unit ?? ""} onChange={event=>updateQC({unit:event.target.value})}/></div>
+      <textarea disabled={disabled} className="w-full rounded-xl border bg-white p-3" rows="2" placeholder="یادداشت کنترل کیفیت" value={qc.note ?? ""} onChange={event=>updateQC({note:event.target.value})}/>
+      <input disabled={disabled} type="file" accept="image/png,image/jpeg" capture="environment" onChange={event=>event.target.files?.[0]&&onUpload(event.target.files[0])}/>
+      {qc.fileId&&<a className="text-sm underline" href={`/api/v1/workflow-files/${qc.fileId}`} target="_blank" rel="noreferrer">مشاهده تصویر</a>}
+    </div>;
+  }
   else if (field.field_type === "SIGNATURE") control = <SignaturePad disabled={disabled} onUpload={onUpload}/>;
   else if (["FILE", "IMAGE"].includes(field.field_type)) control = <div><input disabled={disabled} type="file" accept={field.field_type==="IMAGE"?"image/png,image/jpeg":"image/png,image/jpeg,application/pdf"} onChange={event=>event.target.files?.[0]&&onUpload(event.target.files[0])}/>{value?.fileId&&<a className="mr-3 text-sm underline" href={`/api/v1/workflow-files/${value.fileId}`} target="_blank" rel="noreferrer">مشاهده فایل</a>}</div>;
   else control = <input {...common} type={field.field_type === "PHONE" ? "tel" : "text"} placeholder={field.placeholder_fa||""}/>;

@@ -18,4 +18,5 @@ type UserRepository interface {
 	UpdateLastLogin(ctx context.Context, id string, at time.Time) error
 	Authorization(ctx context.Context, id string) ([]string, []string, error)
 	UpdatePassword(ctx context.Context, id, passwordHash string, mustChange bool) error
+	AccessAllowed(ctx context.Context, id string, issuedAt time.Time) (bool, error)
 }

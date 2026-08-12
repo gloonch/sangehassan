@@ -692,6 +692,7 @@ function robotsTxt() {
     "Disallow: /login",
     "Disallow: /signup",
     "Disallow: /profile",
+    "Disallow: /account",
     "Disallow: /gallery",
     "Disallow: /ads/new",
     "",

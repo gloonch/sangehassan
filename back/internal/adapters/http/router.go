@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -37,13 +39,14 @@ func NewRouter(
 	operationsService *usecase.OperationsService,
 ) *gin.Engine {
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	logger := slog.Default()
+	router.Use(middleware.RequestContext(), middleware.SecurityHeaders(strings.EqualFold(cfg.AppEnv, "production")), middleware.StructuredLogger(logger), middleware.StructuredRecovery(logger))
 
 	corsConfig := cors.Config{
 		AllowOrigins:     cfg.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "Idempotency-Key"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "X-Request-ID"},
 		AllowCredentials: true,
 	}
 	if len(corsConfig.AllowOrigins) == 0 {
@@ -59,6 +62,13 @@ func NewRouter(
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+	router.GET("/ready", func(c *gin.Context) {
+		if err := operationsService.Ready(c.Request.Context()); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not_ready", "requestId": usecase.RequestIDFromContext(c.Request.Context())})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
@@ -78,6 +88,7 @@ func NewRouter(
 	stoneSampleRequestHandler := handlers.NewStoneSampleRequestHandler(stoneSampleRequestService)
 	contactSubmissionHandler := handlers.NewContactSubmissionHandler(contactSubmissionService)
 	operationsHandler := handlers.NewOperationsHandler(operationsService)
+	operationsHandler.ConfigureBuildInfo(cfg.AppVersion, cfg.GitCommit, cfg.BuildTime, cfg.AppEnv)
 	workflowFileHandler := handlers.NewWorkflowFileHandler(operationsService, cfg.WorkflowFileDir)
 	operationsMiddleware := middleware.NewOperationsMiddleware(userAuthService, operationsService)
 
@@ -120,6 +131,7 @@ func NewRouter(
 
 		v1 := api.Group("/v1")
 		{
+			v1.GET("/version", operationsHandler.Version)
 			v1.POST("/auth/signup", middleware.RateLimit(10, 15*time.Minute), userAuthHandler.Signup)
 			v1.POST("/auth/login", middleware.RateLimit(10, 15*time.Minute), userAuthHandler.Login)
 			v1.POST("/auth/internal/login", middleware.RateLimit(10, 15*time.Minute), userAuthHandler.LoginInternal)
@@ -139,6 +151,13 @@ func NewRouter(
 			v1.GET("/sample-requests/:id", userMiddleware.RequireUser, stoneSampleRequestHandler.GetMine)
 
 			v1.GET("/operations/me", operationsMiddleware.RequireUser, operationsHandler.Me)
+			v1.GET("/operations/features", operationsMiddleware.RequireInternal, operationsHandler.FeatureFlags)
+			v1.GET("/dashboard/home", operationsMiddleware.RequirePermission("dashboard.internal.view"), operationsHandler.DashboardHome)
+			v1.GET("/search", middleware.RateLimit(60, time.Minute), operationsMiddleware.RequireInternal, operationsHandler.GlobalSearch)
+			v1.GET("/saved-views", operationsMiddleware.RequireInternal, operationsHandler.SavedViews)
+			v1.POST("/saved-views", operationsMiddleware.RequireInternal, operationsHandler.CreateSavedView)
+			v1.PUT("/saved-views/:id", operationsMiddleware.RequireInternal, operationsHandler.UpdateSavedView)
+			v1.DELETE("/saved-views/:id", operationsMiddleware.RequireInternal, operationsHandler.DeleteSavedView)
 			v1.GET("/dashboard/action-items", operationsMiddleware.RequirePermission("action_items.view_own"), operationsHandler.ActionItems)
 			v1.GET("/dashboard/workflow-templates", operationsMiddleware.RequirePermission("workflow_templates.view"), operationsHandler.Workflows)
 			v1.GET("/dashboard/workflow-summary", operationsMiddleware.RequirePermission("dashboard.internal.view"), operationsHandler.WorkflowDashboard)
@@ -167,13 +186,55 @@ func NewRouter(
 			v1.GET("/customers/search", operationsMiddleware.RequirePermission("customers.view"), operationsHandler.SearchCustomer)
 			v1.POST("/orders/:id/proformas", operationsMiddleware.RequirePermission("proformas.create"), operationsHandler.CreateProforma)
 			v1.POST("/proformas/:id/issue", operationsMiddleware.RequirePermission("proformas.issue"), operationsHandler.IssueProforma)
-			v1.GET("/account/orders", operationsMiddleware.RequirePermission("customer_portal.orders.view_own"), operationsHandler.AccountOrders)
-			v1.GET("/account/proformas", operationsMiddleware.RequirePermission("customer_portal.proformas.view_own"), operationsHandler.AccountProformas)
-			v1.GET("/account/orders/:orderId/progress", operationsMiddleware.RequirePermission("customer_portal.orders.view_own"), operationsHandler.AccountOrderProgress)
-			v1.GET("/account/orders/:orderId/shipments", operationsMiddleware.RequirePermission("customer_portal.shipments.view_own"), operationsHandler.AccountShipments)
-			v1.POST("/account/orders/:orderId/shipments/:id/confirm-delivery", operationsMiddleware.RequirePermission("customer_portal.shipments.confirm_delivery"), operationsHandler.AccountDeliverShipment)
+			v1.GET("/orders/:id/commercial-terms", operationsMiddleware.RequirePermission("finance.commercial_terms.view"), operationsHandler.CommercialTerms)
+			v1.PUT("/orders/:id/commercial-terms", operationsMiddleware.RequirePermission("finance.commercial_terms.manage"), operationsHandler.SaveCommercialTerms)
+			v1.GET("/orders/:id/payment-schedule", operationsMiddleware.RequirePermission("finance.payment_schedule.view"), operationsHandler.PaymentSchedule)
+			v1.PUT("/orders/:id/payment-schedule", operationsMiddleware.RequirePermission("finance.payment_schedule.manage"), operationsHandler.SavePaymentSchedule)
+			v1.GET("/orders/:id/payments", operationsMiddleware.RequireAnyPermission("finance.payments.view", "finance.customer_payments.view"), operationsHandler.Payments)
+			v1.POST("/orders/:id/payments", operationsMiddleware.RequireAnyPermission("finance.payments.record", "finance.customer_payments.record"), operationsHandler.RecordPayment)
+			v1.GET("/orders/:id/costs", operationsMiddleware.RequireAnyPermission("finance.costs.view", "finance.costs.view_all", "finance.costs.view_assigned"), operationsHandler.OrderCosts)
+			v1.GET("/orders/:id/financial-summary", operationsMiddleware.RequirePermission("finance.commercial_terms.view"), operationsHandler.FinancialSummary)
+			v1.POST("/orders/:id/confirm", operationsMiddleware.RequirePermission("orders.confirm"), operationsHandler.ConfirmOrder)
+			v1.POST("/payments/:id/confirm", operationsMiddleware.RequireAnyPermission("finance.payments.confirm", "finance.customer_payments.confirm"), operationsHandler.ConfirmPayment)
+			v1.GET("/payments/:id/allocations", operationsMiddleware.RequireAnyPermission("finance.payments.view", "finance.customer_payments.view"), operationsHandler.PaymentAllocations)
+			v1.POST("/payments/:id/reject", operationsMiddleware.RequireAnyPermission("finance.payments.confirm", "finance.customer_payments.reject"), operationsHandler.RejectPayment)
+			v1.POST("/payments/:id/refund", operationsMiddleware.RequireAnyPermission("finance.payments.refund", "finance.customer_payments.refund"), operationsHandler.RefundPayment)
+			v1.POST("/costs", operationsMiddleware.RequirePermission("finance.costs.record"), operationsHandler.CreateCost)
+			v1.POST("/costs/:id/submit", operationsMiddleware.RequirePermission("finance.costs.record"), operationsHandler.SubmitCost)
+			v1.POST("/costs/:id/approve", operationsMiddleware.RequirePermission("finance.costs.approve"), operationsHandler.ApproveCost)
+			v1.POST("/costs/:id/reject", operationsMiddleware.RequirePermission("finance.costs.approve"), operationsHandler.RejectCost)
+			v1.POST("/costs/:id/mark-paid", operationsMiddleware.RequireAnyPermission("finance.costs.pay", "finance.costs.mark_paid"), operationsHandler.MarkCostPaid)
+			v1.POST("/costs/:id/cancel", operationsMiddleware.RequirePermission("finance.costs.approve"), operationsHandler.CancelCost)
 
-			v1.GET("/dashboard/phase3-summary", operationsMiddleware.RequirePermission("dashboard.internal.view"), operationsHandler.Phase3Dashboard)
+			v1.GET("/notifications", operationsMiddleware.RequirePermission("notifications.view_own"), operationsHandler.Notifications)
+			v1.POST("/notifications/read-all", operationsMiddleware.RequirePermission("notifications.view_own"), operationsHandler.ReadAllNotifications)
+			v1.POST("/notifications/:id/read", operationsMiddleware.RequirePermission("notifications.view_own"), operationsHandler.ReadNotification)
+			v1.GET("/notifications/preferences", operationsMiddleware.RequirePermission("notifications.preferences.manage"), operationsHandler.NotificationPreferences)
+			v1.PUT("/notifications/preferences", operationsMiddleware.RequirePermission("notifications.preferences.manage"), operationsHandler.SaveNotificationPreferences)
+
+			v1.GET("/orders/:id/documents", operationsMiddleware.RequireAnyPermission("documents.view", "documents.view_all", "documents.view_assigned"), operationsHandler.Documents)
+			v1.POST("/orders/:id/documents/generate", operationsMiddleware.RequirePermission("documents.generate"), operationsHandler.GenerateDocument)
+			v1.POST("/orders/:id/documents/upload", operationsMiddleware.RequireAnyPermission("documents.upload", "documents.create"), workflowFileHandler.UploadDocument)
+			v1.POST("/documents/:id/issue", operationsMiddleware.RequirePermission("documents.issue"), operationsHandler.IssueDocument)
+			v1.POST("/documents/:id/cancel", operationsMiddleware.RequirePermission("documents.cancel"), operationsHandler.CancelDocument)
+			v1.GET("/documents/:id/download", operationsMiddleware.RequireAnyPermission("documents.download", "documents.download_internal"), operationsHandler.DownloadDocument)
+
+			v1.GET("/customers/:id/contact-logs", operationsMiddleware.RequirePermission("customers.contacts.view"), operationsHandler.CustomerContactLogs)
+			v1.POST("/customers/:id/contact-logs", operationsMiddleware.RequirePermission("customers.contacts.record"), operationsHandler.CreateCustomerContactLog)
+			v1.GET("/orders/:id/contact-logs", operationsMiddleware.RequirePermission("customers.contacts.view"), operationsHandler.OrderContactLogs)
+			v1.POST("/orders/:id/contact-logs", operationsMiddleware.RequirePermission("customers.contacts.record"), operationsHandler.CreateOrderContactLog)
+			v1.GET("/account/orders", operationsMiddleware.RequirePermission("customer_portal.orders.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountOrders)
+			v1.GET("/account/proformas", operationsMiddleware.RequirePermission("customer_portal.proformas.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountProformas)
+			v1.GET("/account/orders/:orderId/progress", operationsMiddleware.RequirePermission("customer_portal.orders.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountOrderProgress)
+			v1.GET("/account/orders/:orderId/shipments", operationsMiddleware.RequirePermission("customer_portal.shipments.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountShipments)
+			v1.POST("/account/orders/:orderId/shipments/:id/confirm-delivery", operationsMiddleware.RequirePermission("customer_portal.shipments.confirm_delivery"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountDeliverShipment)
+			v1.GET("/account/orders/:id/financial-summary", operationsMiddleware.RequirePermission("customer_portal.financial_summary.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountFinancialSummary)
+			v1.GET("/account/orders/:id/payment-schedule", operationsMiddleware.RequirePermission("customer_portal.payments.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountPaymentSchedule)
+			v1.GET("/account/orders/:id/payments", operationsMiddleware.RequirePermission("customer_portal.payments.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountPayments)
+			v1.GET("/account/orders/:id/documents", operationsMiddleware.RequirePermission("customer_portal.documents.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountDocuments)
+			v1.GET("/account/documents/:id/download", operationsMiddleware.RequirePermission("customer_portal.documents.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.DownloadAccountDocument)
+
+			v1.GET("/dashboard/operations-summary", operationsMiddleware.RequirePermission("dashboard.internal.view"), operationsHandler.OperationsDashboardSummary)
 			v1.GET("/orders/:id/items", operationsMiddleware.RequirePermission("orders.view_all"), operationsHandler.OrderItems)
 			v1.POST("/orders/:id/items", operationsMiddleware.RequirePermission("orders.update"), operationsHandler.CreateOrderItem)
 			v1.PUT("/order-items/:id", operationsMiddleware.RequirePermission("orders.update"), operationsHandler.UpdateOrderItem)
@@ -191,18 +252,18 @@ func NewRouter(
 			v1.GET("/batches/:id/reservations", operationsMiddleware.RequirePermission("inventory.reservations.view"), operationsHandler.BatchReservations)
 
 			v1.GET("/inventory/locations", operationsMiddleware.RequirePermission("inventory.locations.view"), operationsHandler.Locations)
-			v1.POST("/inventory/locations", operationsMiddleware.RequirePermission("inventory.locations.manage"), operationsHandler.CreateLocation)
-			v1.PUT("/inventory/locations/:id", operationsMiddleware.RequirePermission("inventory.locations.manage"), operationsHandler.UpdateLocation)
+			v1.POST("/inventory/locations", operationsMiddleware.RequirePermission("inventory.locations.manage"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.CreateLocation)
+			v1.PUT("/inventory/locations/:id", operationsMiddleware.RequirePermission("inventory.locations.manage"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.UpdateLocation)
 			v1.GET("/inventory/lots", operationsMiddleware.RequirePermission("inventory.lots.view"), operationsHandler.Lots)
 			v1.GET("/inventory/lots/:id", operationsMiddleware.RequirePermission("inventory.lots.view"), operationsHandler.Lot)
-			v1.PUT("/inventory/lots/:id", operationsMiddleware.RequirePermission("inventory.lots.update_metadata"), operationsHandler.UpdateLot)
+			v1.PUT("/inventory/lots/:id", operationsMiddleware.RequirePermission("inventory.lots.update_metadata"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.UpdateLot)
 			v1.GET("/inventory/lots/:id/traceability", operationsMiddleware.RequirePermission("inventory.lots.view"), operationsHandler.LotTraceability)
-			v1.POST("/inventory/receipts", operationsMiddleware.RequirePermission("inventory.lots.create"), operationsHandler.ReceiveInventory)
-			v1.POST("/inventory/lots/:id/reservations", operationsMiddleware.RequirePermission("inventory.reservations.create"), operationsHandler.CreateReservation)
-			v1.POST("/inventory/reservations/:id/release", operationsMiddleware.RequirePermission("inventory.reservations.release"), operationsHandler.ReleaseReservation)
-			v1.POST("/inventory/transfers", operationsMiddleware.RequirePermission("inventory.transfers.create"), operationsHandler.TransferInventory)
-			v1.POST("/inventory/adjustments", operationsMiddleware.RequirePermission("inventory.adjustments.create"), operationsHandler.AdjustInventory)
-			v1.POST("/inventory/conversions", operationsMiddleware.RequirePermission("inventory.conversions.create"), operationsHandler.ConvertInventory)
+			v1.POST("/inventory/receipts", operationsMiddleware.RequirePermission("inventory.lots.create"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.ReceiveInventory)
+			v1.POST("/inventory/lots/:id/reservations", operationsMiddleware.RequirePermission("inventory.reservations.create"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.CreateReservation)
+			v1.POST("/inventory/reservations/:id/release", operationsMiddleware.RequirePermission("inventory.reservations.release"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.ReleaseReservation)
+			v1.POST("/inventory/transfers", operationsMiddleware.RequirePermission("inventory.transfers.create"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.TransferInventory)
+			v1.POST("/inventory/adjustments", operationsMiddleware.RequirePermission("inventory.adjustments.create"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.AdjustInventory)
+			v1.POST("/inventory/conversions", operationsMiddleware.RequirePermission("inventory.conversions.create"), operationsMiddleware.RequireFeature("inventory_module_enabled"), operationsHandler.ConvertInventory)
 			v1.GET("/inventory/movements", operationsMiddleware.RequirePermission("inventory.movements.view"), operationsHandler.InventoryMovements)
 			v1.GET("/inventory/summary", operationsMiddleware.RequirePermission("inventory.lots.view"), operationsHandler.InventorySummary)
 
@@ -234,8 +295,76 @@ func NewRouter(
 			v1.GET("/workflow-step-instances/:id/transitions", operationsMiddleware.RequirePermission("workflow_transitions.view"), operationsHandler.RuntimeTransitions)
 			v1.POST("/workflow-step-instances/:id/select-transition", operationsMiddleware.RequirePermission("workflow_transitions.select"), operationsHandler.SelectRuntimeTransition)
 
+			v1.GET("/suppliers", operationsMiddleware.RequirePermission("suppliers.view"), operationsHandler.Suppliers)
+			v1.POST("/suppliers", operationsMiddleware.RequirePermission("suppliers.create"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.CreateSupplier)
+			v1.GET("/suppliers/:id", operationsMiddleware.RequirePermission("suppliers.view"), operationsHandler.Supplier)
+			v1.PATCH("/suppliers/:id", operationsMiddleware.RequirePermission("suppliers.update"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.UpdateSupplier)
+			v1.POST("/suppliers/:id/disable", operationsMiddleware.RequirePermission("suppliers.disable"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.DisableSupplier)
+
+			v1.GET("/purchases", operationsMiddleware.RequireAnyPermission("purchases.view_assigned", "purchases.view_all"), operationsHandler.Purchases)
+			v1.POST("/orders/:id/purchases", operationsMiddleware.RequirePermission("purchases.create"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.CreatePurchase)
+			v1.GET("/purchases/:id", operationsMiddleware.RequireAnyPermission("purchases.view_assigned", "purchases.view_all"), operationsHandler.Purchase)
+			v1.PATCH("/purchases/:id", operationsMiddleware.RequirePermission("purchases.update"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.UpdatePurchase)
+			v1.POST("/purchases/:id/confirm", operationsMiddleware.RequirePermission("purchases.confirm"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.ConfirmPurchase)
+			v1.POST("/purchases/:id/receive", operationsMiddleware.RequirePermission("purchases.receive"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.ReceivePurchase)
+			v1.POST("/purchases/:id/cancel", operationsMiddleware.RequirePermission("purchases.cancel"), operationsMiddleware.RequireFeature("supplier_module_enabled"), operationsHandler.CancelPurchase)
+
+			v1.GET("/quality-inspections", operationsMiddleware.RequireAnyPermission("quality.view_assigned", "quality.view_all"), operationsHandler.QualityInspections)
+			v1.POST("/quality-inspections", operationsMiddleware.RequirePermission("quality.inspect"), operationsHandler.CreateQualityInspection)
+			v1.GET("/quality-inspections/:id", operationsMiddleware.RequireAnyPermission("quality.view_assigned", "quality.view_all"), operationsHandler.QualityInspection)
+			v1.POST("/quality-inspections/:id/pass", operationsMiddleware.RequirePermission("quality.inspect"), operationsHandler.PassQualityInspection)
+			v1.POST("/quality-inspections/:id/fail", operationsMiddleware.RequirePermission("quality.inspect"), operationsHandler.FailQualityInspection)
+			v1.POST("/quality-inspections/:id/request-rework", operationsMiddleware.RequirePermission("quality.inspect"), operationsHandler.RequestQualityRework)
+			v1.POST("/quality-inspections/:id/reject", operationsMiddleware.RequirePermission("quality.reject"), operationsHandler.RejectQualityInspection)
+			v1.POST("/quality-inspections/:id/override", operationsMiddleware.RequireAnyPermission("quality.accept", "quality.override"), operationsHandler.OverrideQualityInspection)
+
+			v1.GET("/installations", operationsMiddleware.RequireAnyPermission("installation.view_assigned", "installation.view_all"), operationsHandler.Installations)
+			v1.POST("/orders/:id/installations", operationsMiddleware.RequirePermission("installation.create"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.CreateInstallation)
+			v1.GET("/installations/:id", operationsMiddleware.RequireAnyPermission("installation.view_assigned", "installation.view_all"), operationsHandler.Installation)
+			v1.PATCH("/installations/:id", operationsMiddleware.RequirePermission("installation.update"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.UpdateInstallation)
+			v1.PUT("/installations/:id/members", operationsMiddleware.RequirePermission("installation.update"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.ReplaceInstallationMembers)
+			v1.POST("/installations/:id/start", operationsMiddleware.RequirePermission("installation.start"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.StartInstallation)
+			v1.POST("/installations/:id/pause", operationsMiddleware.RequirePermission("installation.start"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.PauseInstallation)
+			v1.POST("/installations/:id/updates", operationsMiddleware.RequirePermission("installation.progress"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.AddInstallationUpdate)
+			v1.POST("/installations/:id/issues", operationsMiddleware.RequirePermission("installation.progress"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.AddInstallationIssue)
+			v1.POST("/installations/:id/issues/:issueId/resolve", operationsMiddleware.RequirePermission("installation.update"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.ResolveInstallationIssue)
+			v1.POST("/installations/:id/materials", operationsMiddleware.RequirePermission("installation.progress"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.AddInstallationMaterial)
+			v1.POST("/installations/:id/complete", operationsMiddleware.RequirePermission("installation.complete"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.CompleteInstallation)
+			v1.POST("/installations/:id/cancel", operationsMiddleware.RequirePermission("installation.cancel"), operationsMiddleware.RequireFeature("installation_module_enabled"), operationsHandler.CancelInstallation)
+
+			v1.POST("/orders/:id/customer-acceptances", operationsMiddleware.RequirePermission("customer_acceptance.record"), operationsHandler.RecordCustomerAcceptance)
+			v1.GET("/orders/:id/closure-readiness", operationsMiddleware.RequireAnyPermission("orders.close", "orders.close_with_warnings"), operationsHandler.OrderClosureReadiness)
+			v1.POST("/orders/:id/close", operationsMiddleware.RequireAnyPermission("orders.close", "orders.close_with_warnings"), operationsHandler.CloseOrder)
+			v1.GET("/account/orders/:id/installation", operationsMiddleware.RequirePermission("customer_portal.installation.view_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountInstallation)
+			v1.POST("/account/orders/:id/acceptance", operationsMiddleware.RequirePermission("customer_portal.acceptance.confirm_own"), operationsMiddleware.RequireFeature("customer_portal_enabled"), operationsHandler.AccountCustomerAcceptance)
+
 			opsAdmin := v1.Group("/admin")
 			{
+				opsAdmin.GET("/settings", operationsMiddleware.RequirePermission("settings.view"), operationsHandler.Settings)
+				opsAdmin.PUT("/settings", operationsMiddleware.RequirePermission("settings.manage"), operationsHandler.UpdateSetting)
+				opsAdmin.GET("/system-info", operationsMiddleware.RequirePermission("settings.view"), operationsHandler.SystemInfo)
+				opsAdmin.GET("/diagnostics/workflows/:id", operationsMiddleware.RequirePermission("diagnostics.view"), operationsHandler.WorkflowDiagnostics)
+				opsAdmin.POST("/diagnostics/workflows/:id/repair", operationsMiddleware.RequirePermission("diagnostics.repair"), operationsHandler.RepairWorkflow)
+				opsAdmin.POST("/tools/orders/:id/estimated-delivery", operationsMiddleware.RequirePermission("admin_tools.order_repair"), operationsHandler.CorrectEstimatedDelivery)
+				opsAdmin.POST("/tools/orders/:id/recalculate-progress", operationsMiddleware.RequirePermission("admin_tools.order_repair"), operationsHandler.RecalculateProgress)
+				opsAdmin.POST("/tools/orders/:id/reconcile-payment", operationsMiddleware.RequirePermission("admin_tools.order_repair"), operationsHandler.ReconcilePayment)
+				opsAdmin.POST("/tools/action-items/:id/resolve", operationsMiddleware.RequirePermission("admin_tools.workflow_repair"), operationsHandler.ResolveStuckAction)
+				opsAdmin.POST("/users/:id/revoke-sessions", operationsMiddleware.RequirePermission("admin_tools.sessions.revoke"), operationsHandler.RevokeSessions)
+				opsAdmin.GET("/exports/:kind", operationsMiddleware.RequireInternal, operationsHandler.ExportCSV)
+				opsAdmin.GET("/exchange-rates", operationsMiddleware.RequireAnyPermission("finance.exchange_rates.view", "finance.exchange_rates.manage"), operationsHandler.ExchangeRates)
+				opsAdmin.POST("/exchange-rates", operationsMiddleware.RequirePermission("finance.exchange_rates.manage"), operationsHandler.SaveExchangeRate)
+				opsAdmin.GET("/notification-templates", operationsMiddleware.RequirePermission("notifications.templates.manage"), operationsHandler.NotificationTemplates)
+				opsAdmin.PUT("/notification-templates/:id", operationsMiddleware.RequirePermission("notifications.templates.manage"), operationsHandler.UpdateNotificationTemplate)
+				opsAdmin.GET("/notification-deliveries", operationsMiddleware.RequireAnyPermission("notifications.delivery.view", "notifications.deliveries.retry", "notifications.retry"), operationsHandler.NotificationDeliveries)
+				opsAdmin.POST("/notification-deliveries/:id/retry", operationsMiddleware.RequireAnyPermission("notifications.deliveries.retry", "notifications.retry"), operationsHandler.RetryNotification)
+				opsAdmin.GET("/document-templates", operationsMiddleware.RequireAnyPermission("document_templates.manage", "documents.templates.manage"), operationsHandler.DocumentTemplates)
+				opsAdmin.PUT("/document-templates/:id", operationsMiddleware.RequireAnyPermission("document_templates.manage", "documents.templates.manage"), operationsHandler.UpdateDocumentTemplate)
+				opsAdmin.GET("/reports/overview", operationsMiddleware.RequirePermission("reports.overview.view"), operationsHandler.ReportOverview)
+				opsAdmin.GET("/reports/receivables", operationsMiddleware.RequirePermission("reports.receivables.view"), operationsHandler.ReportReceivables)
+				opsAdmin.GET("/reports/costs", operationsMiddleware.RequirePermission("reports.costs.view"), operationsHandler.ReportCosts)
+				opsAdmin.GET("/reports/profitability", operationsMiddleware.RequirePermission("reports.profitability.view"), operationsHandler.ReportProfitability)
+				opsAdmin.GET("/reports/operations", operationsMiddleware.RequirePermission("reports.operations.view"), operationsHandler.ReportOperations)
+				opsAdmin.GET("/reports/sales", operationsMiddleware.RequirePermission("reports.sales.view"), operationsHandler.ReportSales)
 				opsAdmin.GET("/users", operationsMiddleware.RequirePermission("users.view"), operationsHandler.Users)
 				opsAdmin.POST("/users", operationsMiddleware.RequirePermission("users.create"), operationsHandler.CreateUser)
 				opsAdmin.PUT("/users/:id/roles", operationsMiddleware.RequirePermission("users.assign_roles"), operationsHandler.AssignRoles)
@@ -248,7 +377,7 @@ func NewRouter(
 				opsAdmin.PATCH("/roles/:id", operationsMiddleware.RequirePermission("roles.update"), operationsHandler.UpdateRole)
 				opsAdmin.PUT("/roles/:id/permissions", operationsMiddleware.RequirePermission("roles.assign_permissions"), operationsHandler.RolePermissions)
 				opsAdmin.GET("/permissions", operationsMiddleware.RequirePermission("permissions.view"), operationsHandler.Permissions)
-				opsAdmin.GET("/audit", operationsMiddleware.RequirePermission("audit.view"), operationsHandler.Audit)
+				opsAdmin.GET("/audit", operationsMiddleware.RequirePermission("audit.view"), operationsHandler.AuditPage)
 				opsAdmin.GET("/workflow-step-catalogue", operationsMiddleware.RequirePermission("workflow_templates.manage"), operationsHandler.WorkflowStepCatalogue)
 
 				workflowAdmin := opsAdmin.Group("/workflow-templates")
@@ -283,6 +412,9 @@ func NewRouter(
 					workflowAdmin.POST("/:id/transitions", operationsMiddleware.RequirePermission("workflow_transitions.manage"), operationsHandler.CreateWorkflowTransition)
 					workflowAdmin.PATCH("/:id/transitions/:transitionId", operationsMiddleware.RequirePermission("workflow_transitions.manage"), operationsHandler.UpdateWorkflowTransition)
 					workflowAdmin.DELETE("/:id/transitions/:transitionId", operationsMiddleware.RequirePermission("workflow_transitions.manage"), operationsHandler.DeleteWorkflowTransition)
+					workflowAdmin.GET("/:id/document-requirements", operationsMiddleware.RequirePermission("workflow_document_requirements.manage"), operationsHandler.DocumentRequirements)
+					workflowAdmin.POST("/:id/document-requirements", operationsMiddleware.RequirePermission("workflow_document_requirements.manage"), operationsHandler.SaveDocumentRequirement)
+					workflowAdmin.DELETE("/:id/document-requirements/:requirementId", operationsMiddleware.RequirePermission("workflow_document_requirements.manage"), operationsHandler.DeleteDocumentRequirement)
 				}
 			}
 		}

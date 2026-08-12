@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var fieldTypes = map[string]bool{"SHORT_TEXT": true, "LONG_TEXT": true, "INTEGER": true, "DECIMAL": true, "BOOLEAN": true, "DATE": true, "TIME": true, "DATETIME": true, "MONEY": true, "SELECT": true, "MULTI_SELECT": true, "PHONE": true, "ADDRESS": true, "WEIGHT": true, "AREA": true, "VOLUME": true, "QUANTITY": true, "IMAGE": true, "FILE": true, "SIGNATURE": true}
+var fieldTypes = map[string]bool{"SHORT_TEXT": true, "LONG_TEXT": true, "INTEGER": true, "DECIMAL": true, "BOOLEAN": true, "DATE": true, "TIME": true, "DATETIME": true, "MONEY": true, "SELECT": true, "MULTI_SELECT": true, "PHONE": true, "ADDRESS": true, "WEIGHT": true, "AREA": true, "VOLUME": true, "QUANTITY": true, "IMAGE": true, "FILE": true, "SIGNATURE": true, "QC_CHECK": true}
 var stepTriggerTypes = map[string]bool{"ON_STEP_OPEN": true, "ON_STEP_START": true, "ON_STEP_SUBMIT": true, "ON_STEP_APPROVE": true, "ON_STEP_COMPLETE": true}
 
 type WorkflowStepCatalogueItem struct {

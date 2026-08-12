@@ -133,7 +133,7 @@ func (h *UserAuthHandler) Session(c *gin.Context) {
 		return
 	}
 
-	userID, err := h.service.ParseAccess(token)
+	userID, err := h.service.ValidateAccess(c.Request.Context(), token)
 	if err != nil || userID == "" {
 		respondOK(c, anonymous)
 		return
@@ -192,11 +192,11 @@ func (h *UserAuthHandler) ChangePassword(c *gin.Context) {
 	if err := h.service.ChangePassword(c.Request.Context(), id.(string), payload.CurrentPassword, payload.NewPassword); err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrPasswordTooShort):
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "new password must be at least 8 characters", "code": "PASSWORD_TOO_SHORT"})
+			respondErrorCode(c, http.StatusBadRequest, "PASSWORD_TOO_SHORT", "رمز جدید باید حداقل ۸ نویسه باشد.", nil)
 		case errors.Is(err, usecase.ErrPasswordTooLong):
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "new password must not exceed 72 bytes", "code": "PASSWORD_TOO_LONG"})
+			respondErrorCode(c, http.StatusBadRequest, "PASSWORD_TOO_LONG", "رمز جدید بیش از حد طولانی است.", nil)
 		case errors.Is(err, usecase.ErrInvalidCredentials):
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "current password is incorrect", "code": "CURRENT_PASSWORD_INVALID"})
+			respondErrorCode(c, http.StatusBadRequest, "CURRENT_PASSWORD_INVALID", "رمز فعلی صحیح نیست.", nil)
 		default:
 			respondError(c, http.StatusInternalServerError, "password change failed")
 		}

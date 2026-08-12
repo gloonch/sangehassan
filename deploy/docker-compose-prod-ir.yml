@@ -32,6 +32,24 @@ services:
       - workflow_files_data_prod:/app/storage/workflow-files
       - ../back/storage/images:/seed/images:ro
 
+  operations-worker:
+    build:
+      context: ../back
+      target: prod
+      args:
+        GO_IMAGE: docker.abrha.net/golang:1.22-alpine
+        ALPINE_IMAGE: docker.abrha.net/alpine:3.19
+        GOPROXY_URL: https://package-mirror.liara.ir/repository/go/
+    container_name: sangehassan-operations-worker
+    restart: unless-stopped
+    env_file: .prod-ir.env
+    depends_on:
+      - db
+      - backend
+    command: ["/app/operations-worker"]
+    volumes:
+      - workflow_files_data_prod:/app/storage/workflow-files
+
   website:
     build:
       context: ../front

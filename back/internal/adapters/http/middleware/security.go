@@ -21,6 +21,13 @@ func RateLimit(max int, window time.Duration) gin.HandlerFunc {
 		key := c.ClientIP()
 		now := time.Now()
 		mu.Lock()
+		if len(attempts) > 10000 {
+			for candidate, window := range attempts {
+				if window.ResetAt.Before(now) {
+					delete(attempts, candidate)
+				}
+			}
+		}
 		item := attempts[key]
 		if item.ResetAt.Before(now) {
 			item = attemptWindow{ResetAt: now.Add(window)}
@@ -30,8 +37,10 @@ func RateLimit(max int, window time.Duration) gin.HandlerFunc {
 		blocked := item.Count > max
 		mu.Unlock()
 		if blocked {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"success": false, "error": "too many attempts"})
+			abortAPIError(c, http.StatusTooManyRequests, "RATE_LIMITED", "تعداد تلاش‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.")
+			return
 		}
+		c.Next()
 	}
 }
 
@@ -48,7 +57,9 @@ func OriginGuard(allowed []string) gin.HandlerFunc {
 		}
 		origin := strings.TrimRight(c.GetHeader("Origin"), "/")
 		if origin != "" && !set[origin] {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "invalid origin"})
+			abortAPIError(c, http.StatusForbidden, "INVALID_ORIGIN", "منشأ درخواست مجاز نیست.")
+			return
 		}
+		c.Next()
 	}
 }

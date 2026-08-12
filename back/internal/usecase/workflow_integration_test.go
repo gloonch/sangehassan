@@ -21,7 +21,7 @@ func TestWorkflowSnapshotAndIdempotencyIntegration(t *testing.T) {
 	defer db.Close()
 	ctx := context.Background()
 	actor := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	_, err = db.ExecContext(ctx, `INSERT INTO users(id,email,password_hash,phone,phone_normalized,user_type,status,is_active) VALUES($1,'phase2-operator@example.test','x','+989121111111','+989121111111','INTERNAL','ACTIVE',TRUE) ON CONFLICT(id) DO NOTHING`, actor)
+	_, err = db.ExecContext(ctx, `INSERT INTO users(id,email,password_hash,phone,phone_normalized,user_type,status,is_active) VALUES($1,'workflow-operator@example.test','x','+989121111111','+989121111111','INTERNAL','ACTIVE',TRUE) ON CONFLICT(id) DO NOTHING`, actor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestWorkflowSnapshotAndIdempotencyIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	service := NewOperationsService(db)
-	idempotencyKey := "phase2-integration-" + randomDigits(8)
+	idempotencyKey := "workflow-integration-" + randomDigits(8)
 	started, err := service.StartWorkflow(ctx, actor, legacyTemplateID, "09123334444", "مشتری تست", idempotencyKey, []string{"INSTALLATION"})
 	if err != nil {
 		t.Fatal(err)

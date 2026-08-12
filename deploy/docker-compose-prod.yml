@@ -31,6 +31,20 @@ services:
       # Seed the volume from the repo's checked-in images on first start.
       - ../back/storage/images:/seed/images:ro
 
+  operations-worker:
+    build:
+      context: ../back
+      target: prod
+    container_name: sangehassan-operations-worker
+    restart: unless-stopped
+    env_file: .prod.env
+    depends_on:
+      - db
+      - backend
+    command: ["/app/operations-worker"]
+    volumes:
+      - workflow_files_data_prod:/app/storage/workflow-files
+
   website:
     build:
       context: ../front

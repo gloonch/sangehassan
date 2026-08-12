@@ -9,17 +9,32 @@ import (
 	"sangehassan/back/internal/usecase"
 )
 
-type OperationsHandler struct{ service *usecase.OperationsService }
+type OperationsHandler struct {
+	service     *usecase.OperationsService
+	version     string
+	commit      string
+	buildTime   string
+	environment string
+}
 
 func NewOperationsHandler(s *usecase.OperationsService) *OperationsHandler {
 	return &OperationsHandler{service: s}
+}
+func (h *OperationsHandler) ConfigureBuildInfo(version, commit, buildTime, environment string) {
+	if len(commit) > 12 {
+		commit = commit[:12]
+	}
+	h.version = version
+	h.commit = commit
+	h.buildTime = buildTime
+	h.environment = environment
 }
 func actorID(c *gin.Context) string { v, _ := c.Get("user_id"); id, _ := v.(string); return id }
 func operationError(c *gin.Context, err error) {
 	status := http.StatusBadRequest
 	var operationConflict *usecase.OperationConflict
 	if errors.As(err, &operationConflict) {
-		c.JSON(http.StatusConflict, gin.H{"success": false, "error": operationConflict.Message, "code": operationConflict.Code})
+		respondErrorCode(c, http.StatusConflict, operationConflict.Code, operationConflict.Message, nil)
 		return
 	}
 	if errors.Is(err, usecase.ErrForbidden) {
@@ -28,7 +43,15 @@ func operationError(c *gin.Context, err error) {
 	if errors.Is(err, usecase.ErrActivationInvalid) {
 		status = http.StatusUnauthorized
 	}
-	respondError(c, status, err.Error())
+	code := "VALIDATION_FAILED"
+	message := err.Error()
+	if errors.Is(err, usecase.ErrForbidden) {
+		code, message = "PERMISSION_DENIED", "شما دسترسی لازم برای انجام این عملیات را ندارید."
+	}
+	if errors.Is(err, usecase.ErrActivationInvalid) {
+		code, message = "ACTIVATION_INVALID", "کد فعال‌سازی نامعتبر یا منقضی شده است."
+	}
+	respondErrorCode(c, status, code, message, nil)
 }
 
 func (h *OperationsHandler) Me(c *gin.Context) {
@@ -263,12 +286,23 @@ func (h *OperationsHandler) Activate(c *gin.Context) {
 	respondOK(c, gin.H{"activated": true})
 }
 func (h *OperationsHandler) RegenerateActivation(c *gin.Context) {
-	code, err := h.service.RegenerateActivation(c.Request.Context(), actorID(c), c.Param("id"))
+	key, ok := idempotencyKey(c)
+	if !ok {
+		return
+	}
+	var payload struct {
+		Reason string `json:"reason"`
+	}
+	if c.ShouldBindJSON(&payload) != nil {
+		respondError(c, http.StatusBadRequest, "اطلاعات درخواست معتبر نیست.")
+		return
+	}
+	result, err := h.service.RegenerateActivation(c.Request.Context(), actorID(c), c.Param("id"), key, payload.Reason)
 	if err != nil {
 		operationError(c, err)
 		return
 	}
-	respondOK(c, gin.H{"activation_code": code})
+	respondOK(c, result)
 }
 
 type proformaPayload struct {
@@ -279,12 +313,16 @@ type proformaPayload struct {
 }
 
 func (h *OperationsHandler) CreateProforma(c *gin.Context) {
+	key, ok := idempotencyKey(c)
+	if !ok {
+		return
+	}
 	var p proformaPayload
 	if c.ShouldBindJSON(&p) != nil {
 		respondError(c, 400, "invalid payload")
 		return
 	}
-	v, err := h.service.CreateProforma(c.Request.Context(), actorID(c), c.Param("id"), p.Currency, p.Subtotal, p.DiscountAmount, p.Notes)
+	v, err := h.service.CreateProformaWithKey(c.Request.Context(), actorID(c), c.Param("id"), key, p.Currency, p.Subtotal, p.DiscountAmount, p.Notes)
 	if err != nil {
 		operationError(c, err)
 		return
@@ -292,7 +330,11 @@ func (h *OperationsHandler) CreateProforma(c *gin.Context) {
 	respondOK(c, v)
 }
 func (h *OperationsHandler) IssueProforma(c *gin.Context) {
-	if err := h.service.IssueProforma(c.Request.Context(), actorID(c), c.Param("id")); err != nil {
+	key, ok := idempotencyKey(c)
+	if !ok {
+		return
+	}
+	if err := h.service.IssueProformaWithKey(c.Request.Context(), actorID(c), c.Param("id"), key); err != nil {
 		operationError(c, err)
 		return
 	}

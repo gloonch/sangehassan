@@ -1,8 +1,6 @@
-version: "3.9"
-
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: sangehassan-db
     env_file: .dev.env
     environment:
@@ -33,6 +31,20 @@ services:
       - "8080:8080"
     volumes:
       - ../back:/app
+
+  operations-worker:
+    build:
+      context: ../back
+      target: dev
+    container_name: sangehassan-operations-worker
+    restart: unless-stopped
+    env_file: .dev.env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../back:/app
+    command: go run ./cmd/operations-worker
 
   website:
     image: node:20-alpine

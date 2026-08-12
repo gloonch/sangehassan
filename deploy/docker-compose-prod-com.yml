@@ -30,6 +30,20 @@ services:
       - workflow_files_data_prod:/app/storage/workflow-files
       - ../back/storage/images:/seed/images:ro
 
+  operations-worker:
+    build:
+      context: ../back
+      target: prod
+    container_name: sangehassan-operations-worker
+    restart: unless-stopped
+    env_file: .prod-com.env
+    depends_on:
+      - db
+      - backend
+    command: ["/app/operations-worker"]
+    volumes:
+      - workflow_files_data_prod:/app/storage/workflow-files
+
   website:
     image: deploy-website:latest
     build:

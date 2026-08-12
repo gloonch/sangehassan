@@ -175,6 +175,12 @@ func setOperationalUserFields(u *domain.User, phone, first, last sql.NullString,
 	}
 }
 
+func (r *UserRepository) AccessAllowed(ctx context.Context, id string, issuedAt time.Time) (bool, error) {
+	var allowed bool
+	err := r.db.QueryRowContext(ctx, `SELECT is_active AND status='ACTIVE' AND (auth_invalid_before IS NULL OR auth_invalid_before<=$2) FROM users WHERE id=$1`, id, issuedAt).Scan(&allowed)
+	return allowed, err
+}
+
 func (r *UserRepository) Authorization(ctx context.Context, id string) ([]string, []string, error) {
 	rows, err := r.db.QueryContext(ctx, `SELECT DISTINCT r.code, COALESCE(p.code,'') FROM user_roles ur JOIN roles r ON r.id=ur.role_id AND r.is_active LEFT JOIN role_permissions rp ON rp.role_id=r.id LEFT JOIN permissions p ON p.id=rp.permission_id AND p.is_active WHERE ur.user_id=$1`, id)
 	if err != nil {

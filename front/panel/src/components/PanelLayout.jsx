@@ -2,6 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import LanguageSwitch from "./LanguageSwitch";
+import NotificationBell from "./NotificationBell";
+import GlobalSearch from "./GlobalSearch";
 
 const navItems = [
   { key: "dashboard", path: "/dashboard", label: "nav.dashboard", end: true },
@@ -22,14 +24,23 @@ const navItems = [
   { key: "roles", path: "/dashboard/roles", text: "نقش‌ها و دسترسی‌ها", permission: "roles.view" },
   { key: "workflows", path: "/dashboard/workflows", text: "طراحی Workflow", permission: "workflow_templates.manage" },
   { key: "batches", path: "/dashboard/batches", text: "بچ‌ها", permissions: ["batches.view_assigned", "batches.view_all"] },
-  { key: "inventory", path: "/dashboard/inventory", text: "موجودی", permission: "inventory.lots.view" },
+	{ key: "inventory", path: "/dashboard/inventory", text: "موجودی", permission: "inventory.lots.view", feature: "inventory_module_enabled" },
   { key: "shipments", path: "/dashboard/shipments", text: "محموله‌ها", permissions: ["shipments.view_assigned", "shipments.view_all"] },
+	{ key: "suppliers", path: "/dashboard/suppliers", text: "تأمین‌کنندگان", permission: "suppliers.view", feature: "supplier_module_enabled" },
+	{ key: "purchases", path: "/dashboard/purchases", text: "خریدها", permissions: ["purchases.view_assigned", "purchases.view_all"], feature: "supplier_module_enabled" },
+  { key: "quality", path: "/dashboard/quality", text: "کنترل کیفیت", permissions: ["quality.view_assigned", "quality.view_all"] },
+	{ key: "installations", path: "/dashboard/installations", text: "نصب", permissions: ["installation.view_assigned", "installation.view_all"], feature: "installation_module_enabled" },
+  { key: "finance", path: "/dashboard/finance", text: "مالی و نرخ ارز", permissions: ["finance.exchange_rates.manage", "finance.payments.view", "finance.costs.view", "finance.costs.view_assigned"] },
+  { key: "reports", path: "/dashboard/reports", text: "گزارش‌ها", permissions: ["reports.overview.view", "reports.receivables.view", "reports.profitability.view", "reports.operations.view", "reports.sales.view"] },
+  { key: "notifications", path: "/dashboard/notifications", text: "اعلان‌ها", permission: "notifications.view_own" },
   { key: "audit", path: "/dashboard/audit", text: "گزارش تغییرات", permission: "audit.view" }
+  ,{ key: "settings", path: "/dashboard/settings", text: "تنظیمات سیستم", permission: "settings.view" }
+  ,{ key: "adminTools", path: "/dashboard/admin-tools", text: "ابزارهای اصلاح", permission: "admin_tools.view" }
 ];
 
 export default function PanelLayout() {
   const { t } = useTranslation();
-  const { logout, user, hasPermission } = useAuth();
+	const { logout, user, hasPermission, featureEnabled } = useAuth();
 
   return (
     <div className="min-h-screen">
@@ -39,8 +50,10 @@ export default function PanelLayout() {
             <p className="text-sm uppercase tracking-[0.3em] text-primary/60">{t("admin.subtitle")}</p>
             <h1 className="font-display text-3xl">{t("admin.title")}</h1>
           </div>
+          <GlobalSearch />
           <div className="flex items-center gap-3">
             <LanguageSwitch />
+            <NotificationBell />
             <span className="text-xs text-primary/60">{[user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.phone}</span>
             <button
               type="button"
@@ -54,7 +67,7 @@ export default function PanelLayout() {
 
         <nav className="rounded-3xl border border-primary/10 bg-primary/5 px-4 py-3 shadow-lg">
           <div className="flex flex-wrap items-center gap-3 overflow-x-auto">
-            {navItems.filter((item) => (!item.permission || hasPermission(item.permission)) && (!item.permissions || item.permissions.some(hasPermission))).map((item) => (
+			{navItems.filter((item) => (!item.feature || featureEnabled(item.feature)) && (!item.permission || hasPermission(item.permission)) && (!item.permissions || item.permissions.some(hasPermission))).map((item) => (
               <NavLink
                 key={item.key}
                 to={item.path}

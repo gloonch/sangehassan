@@ -22,16 +22,17 @@ import (
 )
 
 var (
-	ErrEmailExists      = errors.New("email already exists")
-	ErrPhoneExists      = errors.New("phone already exists")
-	ErrPhoneRequired    = errors.New("phone is required")
-	ErrUserNotFound     = errors.New("user not found")
-	ErrRefreshInvalid   = errors.New("invalid refresh token")
-	ErrRefreshExpired   = errors.New("refresh token expired")
-	ErrRefreshRevoked   = errors.New("refresh token revoked")
-	ErrInactiveUser     = errors.New("user inactive")
-	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
-	ErrPasswordTooLong  = errors.New("password exceeds bcrypt's 72-byte limit")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrEmailExists        = errors.New("email already exists")
+	ErrPhoneExists        = errors.New("phone already exists")
+	ErrPhoneRequired      = errors.New("phone is required")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrRefreshInvalid     = errors.New("invalid refresh token")
+	ErrRefreshExpired     = errors.New("refresh token expired")
+	ErrRefreshRevoked     = errors.New("refresh token revoked")
+	ErrInactiveUser       = errors.New("user inactive")
+	ErrPasswordTooShort   = errors.New("password must be at least 8 characters")
+	ErrPasswordTooLong    = errors.New("password exceeds bcrypt's 72-byte limit")
 )
 
 const userJWTIssuer = "sangehassan-user"
@@ -315,14 +316,18 @@ func (s *UserAuthService) ListRequests(ctx context.Context, userID string) ([]do
 }
 
 func (s *UserAuthService) issueTokenPair(ctx context.Context, userID, role string) (TokenPair, error) {
-	accessExp := time.Now().Add(s.accessTTL)
-	refreshExp := time.Now().Add(s.refreshTTL)
+	issuedAt := time.Now().UTC()
+	accessExp := issuedAt.Add(s.accessTTL)
+	refreshExp := issuedAt.Add(s.refreshTTL)
 
-	accessClaims := jwt.RegisteredClaims{
-		Issuer:    userJWTIssuer,
-		Subject:   userID,
-		ExpiresAt: jwt.NewNumericDate(accessExp),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	accessClaims := userAccessClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    userJWTIssuer,
+			Subject:   userID,
+			ExpiresAt: jwt.NewNumericDate(accessExp),
+			IssuedAt:  jwt.NewNumericDate(issuedAt),
+		},
+		IssuedAtMillis: issuedAt.UnixMilli(),
 	}
 	accessClaims.Audience = jwt.ClaimStrings{role}
 
@@ -356,20 +361,56 @@ func (s *UserAuthService) issueTokenPair(ctx context.Context, userID, role strin
 }
 
 func (s *UserAuthService) ParseAccess(tokenString string) (string, error) {
-	parsed, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+	id, _, err := s.ParseAccessDetails(tokenString)
+	return id, err
+}
+
+// IssuedAtMillis preserves the ordering needed when a password reset and a
+// fresh login happen within the same second. RegisteredClaims alone serializes
+// iat with second precision, which cannot distinguish the new session from the
+// one that was just revoked.
+type userAccessClaims struct {
+	jwt.RegisteredClaims
+	IssuedAtMillis int64 `json:"issued_at_ms,omitempty"`
+}
+
+func (s *UserAuthService) ParseAccessDetails(tokenString string) (string, time.Time, error) {
+	parsed, err := jwt.ParseWithClaims(tokenString, &userAccessClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("invalid token signing method")
+		}
 		return s.jwtSecret, nil
 	})
 	if err != nil {
-		return "", err
+		return "", time.Time{}, err
 	}
-	claims, ok := parsed.Claims.(*jwt.RegisteredClaims)
+	claims, ok := parsed.Claims.(*userAccessClaims)
 	if !ok || !parsed.Valid {
-		return "", errors.New("invalid token")
+		return "", time.Time{}, errors.New("invalid token")
 	}
 	if claims.Issuer != userJWTIssuer {
-		return "", errors.New("invalid token issuer")
+		return "", time.Time{}, errors.New("invalid token issuer")
 	}
-	return claims.Subject, nil
+	if claims.IssuedAt == nil || claims.Subject == "" {
+		return "", time.Time{}, errors.New("invalid token claims")
+	}
+	issuedAt := claims.IssuedAt.Time
+	if claims.IssuedAtMillis > 0 {
+		issuedAt = time.UnixMilli(claims.IssuedAtMillis).UTC()
+	}
+	return claims.Subject, issuedAt, nil
+}
+
+func (s *UserAuthService) ValidateAccess(ctx context.Context, tokenString string) (string, error) {
+	id, issuedAt, err := s.ParseAccessDetails(tokenString)
+	if err != nil {
+		return "", err
+	}
+	allowed, err := s.users.AccessAllowed(ctx, id, issuedAt)
+	if err != nil || !allowed {
+		return "", ErrInactiveUser
+	}
+	return id, nil
 }
 
 func NormalizePhone(raw string) string {

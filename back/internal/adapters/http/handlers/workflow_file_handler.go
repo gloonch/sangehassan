@@ -15,7 +15,7 @@ import (
 	"sangehassan/back/internal/usecase"
 )
 
-const maxWorkflowFileBytes = 15 << 20
+const maxWorkflowFileBytes = 100 << 20
 
 type WorkflowFileHandler struct {
 	service *usecase.OperationsService
@@ -72,10 +72,17 @@ func (h *WorkflowFileHandler) persistUpload(c *gin.Context, policy usecase.Workf
 		_ = os.Remove(out.path)
 		return out, errors.New("cannot save file")
 	}
-	out.originalName = filepath.Base(strings.ReplaceAll(header.Filename, "\\", "/"))
+	out.originalName = sanitizeUploadName(header.Filename)
 	out.mimeType = detected
 	out.size = written
 	return out, nil
+}
+
+func sanitizeUploadName(name string) string {
+	name=filepath.Base(strings.ReplaceAll(name,"\\","/"))
+	name=strings.Map(func(r rune)rune{if r<32||r=='/'||r=='\\'{return -1};return r},name)
+	if len([]rune(name))>180{name=string([]rune(name)[:180])}
+	if strings.TrimSpace(name)==""{return "file"};return name
 }
 
 func NewWorkflowFileHandler(service *usecase.OperationsService, baseDir string) *WorkflowFileHandler {
@@ -147,7 +154,7 @@ func (h *WorkflowFileHandler) Upload(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, "cannot save file")
 		return
 	}
-	originalName := filepath.Base(strings.ReplaceAll(header.Filename, "\\", "/"))
+	originalName := sanitizeUploadName(header.Filename)
 	file, err := h.service.RegisterWorkflowFile(c.Request.Context(), actorID(c), workflowID, c.Param("id"), fieldID, storageKey, originalName, detected, written, customerVisible)
 	if err != nil {
 		_ = os.Remove(path)
@@ -202,4 +209,37 @@ func (h *WorkflowFileHandler) UploadEntity(c *gin.Context) {
 		return
 	}
 	respondCreated(c, file)
+}
+
+func (h *WorkflowFileHandler) UploadDocument(c *gin.Context) {
+	key, ok := idempotencyKey(c)
+	if !ok {
+		return
+	}
+	visible, _ := strconv.ParseBool(c.PostForm("customer_visible"))
+	payload := usecase.DocumentGeneratePayload{
+		DocumentType: c.PostForm("document_type"), ScopeType: c.PostForm("scope_type"),
+		ScopeID: c.PostForm("scope_id"), CustomerVisible: visible,
+	}
+	if payload.ScopeType == "" {
+		payload.ScopeType = "ORDER"
+	}
+	if payload.ScopeID == "" {
+		payload.ScopeID = c.Param("id")
+	}
+	stored, err := h.persistUpload(c, usecase.WorkflowUploadPolicy{AllowedMIMETypes: []string{"application/pdf"}, MaxSizeBytes: h.service.MaximumUploadBytes(c.Request.Context(),15<<20)})
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	document, created, err := h.service.RegisterUploadedDocument(c.Request.Context(), actorID(c), c.Param("id"), key, payload, stored.storageKey, stored.originalName, stored.mimeType, stored.size)
+	if err != nil {
+		_ = os.Remove(stored.path)
+		operationError(c, err)
+		return
+	}
+	if !created {
+		_ = os.Remove(stored.path)
+	}
+	respondCreated(c, document)
 }

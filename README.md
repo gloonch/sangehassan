@@ -1,4 +1,6 @@
-# Sange Hassan - Clean Architecture Rebuild
+# Sange Hassan operations platform
+
+This repository contains the public marketplace, the internal operations panel, a Go API, an operations worker, PostgreSQL migrations, and private document storage. The API is the authorization boundary; menu visibility in React is only a usability aid.
 
 ## Structure
 - `back/` Go + Gin backend (clean architecture, JWT cookie auth)
@@ -19,9 +21,7 @@ Services:
 - API: http://localhost:8080
 - Images: http://localhost:8081/images/
 
-Admin credentials (seeded in DB):
-- Username: `admin`
-- Password: `Admin123!`
+The first internal administrator is created only from the `BOOTSTRAP_SUPER_ADMIN_*` environment variables. No fixed production password is seeded or documented.
 
 ## Prod (Docker)
 Each production target has its own compose, env, and nginx config.
@@ -76,7 +76,12 @@ docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypo
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/014_operations_phase1.sql
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/015_operations_phase2.sql
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/016_operations_phase3.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/017_finance_notifications_documents_reporting.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/018_supplier_purchase_quality_installation.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/019_application_settings_diagnostics_indexes.sql
 ```
+
+Apply migrations in numeric order and take a database backup first. PostgreSQL init scripts do not migrate an existing volume automatically. The runtime readiness endpoint requires migration 19 to be registered. Moving an existing PostgreSQL 15 data directory to the PostgreSQL 16 image requires `pg_dump`/`pg_restore` or `pg_upgrade`; never attach a version-15 data directory directly to version 16.
 
 ## Operational dashboard bootstrap
 
@@ -94,6 +99,27 @@ Bootstrap runs only while no active Super Admin exists and forces a password cha
 Phase 2 adds versioned Workflow templates, normalized per-order snapshots, lifecycle transitions, dynamic forms, handoff discrepancies, triggers, and private files. Apply `015_operations_phase2.sql` after Phase 1. Set `WORKFLOW_FILE_DIR` when the default `/app/storage/workflow-files` is not suitable; production compose files persist this directory in a backend-only volume that is never mounted by nginx.
 
 Phase 3 adds order lines, Batch-scoped fulfillment, immutable inventory movements, private Shipment/Package files, partial delivery, operational costs, Workflow scopes and controlled branching. Apply `016_operations_phase3.sql` after Phase 2; existing Order-scoped instances are backfilled without receiving new Batch or Step records.
+
+## Production configuration and health
+
+Production startup fails closed when JWT is shorter than 32 characters, secure cookies are disabled, allowed origins are empty, the database pool is invalid, or the fake SMS provider is selected. Relevant controls are `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME`, `HTTP_*_TIMEOUT`, `MAX_UPLOAD_SIZE_MB`, `APP_VERSION`, `GIT_COMMIT`, and `BUILD_TIME`. Keep `SMS_PROVIDER=disabled` until a real provider is explicitly implemented.
+
+- `/health` is process liveness only.
+- `/ready` verifies database connectivity and migration 19.
+- `/api/v1/version` returns non-sensitive build and schema metadata.
+- Private workflow, payment, shipment, quality, and installation files are served only by authorized API endpoints from `WORKFLOW_FILE_DIR`; nginx must never mount that volume.
+
+Application modules can be disabled from `/panel/dashboard/settings`. Disabling a module blocks new mutations with `MODULE_DISABLED` but preserves read access to existing records. Public marketplace login remains independent from the customer operations portal.
+
+## RBAC and operational recovery
+
+Users may have multiple roles and effective permissions are the union of active roles. `SUPER_ADMIN` receives current and future permissions while backend invariants protect the last Super Admin. Disabling a user, resetting a password, or revoking sessions deletes refresh tokens and invalidates issued access tokens through `auth_invalid_before`.
+
+Known safe reconciliation and correction operations are exposed at `/panel/dashboard/admin-tools`; arbitrary SQL and generic record editors are intentionally excluded. Every mutation requires a reason, permission, idempotency key, request ID, and audit entry.
+
+## Backup and restore
+
+Back up PostgreSQL and the private file volume daily. Retain 14 daily, 8 weekly, and 12 monthly recovery points. Encrypt backups, restrict their credentials, and test a complete restore monthly in an isolated environment. A valid restore includes matching database and private-file snapshots, followed by `/ready`, the smoke script, customer-isolation tests, and a document download check. See [the operations guide](docs/operations-guide.md) and [the release checklist](docs/production-release-checklist.md).
 
 ## Data import (SangeHassan export)
 The extracted JSON lives in `data/` and images in `data/images/products`. We added a Go importer and expanded the DB schema (attributes + product-category relations).

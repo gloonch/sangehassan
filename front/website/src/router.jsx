@@ -23,7 +23,7 @@ const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
 const LocalizedProductRoute = lazy(() => import("./pages/LocalizedProductRoute"));
 const StoneSampleRequest = lazy(() => import("./pages/StoneSampleRequest"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Account = lazy(() => import("./pages/Account"));
+const Account = lazy(() => import("./pages/AccountPortal"));
 const ActivateAccount = lazy(() => import("./pages/ActivateAccount"));
 
 export default function AppRoutes() {

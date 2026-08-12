@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +54,14 @@ type RuntimeWorkflow struct {
 	ScopeType             string               `json:"scope_type"`
 	ScopeID               string               `json:"scope_id"`
 	ParentWorkflowID      *string              `json:"parent_workflow_instance_id,omitempty"`
+	Blockers              []RuntimeBlocker     `json:"blockers,omitempty"`
+}
+type RuntimeBlocker struct {
+	Kind           string  `json:"kind"`
+	TitleFA        string  `json:"title_fa"`
+	StepInstanceID *string `json:"step_instance_id,omitempty"`
+	Amount         *string `json:"amount,omitempty"`
+	Currency       *string `json:"currency,omitempty"`
 }
 type RuntimeAudit struct {
 	Actor      string    `json:"actor"`
@@ -91,6 +100,7 @@ type RuntimeStep struct {
 	HasDiscrepancy         bool           `json:"has_discrepancy"`
 	IterationNumber        int            `json:"iteration_number"`
 	PathState              string         `json:"path_state"`
+	DomainEventCode        *string        `json:"domain_event_code,omitempty"`
 }
 type RuntimeField struct {
 	ID                int64           `json:"id"`
@@ -324,6 +334,10 @@ func (s *OperationsService) snapshotWorkflowTx(ctx context.Context, tx *sql.Tx, 
 	if err != nil {
 		return err
 	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO workflow_instance_document_requirements(workflow_instance_id,workflow_step_instance_id,source_requirement_id,document_type,title_fa,is_required,is_blocking,customer_visible) SELECT $1,si.id,r.id,r.document_type,r.title_fa,r.is_required,r.is_blocking,r.customer_visible FROM workflow_template_document_requirements r LEFT JOIN workflow_step_instances si ON si.workflow_instance_id=$1 AND si.template_step_id=r.workflow_template_step_id WHERE r.workflow_template_id=$2`, workflowID, templateID)
+	if err != nil {
+		return err
+	}
 	if transitionCount > 0 {
 		_, err = tx.ExecContext(ctx, `UPDATE workflow_step_instances SET path_state=CASE WHEN id=$2 THEN 'INCLUDED' ELSE 'NOT_SELECTED' END WHERE workflow_instance_id=$1`, workflowID, firstID)
 		if err != nil {
@@ -356,6 +370,17 @@ func (s *OperationsService) createMainStepActionTx(ctx context.Context, tx *sql.
 }
 func (s *OperationsService) runStepTriggersTx(ctx context.Context, tx *sql.Tx, workflowID, stepID, event string) error {
 	_, err := tx.ExecContext(ctx, `INSERT INTO action_items(workflow_instance_id,workflow_step_instance_id,order_id,customer_user_id,title_fa,description_fa,status,priority,assigned_role_id,required_permission_code,due_at,deduplication_key,source_trigger_type,is_blocking) SELECT wi.id,t.workflow_step_instance_id,wi.order_id,wi.customer_user_id,t.title_fa,t.description_fa,'OPEN',t.priority,t.assigned_role_id,t.required_permission_code,CASE WHEN t.due_offset_hours IS NULL THEN NULL ELSE NOW()+MAKE_INTERVAL(hours=>t.due_offset_hours) END,'step-task:'||t.id||':'||$3,t.trigger_type,t.blocks_step_completion FROM workflow_instance_step_task_templates t JOIN workflow_instances wi ON wi.id=t.workflow_instance_id WHERE t.workflow_instance_id=$1 AND t.workflow_step_instance_id=$2 AND t.trigger_type=$3 ON CONFLICT(deduplication_key) WHERE deduplication_key IS NOT NULL DO NOTHING`, workflowID, stepID, event)
+	if err != nil {
+		return err
+	}
+	trigger := map[string]string{"ON_STEP_OPEN": "STEP_OPEN", "ON_STEP_COMPLETE": "STEP_COMPLETE"}[event]
+	if trigger != "" {
+		var orderID string
+		if err = tx.QueryRowContext(ctx, `SELECT order_id FROM workflow_instances WHERE id=$1`, workflowID).Scan(&orderID); err != nil {
+			return err
+		}
+		_, err = s.evaluatePaymentTriggerTx(ctx, tx, orderID, trigger, stepID)
+	}
 	return err
 }
 func (s *OperationsService) runWorkflowTriggersTx(ctx context.Context, tx *sql.Tx, workflowID, event string) error {
@@ -400,7 +425,7 @@ func (s *OperationsService) GetWorkflowRuntime(ctx context.Context, actor, workf
 	} else {
 		w.ViewMode = "INTERNAL"
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT si.id,COALESCE(si.step_code,ts.step_code),COALESCE(si.internal_title_fa,ts.internal_title_fa),COALESCE(si.internal_description_fa,''),COALESCE(si.customer_title_fa,ts.customer_title_fa),COALESCE(si.customer_description_fa,''),COALESCE(si.sequence_number,ts.sequence_number),si.status,si.responsible_role_id,COALESCE(r.name_fa,''),si.assigned_user_id,COALESCE(si.required_permission_code,''),si.requires_approval,si.approval_role_id,si.is_optional,si.is_skippable,si.customer_visible,si.estimated_start_at,si.estimated_end_at,si.actual_start_at,si.actual_end_at,si.rejection_reason,(SELECT COUNT(*) FROM action_items a WHERE a.workflow_step_instance_id=si.id AND a.status NOT IN ('COMPLETED','CANCELLED')),(SELECT EXISTS(SELECT 1 FROM workflow_discrepancies d WHERE (d.source_step_instance_id=si.id OR d.target_step_instance_id=si.id) AND d.status NOT IN ('RESOLVED','CANCELLED'))),si.iteration_number,si.path_state FROM workflow_step_instances si LEFT JOIN workflow_template_steps ts ON ts.id=si.workflow_template_step_id LEFT JOIN roles r ON r.id=si.responsible_role_id WHERE si.workflow_instance_id=$1 ORDER BY COALESCE(si.sequence_number,ts.sequence_number),si.iteration_number`, workflowID)
+	rows, err := s.db.QueryContext(ctx, `SELECT si.id,COALESCE(si.step_code,ts.step_code),COALESCE(si.internal_title_fa,ts.internal_title_fa),COALESCE(si.internal_description_fa,''),COALESCE(si.customer_title_fa,ts.customer_title_fa),COALESCE(si.customer_description_fa,''),COALESCE(si.sequence_number,ts.sequence_number),si.status,si.responsible_role_id,COALESCE(r.name_fa,''),si.assigned_user_id,COALESCE(si.required_permission_code,''),si.requires_approval,si.approval_role_id,si.is_optional,si.is_skippable,si.customer_visible,si.estimated_start_at,si.estimated_end_at,si.actual_start_at,si.actual_end_at,si.rejection_reason,(SELECT COUNT(*) FROM action_items a WHERE a.workflow_step_instance_id=si.id AND a.status NOT IN ('COMPLETED','CANCELLED')),(SELECT EXISTS(SELECT 1 FROM workflow_discrepancies d WHERE (d.source_step_instance_id=si.id OR d.target_step_instance_id=si.id) AND d.status NOT IN ('RESOLVED','CANCELLED'))),si.iteration_number,si.path_state,si.domain_event_code FROM workflow_step_instances si LEFT JOIN workflow_template_steps ts ON ts.id=si.workflow_template_step_id LEFT JOIN roles r ON r.id=si.responsible_role_id WHERE si.workflow_instance_id=$1 ORDER BY COALESCE(si.sequence_number,ts.sequence_number),si.iteration_number`, workflowID)
 	if err != nil {
 		return w, err
 	}
@@ -409,9 +434,9 @@ func (s *OperationsService) GetWorkflowRuntime(ctx context.Context, actor, workf
 	for rows.Next() {
 		var st RuntimeStep
 		var role, approval sql.NullInt64
-		var assigned, rejection sql.NullString
+		var assigned, rejection, domainEvent sql.NullString
 		var es, ee, as, ae sql.NullTime
-		if err := rows.Scan(&st.ID, &st.StepCode, &st.InternalTitleFA, &st.InternalDescriptionFA, &st.CustomerTitleFA, &st.CustomerDescriptionFA, &st.SequenceNumber, &st.Status, &role, &st.ResponsibleRoleName, &assigned, &st.RequiredPermissionCode, &st.RequiresApproval, &approval, &st.IsOptional, &st.IsSkippable, &st.CustomerVisible, &es, &ee, &as, &ae, &rejection, &st.OpenActionCount, &st.HasDiscrepancy, &st.IterationNumber, &st.PathState); err != nil {
+		if err := rows.Scan(&st.ID, &st.StepCode, &st.InternalTitleFA, &st.InternalDescriptionFA, &st.CustomerTitleFA, &st.CustomerDescriptionFA, &st.SequenceNumber, &st.Status, &role, &st.ResponsibleRoleName, &assigned, &st.RequiredPermissionCode, &st.RequiresApproval, &approval, &st.IsOptional, &st.IsSkippable, &st.CustomerVisible, &es, &ee, &as, &ae, &rejection, &st.OpenActionCount, &st.HasDiscrepancy, &st.IterationNumber, &st.PathState, &domainEvent); err != nil {
 			return w, err
 		}
 		if isCustomer && (!st.CustomerVisible || st.Status == "SKIPPED" || st.PathState != "INCLUDED") {
@@ -429,6 +454,7 @@ func (s *OperationsService) GetWorkflowRuntime(ctx context.Context, actor, workf
 			v := assigned.String
 			st.AssignedUserID = &v
 		}
+		st.DomainEventCode = scanNullableString(domainEvent)
 		if rejection.Valid && !isCustomer {
 			v := rejection.String
 			st.RejectionReason = &v
@@ -469,6 +495,20 @@ func (s *OperationsService) GetWorkflowRuntime(ctx context.Context, actor, workf
 		w.Steps = append(w.Steps, st)
 	}
 	if !isCustomer {
+		docRows, _ := s.db.QueryContext(ctx, `SELECT 'DOCUMENT',title_fa,workflow_step_instance_id,NULL::text,NULL::text FROM workflow_instance_document_requirements WHERE workflow_instance_id=$1 AND is_required AND is_blocking AND status='PENDING' UNION ALL SELECT 'PAYMENT','پرداخت موردنیاز',workflow_step_instance_id,required_amount::text,currency::text FROM workflow_payment_blocks WHERE workflow_instance_id=$1 AND status='OPEN'`, workflowID)
+		if docRows != nil {
+			for docRows.Next() {
+				var b RuntimeBlocker
+				var step, amount, currency sql.NullString
+				if docRows.Scan(&b.Kind, &b.TitleFA, &step, &amount, &currency) == nil {
+					b.StepInstanceID = scanNullableString(step)
+					b.Amount = scanNullableString(amount)
+					b.Currency = scanNullableString(currency)
+					w.Blockers = append(w.Blockers, b)
+				}
+			}
+			docRows.Close()
+		}
 		w.ActionItems, _ = s.runtimeActions(ctx, actor, workflowID)
 		if s.HasPermission(ctx, actor, "workflow_discrepancies.view_all") || s.HasPermission(ctx, actor, "workflow_discrepancies.view_assigned") {
 			w.Discrepancies, _ = s.ListWorkflowDiscrepancies(ctx, actor, workflowID)
@@ -722,6 +762,17 @@ func (s *OperationsService) saveValuesTx(ctx context.Context, tx *sql.Tx, actor,
 				return fmt.Errorf("%w: %s: %v", ErrValidation, key, err)
 			}
 		}
+		if kind == "QC_CHECK" {
+			var reference map[string]any
+			if err = json.Unmarshal(raw, &reference); err != nil {
+				return fmt.Errorf("%w: %s: invalid QC value", ErrValidation, key)
+			}
+			if fileID, ok := reference["fileId"].(string); ok && strings.TrimSpace(fileID) != "" {
+				if err = validateFileReferenceTx(ctx, tx, stepID, id, map[string]any{"fileId": fileID}); err != nil {
+					return fmt.Errorf("%w: %s: %v", ErrValidation, key, err)
+				}
+			}
+		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO workflow_step_field_values(workflow_step_instance_id,field_definition_id,field_key,field_type,value_json,entered_by_user_id,updated_by_user_id) VALUES($1,$2,$3,$4,$5,$6,$6) ON CONFLICT(workflow_step_instance_id,field_key) DO UPDATE SET value_json=EXCLUDED.value_json,updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=NOW()`, stepID, id, key, kind, []byte(raw), actor)
 		if err != nil {
 			return err
@@ -850,6 +901,31 @@ func validateRuntimeValue(kind string, raw, options, validation []byte, required
 		if !ok || obj["fileId"] == nil {
 			return errors.New("fileId required")
 		}
+	case "QC_CHECK":
+		obj, ok := v.(map[string]any)
+		if !ok {
+			return errors.New("QC object required")
+		}
+		result, ok := obj["result"].(string)
+		if !ok || (result != "PASS" && result != "FAIL" && result != "NOT_APPLICABLE") {
+			return errors.New("invalid QC result")
+		}
+		if note, exists := obj["note"]; exists {
+			text, valid := note.(string)
+			if !valid || len([]rune(text)) > 2000 {
+				return errors.New("invalid QC note")
+			}
+		}
+		if measured, exists := obj["measuredValue"]; exists && measured != nil && fmt.Sprint(measured) != "" {
+			if _, valid := new(big.Rat).SetString(fmt.Sprint(measured)); !valid {
+				return errors.New("invalid measured value")
+			}
+		}
+		if fileID, exists := obj["fileId"]; exists && fileID != nil {
+			if text, valid := fileID.(string); !valid || strings.TrimSpace(text) == "" {
+				return errors.New("invalid fileId")
+			}
+		}
 	}
 	if n, ok := number(); ok {
 		if min, ok := rules["min"].(float64); ok && n < min {
@@ -896,6 +972,13 @@ func (s *OperationsService) SubmitWorkflowStep(ctx context.Context, actor, stepI
 		return err
 	}
 	defer tx.Rollback()
+	if err = s.submitWorkflowStepTx(ctx, tx, actor, stepID, p); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *OperationsService) submitWorkflowStepTx(ctx context.Context, tx *sql.Tx, actor, stepID string, p StepValuesPayload) error {
 	workflowID, status, perm, role, assigned, approval, _, err := s.lockStepTx(ctx, tx, stepID)
 	if err != nil {
 		return err
@@ -948,6 +1031,13 @@ func (s *OperationsService) SubmitWorkflowStep(ctx context.Context, actor, stepI
 	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM action_items WHERE workflow_step_instance_id=$1 AND is_blocking AND status NOT IN ('COMPLETED','CANCELLED')`, stepID).Scan(&blockingTasks); err != nil {
 		return err
 	}
+	var missingDocuments int
+	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM workflow_instance_document_requirements WHERE workflow_instance_id=$1 AND (workflow_step_instance_id IS NULL OR workflow_step_instance_id=$2) AND is_required AND is_blocking AND status='PENDING'`, workflowID, stepID).Scan(&missingDocuments); err != nil {
+		return err
+	}
+	if missingDocuments > 0 {
+		return conflict(ErrDocumentRequired, "required issued documents are missing")
+	}
 	if blocking {
 		_, err = tx.ExecContext(ctx, `UPDATE workflow_step_instances SET status='HAS_MISMATCH',customer_status_text='در حال تکمیل' WHERE id=$1`, stepID)
 		if err != nil {
@@ -975,7 +1065,7 @@ func (s *OperationsService) SubmitWorkflowStep(ctx context.Context, actor, stepI
 		}
 	}
 	s.auditTx(ctx, tx, actor, chooseAudit("workflow_steps.submit", override), "workflow_step_instance", stepID, nil, map[string]any{"reason": p.Reason})
-	return tx.Commit()
+	return nil
 }
 
 func (s *OperationsService) evaluateHandoffsTx(ctx context.Context, tx *sql.Tx, actor, workflowID, stepID string) (bool, error) {
@@ -1097,11 +1187,21 @@ func (s *OperationsService) completeStepTx(ctx context.Context, tx *sql.Tx, acto
 	if err := s.runStepTriggersTx(ctx, tx, workflowID, stepID, "ON_STEP_COMPLETE"); err != nil {
 		return err
 	}
+	var paymentBlocked bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM workflow_payment_blocks WHERE workflow_step_instance_id=$1 AND status='OPEN')`, stepID).Scan(&paymentBlocked); err != nil {
+		return err
+	}
+	if paymentBlocked {
+		return nil
+	}
 	var customerVisible bool
-	var title string
-	_ = tx.QueryRowContext(ctx, `SELECT customer_visible,customer_title_fa FROM workflow_step_instances WHERE id=$1`, stepID).Scan(&customerVisible, &title)
+	var title, customerID string
+	_ = tx.QueryRowContext(ctx, `SELECT si.customer_visible,si.customer_title_fa,wi.customer_user_id FROM workflow_step_instances si JOIN workflow_instances wi ON wi.id=si.workflow_instance_id WHERE si.id=$1`, stepID).Scan(&customerVisible, &title, &customerID)
 	if customerVisible {
 		_, _ = tx.ExecContext(ctx, `INSERT INTO order_timeline(order_id,title_fa,status_code,occurred_at) SELECT order_id,$2,$3,NOW() FROM workflow_instances WHERE id=$1`, workflowID, title, terminal)
+		if err := emitNotificationTx(ctx, tx, customerID, "WORKFLOW_STEP_COMPLETED", "workflow-step-completed:"+stepID, "WORKFLOW", workflowID, "/account", map[string]string{}); err != nil {
+			return err
+		}
 	}
 	if handled, err := s.routeCompletedStepTx(ctx, tx, actor, workflowID, stepID); err != nil {
 		return err
@@ -1120,7 +1220,12 @@ func (s *OperationsService) completeStepTx(ctx context.Context, tx *sql.Tx, acto
 			if err != nil {
 				return err
 			}
-			_, _ = tx.ExecContext(ctx, `UPDATE orders SET status='COMPLETED',updated_at=NOW() WHERE id=(SELECT order_id FROM workflow_instances WHERE id=$1 AND scope_type='ORDER')`, workflowID)
+			_, _ = tx.ExecContext(ctx, `UPDATE orders SET status='COMPLETED',updated_at=NOW() WHERE id=(SELECT order_id FROM workflow_instances WHERE id=$1 AND scope_type='ORDER') AND status<>'CLOSED'`, workflowID)
+			if customerID != "" {
+				if err = emitNotificationTx(ctx, tx, customerID, "ORDER_COMPLETED", "order-completed:"+workflowID, "WORKFLOW", workflowID, "/account", map[string]string{}); err != nil {
+					return err
+				}
+			}
 			if err = s.completeChildDependencyTx(ctx, tx, actor, workflowID); err != nil {
 				return err
 			}

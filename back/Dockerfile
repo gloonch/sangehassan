@@ -17,10 +17,12 @@ CMD ["air", "-c", ".air.toml"]
 FROM base AS build
 COPY . .
 RUN go build -o /bin/server ./cmd/server
+RUN go build -o /bin/operations-worker ./cmd/operations-worker
 
 FROM ${ALPINE_IMAGE} AS prod
 WORKDIR /app
 COPY --from=build /bin/server /app/server
+COPY --from=build /bin/operations-worker /app/operations-worker
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080

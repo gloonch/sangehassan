@@ -24,9 +24,24 @@ var (
 	ErrProtectedRole     = errors.New("protected role")
 )
 
-type OperationsService struct{ db *sql.DB }
+type OperationsService struct {
+	db          *sql.DB
+	documentDir string
+	smsProvider SMSProvider
+}
 
-func NewOperationsService(db *sql.DB) *OperationsService { return &OperationsService{db: db} }
+func NewOperationsService(db *sql.DB) *OperationsService {
+	return &OperationsService{db: db, documentDir: "./storage/workflow-files", smsProvider: DisabledSMSProvider{}}
+}
+
+func (s *OperationsService) ConfigureFinanceAndDocuments(documentDir string, provider SMSProvider) {
+	if strings.TrimSpace(documentDir) != "" {
+		s.documentDir = documentDir
+	}
+	if provider != nil {
+		s.smsProvider = provider
+	}
+}
 
 type OperationalUser struct {
 	ID                 string     `json:"id"`
@@ -100,14 +115,15 @@ type CustomerMatch struct {
 	Status      string `json:"status"`
 }
 type AccountOrder struct {
-	ID                 string         `json:"id"`
-	WorkflowInstanceID string         `json:"workflow_instance_id"`
-	OrderNumber        string         `json:"order_number"`
-	Status             string         `json:"status"`
-	WorkflowName       string         `json:"workflow_name"`
-	CreatedAt          time.Time      `json:"created_at"`
-	ProformaIssuedAt   *time.Time     `json:"proforma_issued_at,omitempty"`
-	Timeline           []TimelineItem `json:"timeline,omitempty"`
+	ID                  string         `json:"id"`
+	WorkflowInstanceID  string         `json:"workflow_instance_id"`
+	OrderNumber         string         `json:"order_number"`
+	Status              string         `json:"status"`
+	WorkflowName        string         `json:"workflow_name"`
+	CreatedAt           time.Time      `json:"created_at"`
+	ProformaIssuedAt    *time.Time     `json:"proforma_issued_at,omitempty"`
+	EstimatedDeliveryAt *time.Time     `json:"estimated_delivery_at,omitempty"`
+	Timeline            []TimelineItem `json:"timeline,omitempty"`
 }
 type TimelineItem struct {
 	TitleFA    string    `json:"title_fa"`
@@ -465,8 +481,11 @@ func (s *OperationsService) SetUserStatus(ctx context.Context, actor, userID, st
 	if s.userHasRole(ctx, userID, "ADMIN", "SUPER_ADMIN") && !s.HasPermission(ctx, actor, "administrators.disable") {
 		return ErrForbidden
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET status=$2,is_active=($2='ACTIVE'),disabled_at=CASE WHEN $2='DISABLED' THEN NOW() ELSE NULL END,updated_at=NOW() WHERE id=$1`, userID, status)
+	_, err := s.db.ExecContext(ctx, `UPDATE users SET status=$2,is_active=($2='ACTIVE'),disabled_at=CASE WHEN $2='DISABLED' THEN NOW() ELSE NULL END,auth_invalid_before=CASE WHEN $2='DISABLED' THEN NOW() ELSE auth_invalid_before END,updated_at=NOW() WHERE id=$1`, userID, status)
 	if err == nil {
+		if status == "DISABLED" {
+			_, _ = s.db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id=$1`, userID)
+		}
 		s.audit(ctx, actor, "users.status", "user", userID, map[string]any{"status": status})
 	}
 	return err
@@ -492,7 +511,7 @@ func (s *OperationsService) ResetPassword(ctx context.Context, actor, userID, pa
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE users SET password_hash=$2,must_change_password=TRUE,updated_at=NOW() WHERE id=$1`, userID, string(hash))
+	result, err := tx.ExecContext(ctx, `UPDATE users SET password_hash=$2,must_change_password=TRUE,auth_invalid_before=NOW(),updated_at=NOW() WHERE id=$1`, userID, string(hash))
 	if err != nil {
 		return err
 	}
@@ -653,7 +672,7 @@ func (s *OperationsService) StartWorkflow(ctx context.Context, actor string, tem
 		}
 	}
 	orderNumber := "ORD-" + time.Now().UTC().Format("20060102-150405") + "-" + randomDigits(4)
-	err = tx.QueryRowContext(ctx, `INSERT INTO orders(order_number,customer_user_id,created_by_user_id,workflow_template_id) VALUES($1,$2,$3,$4) RETURNING id`, orderNumber, customerID, actor, templateID).Scan(&out.OrderID)
+	err = tx.QueryRowContext(ctx, `INSERT INTO orders(order_number,customer_user_id,created_by_user_id,workflow_template_id,sales_owner_user_id) SELECT $1,$2,$3,$4,CASE WHEN EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=$3 AND r.code='SALES') THEN $3::uuid END RETURNING id`, orderNumber, customerID, actor, templateID).Scan(&out.OrderID)
 	if err != nil {
 		return out, err
 	}
@@ -662,6 +681,14 @@ func (s *OperationsService) StartWorkflow(ctx context.Context, actor string, tem
 		return out, err
 	}
 	if err = s.snapshotWorkflowTx(ctx, tx, out.WorkflowInstanceID, templateID, actor, excludedOptionalStepCodes); err != nil {
+		return out, err
+	}
+	if out.CustomerCreated {
+		if err = emitNotificationTx(ctx, tx, customerID, "CUSTOMER_ACCOUNT_CREATED", "customer-account-created:"+customerID, "ORDER", out.OrderID, "/account", map[string]string{}); err != nil {
+			return out, err
+		}
+	}
+	if err = emitNotificationTx(ctx, tx, customerID, "WORKFLOW_STARTED", "workflow-started:"+out.WorkflowInstanceID, "WORKFLOW", out.WorkflowInstanceID, "/account", map[string]string{}); err != nil {
 		return out, err
 	}
 	s.auditTx(ctx, tx, actor, "workflow_instances.start", "workflow_instance", out.WorkflowInstanceID, nil, map[string]any{"order_id": out.OrderID, "customer_user_id": customerID})
@@ -684,18 +711,36 @@ func (s *OperationsService) createActivationTx(ctx context.Context, tx *sql.Tx, 
 	_, err = tx.ExecContext(ctx, `INSERT INTO customer_activation_tokens(user_id,token_hash,expires_at,created_by_user_id) VALUES($1,$2,NOW()+INTERVAL '7 days',$3)`, userID, hex.EncodeToString(sum[:]), actor)
 	return code, err
 }
-func (s *OperationsService) RegenerateActivation(ctx context.Context, actor, userID string) (string, error) {
+func (s *OperationsService) RegenerateActivation(ctx context.Context, actor, userID, key, reason string) (map[string]any, error) {
+	if err := requireReason(reason); err != nil {
+		return nil, conflict("REASON_REQUIRED", "ثبت دلیل صدور کد جدید الزامی است")
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer tx.Rollback()
+	claim, err := claimOperationTx(ctx, tx, actor, "CUSTOMER_ACTIVATION_REGENERATE", key, map[string]string{"user_id": userID, "reason": reason})
+	if err != nil {
+		return nil, err
+	}
+	if claim.Existing {
+		var out map[string]any
+		if err = json.Unmarshal(claim.Response, &out); err != nil {
+			return nil, err
+		}
+		return out, tx.Commit()
+	}
 	code, err := s.createActivationTx(ctx, tx, userID, actor)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	s.auditTx(ctx, tx, actor, "customers.regenerate_activation", "user", userID, nil, nil)
-	return code, tx.Commit()
+	out := map[string]any{"activation_code": code}
+	s.auditTx(ctx, tx, actor, "customers.regenerate_activation", "user", userID, nil, map[string]any{"reason": reason})
+	if err = finishOperationTx(ctx, tx, actor, "CUSTOMER_ACTIVATION_REGENERATE", key, out); err != nil {
+		return nil, err
+	}
+	return out, tx.Commit()
 }
 func (s *OperationsService) ActivateCustomer(ctx context.Context, phone, code, password string) error {
 	phone = NormalizePhone(phone)
@@ -733,6 +778,9 @@ func (s *OperationsService) ActivateCustomer(ctx context.Context, phone, code, p
 	}
 	_, err = tx.ExecContext(ctx, `UPDATE customer_activation_tokens SET used_at=NOW() WHERE id=$1`, tokenID)
 	if err != nil {
+		return err
+	}
+	if err = emitNotificationTx(ctx, tx, userID, "CUSTOMER_ACCOUNT_ACTIVATED", "customer-account-activated:"+userID, "USER", userID, "/account", map[string]string{}); err != nil {
 		return err
 	}
 	s.auditTx(ctx, tx, userID, "customers.activate", "user", userID, nil, nil)
@@ -797,38 +845,51 @@ func (s *OperationsService) IssueProforma(ctx context.Context, actor, proformaID
 }
 
 func (s *OperationsService) AccountOrders(ctx context.Context, userID string) ([]AccountOrder, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT o.id,wi.id,o.order_number,o.status,wt.name_fa,o.created_at,o.proforma_issued_at FROM orders o JOIN workflow_instances wi ON wi.order_id=o.id JOIN workflow_templates wt ON wt.id=o.workflow_template_id WHERE o.customer_user_id=$1 ORDER BY o.created_at DESC`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT o.id,wi.id,o.order_number,o.status,COALESCE(wt.name_fa,'سفارش'),o.created_at,o.proforma_issued_at,o.estimated_delivery_at FROM orders o LEFT JOIN LATERAL(SELECT id,workflow_template_id FROM workflow_instances WHERE order_id=o.id ORDER BY started_at DESC LIMIT 1)wi ON TRUE LEFT JOIN workflow_templates wt ON wt.id=COALESCE(wi.workflow_template_id,o.workflow_template_id) WHERE o.customer_user_id=$1 ORDER BY o.created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	out := []AccountOrder{}
+	byID := map[string]int{}
 	for rows.Next() {
 		var o AccountOrder
-		var issued sql.NullTime
-		if err := rows.Scan(&o.ID, &o.WorkflowInstanceID, &o.OrderNumber, &o.Status, &o.WorkflowName, &o.CreatedAt, &issued); err != nil {
+		var workflow sql.NullString
+		var issued, estimated sql.NullTime
+		if err := rows.Scan(&o.ID, &workflow, &o.OrderNumber, &o.Status, &o.WorkflowName, &o.CreatedAt, &issued, &estimated); err != nil {
 			return nil, err
 		}
+		o.WorkflowInstanceID = workflow.String
 		if issued.Valid {
 			t := issued.Time
 			o.ProformaIssuedAt = &t
 		}
-		timeline, err := s.db.QueryContext(ctx, `SELECT title_fa,status_code,occurred_at FROM order_timeline WHERE order_id=$1 ORDER BY occurred_at`, o.ID)
-		if err != nil {
-			return nil, err
+		if estimated.Valid {
+			value := estimated.Time
+			o.EstimatedDeliveryAt = &value
 		}
-		for timeline.Next() {
-			var t TimelineItem
-			if err := timeline.Scan(&t.TitleFA, &t.StatusCode, &t.OccurredAt); err != nil {
-				timeline.Close()
-				return nil, err
-			}
-			o.Timeline = append(o.Timeline, t)
-		}
-		timeline.Close()
+		byID[o.ID] = len(out)
 		out = append(out, o)
 	}
-	return out, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	timeline, err := s.db.QueryContext(ctx, `SELECT t.order_id,t.title_fa,t.status_code,t.occurred_at FROM order_timeline t JOIN orders o ON o.id=t.order_id WHERE o.customer_user_id=$1 ORDER BY t.occurred_at`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer timeline.Close()
+	for timeline.Next() {
+		var orderID string
+		var item TimelineItem
+		if err = timeline.Scan(&orderID, &item.TitleFA, &item.StatusCode, &item.OccurredAt); err != nil {
+			return nil, err
+		}
+		if index, ok := byID[orderID]; ok {
+			out[index].Timeline = append(out[index].Timeline, item)
+		}
+	}
+	return out, timeline.Err()
 }
 func (s *OperationsService) AccountProformas(ctx context.Context, userID string) ([]Proforma, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id,proforma_number,order_id,status,currency,subtotal::text,discount_amount::text,total_amount::text,notes,issued_at,created_at FROM proformas WHERE customer_user_id=$1 AND status<>'DRAFT' ORDER BY created_at DESC`, userID)
@@ -867,9 +928,17 @@ func (s *OperationsService) AuditLogs(ctx context.Context, search string) ([]map
 }
 
 func (s *OperationsService) audit(ctx context.Context, actor, action, entity, entityID string, metadata any) {
+	if requestID := RequestIDFromContext(ctx); requestID != "" {
+		_, _ = s.db.ExecContext(ctx, `INSERT INTO audit_logs(actor_user_id,action_code,entity_type,entity_id,metadata,request_id) VALUES(NULLIF($1,'')::uuid,$2,$3,$4,COALESCE($5::jsonb,'{}'),$6)`, actor, action, entity, entityID, jsonText(metadata), requestID)
+		return
+	}
 	_, _ = s.db.ExecContext(ctx, `INSERT INTO audit_logs(actor_user_id,action_code,entity_type,entity_id,metadata) VALUES(NULLIF($1,'')::uuid,$2,$3,$4,COALESCE($5::jsonb,'{}'))`, actor, action, entity, entityID, jsonText(metadata))
 }
 func (s *OperationsService) auditTx(ctx context.Context, tx *sql.Tx, actor, action, entity, entityID string, before, after any) {
+	if requestID := RequestIDFromContext(ctx); requestID != "" {
+		_, _ = tx.ExecContext(ctx, `INSERT INTO audit_logs(actor_user_id,action_code,entity_type,entity_id,before_data,after_data,request_id) VALUES(NULLIF($1,'')::uuid,$2,$3,$4,$5::jsonb,$6::jsonb,$7)`, actor, action, entity, entityID, jsonText(before), jsonText(after), requestID)
+		return
+	}
 	_, _ = tx.ExecContext(ctx, `INSERT INTO audit_logs(actor_user_id,action_code,entity_type,entity_id,before_data,after_data) VALUES(NULLIF($1,'')::uuid,$2,$3,$4,$5::jsonb,$6::jsonb)`, actor, action, entity, entityID, jsonText(before), jsonText(after))
 }
 func jsonText(v any) string {

@@ -22,9 +22,9 @@ func NewDB(cfg config.Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(10)
-	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetMaxOpenConns(cfg.DBMaxOpenConns)
+	db.SetMaxIdleConns(cfg.DBMaxIdleConns)
+	db.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
 
 	if err := ensureMediaColumns(db); err != nil {
 		return nil, err
