@@ -35,4 +35,22 @@ describe("ReorderableImageGrid", () => {
 
     expect(screen.queryByRole("button", { name: "حذف" })).not.toBeInTheDocument();
   });
+
+  it("keeps built-in slides locked while uploaded slides remain editable", () => {
+    const onRemove = vi.fn();
+    const onMove = vi.fn();
+    render(
+      <ReorderableImageGrid
+        images={["/images/default.webp", "/images/uploaded.webp"]}
+        showPreview={false}
+        onRemove={onRemove}
+        onMove={onMove}
+        isItemLocked={(_, index) => index === 0}
+        labels={{ remove: "حذف", moveLeft: "چپ", moveRight: "راست" }}
+      />
+    );
+
+    expect(screen.getAllByRole("button", { name: "حذف" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "چپ" })).toBeDisabled();
+  });
 });

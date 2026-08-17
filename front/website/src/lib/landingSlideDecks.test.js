@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildLandingSlideDecks } from "./landingSlideDecks";
 
 describe("landing slideshow decks", () => {
-  it("uses uploaded section images in their configured order", () => {
+  it("appends uploaded section images to the existing default slides", () => {
     const decks = buildLandingSlideDecks({
       sections: [
         { key: "finished", images: ["/images/content/first.webp", "/images/content/second.webp"] },
@@ -15,10 +15,11 @@ describe("landing slideshow decks", () => {
     });
 
     expect(decks.products.map((slide) => slide.src)).toEqual([
+      "default-product",
       "https://cdn.example/images/content/first.webp",
       "https://cdn.example/images/content/second.webp"
     ]);
-    expect(decks.blocks[0]).toMatchObject({
+    expect(decks.blocks[1]).toMatchObject({
       src: "https://cdn.example/images/content/block.webp",
       managed: true
     });

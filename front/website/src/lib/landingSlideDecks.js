@@ -10,6 +10,13 @@ const defaultDeck = (slides, fallbackSlide, shuffleSlides) => {
   return [slides[0], ...shuffleSlides(slides.slice(1))];
 };
 
+const combinedDeck = (defaultSlides, uploadedSlides, fallbackSlide, shuffleSlides) => {
+  if (!defaultSlides.length) {
+    return uploadedSlides.length ? uploadedSlides : [fallbackSlide];
+  }
+  return [...defaultDeck(defaultSlides, fallbackSlide, shuffleSlides), ...uploadedSlides];
+};
+
 export const buildLandingSlideDecks = ({
   sections = [],
   productSlides = [],
@@ -21,7 +28,7 @@ export const buildLandingSlideDecks = ({
   const products = managedSlides(sections, "finished", resolveImageUrl);
   const blocks = managedSlides(sections, "blocks", resolveImageUrl);
   return {
-    products: products.length ? products : defaultDeck(productSlides, fallbackSlide, shuffleSlides),
-    blocks: blocks.length ? blocks : defaultDeck(blockSlides, fallbackSlide, shuffleSlides)
+    products: combinedDeck(productSlides, products, fallbackSlide, shuffleSlides),
+    blocks: combinedDeck(blockSlides, blocks, fallbackSlide, shuffleSlides)
   };
 };
