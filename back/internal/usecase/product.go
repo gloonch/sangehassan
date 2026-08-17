@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"sangehassan/back/internal/domain"
@@ -114,6 +115,30 @@ func (s *ProductService) Update(ctx context.Context, product domain.Product) (do
 
 func (s *ProductService) Delete(ctx context.Context, id int64) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *ProductService) Reorder(ctx context.Context, productIDs []int64) error {
+	if err := validateProductOrder(productIDs); err != nil {
+		return err
+	}
+	return s.repo.Reorder(ctx, productIDs)
+}
+
+func validateProductOrder(productIDs []int64) error {
+	if len(productIDs) == 0 {
+		return fmt.Errorf("%w: product_ids is required", domain.ErrInvalidProductOrder)
+	}
+	seen := make(map[int64]struct{}, len(productIDs))
+	for _, id := range productIDs {
+		if id <= 0 {
+			return fmt.Errorf("%w: product ids must be positive", domain.ErrInvalidProductOrder)
+		}
+		if _, exists := seen[id]; exists {
+			return fmt.Errorf("%w: duplicate product id %d", domain.ErrInvalidProductOrder, id)
+		}
+		seen[id] = struct{}{}
+	}
+	return nil
 }
 
 func normalizeProductImages(primary string, images []string) []string {

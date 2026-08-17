@@ -79,9 +79,10 @@ docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypo
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/017_finance_notifications_documents_reporting.sql
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/018_supplier_purchase_quality_installation.sql
 docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/019_application_settings_diagnostics_indexes.sql
+docker exec sangehassan-db psql -U sangehassan -d sangehassan -f /docker-entrypoint-initdb.d/020_product_display_order.sql
 ```
 
-Apply migrations in numeric order and take a database backup first. PostgreSQL init scripts do not migrate an existing volume automatically. The runtime readiness endpoint requires migration 19 to be registered. Moving an existing PostgreSQL 15 data directory to the PostgreSQL 16 image requires `pg_dump`/`pg_restore` or `pg_upgrade`; never attach a version-15 data directory directly to version 16.
+Apply migrations in numeric order and take a database backup first. PostgreSQL init scripts do not migrate an existing volume automatically. The runtime readiness endpoint requires migration 20 to be registered. Moving an existing PostgreSQL 15 data directory to the PostgreSQL 16 image requires `pg_dump`/`pg_restore` or `pg_upgrade`; never attach a version-15 data directory directly to version 16.
 
 ## Operational dashboard bootstrap
 

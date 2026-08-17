@@ -44,13 +44,14 @@ for sql_file in \
   "$repo_dir/deploy/postgres/init/016_operations_phase3.sql" \
   "$repo_dir/deploy/postgres/init/017_finance_notifications_documents_reporting.sql" \
   "$repo_dir/deploy/postgres/init/018_supplier_purchase_quality_installation.sql" \
-  "$repo_dir/deploy/postgres/init/019_application_settings_diagnostics_indexes.sql"; do
+  "$repo_dir/deploy/postgres/init/019_application_settings_diagnostics_indexes.sql" \
+  "$repo_dir/deploy/postgres/init/020_product_display_order.sql"; do
   apply_sql "$sql_file"
 done
 
 migration_version="$(docker exec "$container_name" psql -At -U "$database_user" -d "$database_name" -c 'SELECT COALESCE(MAX(version),0) FROM schema_migrations')"
-if [ "$migration_version" != "19" ]; then
-  echo "Expected migration version 19, got $migration_version." >&2
+if [ "$migration_version" != "20" ]; then
+  echo "Expected migration version 20, got $migration_version." >&2
   exit 1
 fi
 

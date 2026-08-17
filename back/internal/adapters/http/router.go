@@ -447,6 +447,7 @@ func NewRouter(
 			admin.DELETE("/categories/:id", categoryHandler.Delete)
 
 			admin.GET("/products", productHandler.List)
+			admin.PUT("/products/order", productHandler.Reorder)
 			admin.GET("/products/:id", productHandler.GetByID)
 			admin.POST("/products", productHandler.Create)
 			admin.PUT("/products/:id", productHandler.Update)

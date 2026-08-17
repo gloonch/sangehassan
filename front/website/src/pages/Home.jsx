@@ -4,8 +4,10 @@ import { ChevronDown } from "lucide-react";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
+import { buildLandingSlideDecks } from "../lib/landingSlideDecks";
 import { getAbsoluteUrl, getCanonicalUrl, getSiteOrigin } from "../lib/seo";
 import { usePrerenderData } from "../lib/prerenderData";
+import { defaultLandingSlides } from "@shared/landingSlides";
 import blocksOverlayImage from "@shared/assets/landing_page/landingpage_blocks_overlay.webp";
 import marketComplexityIllustration from "@shared/assets/landing_icons/market_complexity_icon_transparent.webp";
 import marketComplexityIllustrationMobile from "@shared/assets/landing_icons/market_complexity_icon_transparent-mobile.webp";
@@ -19,56 +21,8 @@ import tradeboardPostListingIllustration from "@shared/assets/tradeboard/tradebo
 import tradeboardPostListingIllustrationMobile from "@shared/assets/tradeboard/tradeboard-post-listing-mobile.webp";
 import tradeboardSecureReviewIllustration from "@shared/assets/tradeboard/tradeboard-secure-review.webp";
 import tradeboardSecureReviewIllustrationMobile from "@shared/assets/tradeboard/tradeboard-secure-review-mobile.webp";
-import blockImage01 from "@shared/assets/landing_page/blocks/block-slide-01.webp";
-import blockImage01Mobile from "@shared/assets/landing_page/blocks/block-slide-01-mobile.webp";
-import blockImage02 from "@shared/assets/landing_page/blocks/block-slide-02.webp";
-import blockImage02Mobile from "@shared/assets/landing_page/blocks/block-slide-02-mobile.webp";
-import blockImage03 from "@shared/assets/landing_page/blocks/block-slide-03.webp";
-import blockImage03Mobile from "@shared/assets/landing_page/blocks/block-slide-03-mobile.webp";
-import blockImage04 from "@shared/assets/landing_page/blocks/block-slide-04.webp";
-import blockImage04Mobile from "@shared/assets/landing_page/blocks/block-slide-04-mobile.webp";
-import blockImage05 from "@shared/assets/landing_page/blocks/block-slide-05.webp";
-import blockImage05Mobile from "@shared/assets/landing_page/blocks/block-slide-05-mobile.webp";
-import blockImage06 from "@shared/assets/landing_page/blocks/block-slide-06.webp";
-import blockImage06Mobile from "@shared/assets/landing_page/blocks/block-slide-06-mobile.webp";
-import blockImage07 from "@shared/assets/landing_page/blocks/block-slide-07.webp";
-import blockImage07Mobile from "@shared/assets/landing_page/blocks/block-slide-07-mobile.webp";
-import blockImage08 from "@shared/assets/landing_page/blocks/block-slide-08.webp";
-import blockImage08Mobile from "@shared/assets/landing_page/blocks/block-slide-08-mobile.webp";
-import finishesImage01 from "@shared/assets/landing_page/products/finish-slide-01.webp";
-import finishesImage01Mobile from "@shared/assets/landing_page/products/finish-slide-01-mobile.webp";
-import finishesImage02 from "@shared/assets/landing_page/products/finish-slide-02.webp";
-import finishesImage02Mobile from "@shared/assets/landing_page/products/finish-slide-02-mobile.webp";
-import finishesImage03 from "@shared/assets/landing_page/products/finish-slide-03.webp";
-import finishesImage03Mobile from "@shared/assets/landing_page/products/finish-slide-03-mobile.webp";
-import finishesImage04 from "@shared/assets/landing_page/products/finish-slide-04.webp";
-import finishesImage04Mobile from "@shared/assets/landing_page/products/finish-slide-04-mobile.webp";
-import productImage01 from "@shared/assets/landing_page/products/product-slide-01.webp";
-import productImage01Mobile from "@shared/assets/landing_page/products/product-slide-01-mobile.webp";
-import productImage02 from "@shared/assets/landing_page/products/product-slide-02.webp";
-import productImage02Mobile from "@shared/assets/landing_page/products/product-slide-02-mobile.webp";
-import productImage03 from "@shared/assets/landing_page/products/product-slide-03.webp";
-import productImage03Mobile from "@shared/assets/landing_page/products/product-slide-03-mobile.webp";
-
-const productSlides = [
-  { src: finishesImage01, mobileSrc: finishesImage01Mobile, width: 736, height: 981 },
-  { src: finishesImage02, mobileSrc: finishesImage02Mobile, width: 736, height: 1508 },
-  { src: finishesImage03, mobileSrc: finishesImage03Mobile, width: 736, height: 1308 },
-  { src: finishesImage04, mobileSrc: finishesImage04Mobile, width: 735, height: 825 },
-  { src: productImage01, mobileSrc: productImage01Mobile, width: 900, height: 862 },
-  { src: productImage02, mobileSrc: productImage02Mobile, width: 900, height: 864 },
-  { src: productImage03, mobileSrc: productImage03Mobile, width: 900, height: 850 }
-];
-const blockSlides = [
-  { src: blockImage01, mobileSrc: blockImage01Mobile, width: 900, height: 895 },
-  { src: blockImage02, mobileSrc: blockImage02Mobile, width: 900, height: 894 },
-  { src: blockImage03, mobileSrc: blockImage03Mobile, width: 725, height: 906 },
-  { src: blockImage04, mobileSrc: blockImage04Mobile, width: 900, height: 1123 },
-  { src: blockImage05, mobileSrc: blockImage05Mobile, width: 900, height: 1123 },
-  { src: blockImage06, mobileSrc: blockImage06Mobile, width: 900, height: 1104 },
-  { src: blockImage07, mobileSrc: blockImage07Mobile, width: 900, height: 1106 },
-  { src: blockImage08, mobileSrc: blockImage08Mobile, width: 900, height: 1104 }
-];
+const productSlides = defaultLandingSlides.finished;
+const blockSlides = defaultLandingSlides.blocks;
 const fallbackSlide = { src: blocksOverlayImage, width: 1068, height: 845 };
 
 const shuffleSlides = (slides) => {
@@ -80,9 +34,12 @@ const shuffleSlides = (slides) => {
   return shuffled;
 };
 
-const initialSlideDecks = () => ({
-  products: productSlides.length ? productSlides : [fallbackSlide],
-  blocks: blockSlides.length ? blockSlides : [fallbackSlide]
+const initialSlideDecks = (sections = []) => buildLandingSlideDecks({
+  sections,
+  productSlides,
+  blockSlides,
+  fallbackSlide,
+  resolveImageUrl
 });
 
 const getLocalStorageValue = (key) => {
@@ -94,9 +51,13 @@ const getLocalStorageValue = (key) => {
   }
 };
 
-const createSlideDecks = () => ({
-  products: productSlides.length ? [productSlides[0], ...shuffleSlides(productSlides.slice(1))] : [fallbackSlide],
-  blocks: blockSlides.length ? [blockSlides[0], ...shuffleSlides(blockSlides.slice(1))] : [fallbackSlide]
+const createSlideDecks = (sections = []) => buildLandingSlideDecks({
+  sections,
+  productSlides,
+  blockSlides,
+  fallbackSlide,
+  resolveImageUrl,
+  shuffleSlides
 });
 
 const slideTransitionMs = 900;
@@ -625,7 +586,7 @@ export default function Home() {
   const initialTeamMembers = Array.isArray(prerenderData?.homeTeamMembers) ? prerenderData.homeTeamMembers : [];
   const [sections, setSections] = useState(initialSections);
   const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
-  const [slideDecks, setSlideDecks] = useState(initialSlideDecks);
+  const [slideDecks, setSlideDecks] = useState(() => initialSlideDecks(initialSections));
   const [activeSlides, setActiveSlides] = useState({ products: 0, blocks: 0 });
   const [previousSlides, setPreviousSlides] = useState({ products: null, blocks: null });
   const [slidesReady, setSlidesReady] = useState(false);
@@ -754,16 +715,15 @@ export default function Home() {
   }, [lang]);
 
   useEffect(() => {
-    if (initialSections.length) return undefined;
     let mounted = true;
-    fetchJSON("/api/content-sections?page=home")
+    fetchJSON("/api/content-sections?page=home", { cache: "no-store" })
       .then((res) => {
         if (!mounted) return;
         setSections(res.data || []);
       })
       .catch(() => {
         if (!mounted) return;
-        setSections([]);
+        if (!initialSections.length) setSections([]);
       });
     return () => {
       mounted = false;
@@ -788,7 +748,7 @@ export default function Home() {
   }, [initialTeamMembers.length]);
 
   useEffect(() => {
-    const decks = createSlideDecks();
+    const decks = createSlideDecks(sections);
     logSlideDebug("deck-init", {
       products: decks.products.map((slide) => getSlideAssetName(slide.src)),
       blocks: decks.blocks.map((slide) => getSlideAssetName(slide.src))
@@ -796,7 +756,7 @@ export default function Home() {
     setSlideDecks(decks);
     setActiveSlides({ products: 0, blocks: 0 });
     setPreviousSlides({ products: null, blocks: null });
-  }, []);
+  }, [sections]);
 
   useEffect(() => {
     const enableSlides = () => setSlidesReady(true);

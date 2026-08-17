@@ -613,7 +613,14 @@
     "filterLabel": "Filter by category",
     "allCategories": "All categories",
     "imagesLabel": "Images",
-    "imageCount": "images"
+    "imageCount": "images",
+    "orderHint": "This list matches the product order on the website. Drag a product by its handle and drop it in a new position; the order saves automatically.",
+    "reorderAllCategories": "Select “All categories” to change the global product order.",
+    "orderSaving": "Saving order...",
+    "orderSaved": "Order saved",
+    "orderSaveFailed": "The product order could not be saved. The previous order was restored.",
+    "dragProduct": "Move product",
+    "position": "Display position"
   },
   "panelBlocks": {
     "title": "Blocks",
@@ -644,7 +651,17 @@
   },
   "panelContent": {
     "title": "Landing content",
-    "empty": "No sections available yet."
+    "empty": "No sections available yet.",
+    "mediaTitle": "Slideshow media",
+    "currentSlides": "Currently displayed slides",
+    "uploadSlides": "Upload slideshow images",
+    "uploadHint": "Uploading the first image replaces this section's default set. The order below is the slideshow order.",
+    "defaultSlides": "Site default images",
+    "customSlides": "Uploaded images",
+    "defaultSlidesHint": "This section has no custom images and currently uses the site's default slides.",
+    "customSlidesHint": "These images rotate on the landing page in the numbered order shown below.",
+    "slide": "Slide",
+    "noSlides": "No images are configured for this section."
   },
   "panelTeam": {
     "title": "Team",

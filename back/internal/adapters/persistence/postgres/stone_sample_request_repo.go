@@ -28,7 +28,7 @@ func (r *StoneSampleRequestRepository) ListSampleCategories(ctx context.Context)
 		       COALESCE(c.seo_description_en, ''), COALESCE(c.seo_description_fa, ''), COALESCE(c.seo_description_ar, ''),
 		       c.is_active, c.is_indexable, c.created_at, COALESCE(c.updated_at, c.created_at),
 		       COUNT(DISTINCT p.id)::int,
-		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.is_popular DESC, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
+		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.display_order, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
 		FROM categories c
 		JOIN products p ON p.is_active = TRUE AND p.is_indexable = TRUE AND p.sample_available = TRUE AND (
 			p.main_category_id = c.id OR EXISTS (
@@ -80,7 +80,7 @@ func (r *StoneSampleRequestRepository) ListSampleProducts(ctx context.Context, f
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
 		WHERE %s
-		ORDER BY p.is_popular DESC, p.id
+		ORDER BY p.display_order, p.id
 		LIMIT $%d OFFSET $%d
 	`, where, len(args)-1, len(args))
 

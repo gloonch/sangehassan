@@ -27,7 +27,7 @@ func (r *CatalogRepository) ListCategories(ctx context.Context) ([]domain.Catalo
 		       COALESCE(c.seo_description_en, ''), COALESCE(c.seo_description_fa, ''), COALESCE(c.seo_description_ar, ''),
 		       c.is_active, c.is_indexable, c.created_at, COALESCE(c.updated_at, c.created_at),
 		       COUNT(DISTINCT p.id)::int,
-		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.is_popular DESC, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
+		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.display_order, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
 		FROM categories c
 		LEFT JOIN products p ON p.is_active = TRUE AND p.is_indexable = TRUE AND (
 			p.main_category_id = c.id OR EXISTS (
@@ -63,7 +63,7 @@ func (r *CatalogRepository) GetCategory(ctx context.Context, slug string) (domai
 		       COALESCE(c.seo_description_en, ''), COALESCE(c.seo_description_fa, ''), COALESCE(c.seo_description_ar, ''),
 		       c.is_active, c.is_indexable, c.created_at, COALESCE(c.updated_at, c.created_at),
 		       COUNT(DISTINCT p.id)::int,
-		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.is_popular DESC, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
+		       COALESCE(NULLIF(c.image_url, ''), (ARRAY_AGG(p.image_url ORDER BY p.display_order, p.id) FILTER (WHERE COALESCE(p.image_url, '') <> ''))[1], '')
 		FROM categories c
 		LEFT JOIN products p ON p.is_active = TRUE AND p.is_indexable = TRUE AND (
 			p.main_category_id = c.id OR EXISTS (
@@ -95,11 +95,11 @@ func (r *CatalogRepository) ListProducts(ctx context.Context, categoryID int64, 
 		       COALESCE(p.short_description_html_en, p.short_description_html, ''),
 		       COALESCE(p.short_description_html_fa, ''), COALESCE(p.short_description_html_ar, ''),
 		       COALESCE(p.price, 0), COALESCE(p.price_html, ''), COALESCE(p.image_url, ''),
-		       p.main_category_id, p.is_popular, p.is_active, p.is_indexable,
+		       p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.display_order,
 		       p.created_at, COALESCE(p.updated_at, p.created_at)
 		FROM products p
 		WHERE %s
-		ORDER BY p.is_popular DESC, p.id
+		ORDER BY p.display_order, p.id
 		LIMIT $%d OFFSET $%d
 	`, where, len(args)-1, len(args))
 
@@ -116,7 +116,7 @@ func (r *CatalogRepository) ListProducts(ctx context.Context, categoryID int64, 
 			&product.ID, &product.TitleEN, &product.TitleFA, &product.TitleAR, &product.Slug,
 			&product.ShortDescriptionHTMLEn, &product.ShortDescriptionHTMLFa, &product.ShortDescriptionHTMLAr,
 			&product.Price, &product.PriceHTML, &product.ImageURL, &product.MainCategoryID,
-			&product.IsPopular, &product.IsActive, &product.IsIndexable, &product.CreatedAt, &product.UpdatedAt,
+			&product.IsPopular, &product.IsActive, &product.IsIndexable, &product.DisplayOrder, &product.CreatedAt, &product.UpdatedAt,
 		); err != nil {
 			return nil, 0, err
 		}

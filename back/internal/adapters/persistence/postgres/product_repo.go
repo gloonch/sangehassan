@@ -33,7 +33,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, searchQ
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available, p.display_order,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -69,7 +69,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, searchQ
 	`, len(args))
 	}
 	query += `
-		ORDER BY p.is_popular DESC, p.id
+		ORDER BY p.display_order, p.id
 	`
 	if limit > 0 {
 		args = append(args, limit)
@@ -143,6 +143,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, searchQ
 			&product.IsActive,
 			&product.IsIndexable,
 			&product.SampleAvailable,
+			&product.DisplayOrder,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -215,14 +216,14 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available, p.display_order,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
 		FROM products p
 		LEFT JOIN categories c ON c.id = p.main_category_id
 		WHERE p.is_popular = TRUE
-		ORDER BY p.id
+		ORDER BY p.display_order, p.id
 	`)
 	if err != nil {
 		return nil, err
@@ -283,6 +284,7 @@ func (r *ProductRepository) ListPopular(ctx context.Context) ([]domain.Product, 
 			&product.IsActive,
 			&product.IsIndexable,
 			&product.SampleAvailable,
+			&product.DisplayOrder,
 			&imageCount,
 			&product.CreatedAt,
 			&product.UpdatedAt,
@@ -355,7 +357,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available, p.display_order,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -417,6 +419,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (domain.Produ
 		&product.IsActive,
 		&product.IsIndexable,
 		&product.SampleAvailable,
+		&product.DisplayOrder,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -485,7 +488,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 			       p.description_html_en, p.description_html_fa, p.description_html_ar,
 			       p.short_description_html_en, p.short_description_html_fa, p.short_description_html_ar,
 			       p.price, p.price_html,
-			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available,
+			       p.image_url, p.video_url, p.main_category_id, p.is_popular, p.is_active, p.is_indexable, p.sample_available, p.display_order,
 			       (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
 			       p.created_at, COALESCE(p.updated_at, p.created_at),
 		       c.id, c.title_en, c.title_fa, c.title_ar, c.slug, c.parent_id
@@ -547,6 +550,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (domain.
 		&product.IsActive,
 		&product.IsIndexable,
 		&product.SampleAvailable,
+		&product.DisplayOrder,
 		&imageCount,
 		&product.CreatedAt,
 		&product.UpdatedAt,
@@ -617,9 +621,10 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  description_html, short_description_html,
 		  description_html_en, description_html_fa, description_html_ar,
 		  short_description_html_en, short_description_html_fa, short_description_html_ar,
-		  price, price_html, image_url, video_url, main_category_id, is_popular, is_active, is_indexable, sample_available
+		  price, price_html, image_url, video_url, main_category_id, is_popular, is_active, is_indexable, sample_available, display_order
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+		        (SELECT COALESCE(MAX(display_order), -1) + 1 FROM products))
 		ON CONFLICT (slug) DO UPDATE SET
 		  title_en = EXCLUDED.title_en,
 		  title_fa = EXCLUDED.title_fa,
@@ -646,7 +651,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		  is_indexable = EXCLUDED.is_indexable,
 		  sample_available = EXCLUDED.sample_available,
 		  updated_at = NOW()
-		RETURNING id, created_at, COALESCE(updated_at, created_at)
+		RETURNING id, display_order, created_at, COALESCE(updated_at, created_at)
 	`,
 		product.TitleEN,
 		product.TitleFA,
@@ -675,7 +680,7 @@ func (r *ProductRepository) Create(ctx context.Context, product domain.Product) 
 		product.SampleAvailable,
 	)
 
-	if err := row.Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt); err != nil {
+	if err := row.Scan(&product.ID, &product.DisplayOrder, &product.CreatedAt, &product.UpdatedAt); err != nil {
 		return domain.Product{}, err
 	}
 	return product, nil
@@ -752,6 +757,61 @@ func (r *ProductRepository) Update(ctx context.Context, product domain.Product) 
 func (r *ProductRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM products WHERE id = $1`, id)
 	return err
+}
+
+func (r *ProductRepository) Reorder(ctx context.Context, productIDs []int64) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `SELECT id FROM products ORDER BY id FOR UPDATE`)
+	if err != nil {
+		return err
+	}
+	existing := make(map[int64]struct{}, len(productIDs))
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		existing[id] = struct{}{}
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(existing) != len(productIDs) {
+		return fmt.Errorf("%w: expected %d products, received %d", domain.ErrInvalidProductOrder, len(existing), len(productIDs))
+	}
+	for _, id := range productIDs {
+		if _, ok := existing[id]; !ok {
+			return fmt.Errorf("%w: unknown product id %d", domain.ErrInvalidProductOrder, id)
+		}
+	}
+
+	result, err := tx.ExecContext(ctx, `
+		UPDATE products AS p
+		SET display_order = requested.position - 1,
+		    updated_at = NOW()
+		FROM UNNEST($1::bigint[]) WITH ORDINALITY AS requested(id, position)
+		WHERE p.id = requested.id
+	`, pq.Array(productIDs))
+	if err != nil {
+		return err
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if updated != int64(len(productIDs)) {
+		return fmt.Errorf("%w: only %d products were updated", domain.ErrInvalidProductOrder, updated)
+	}
+	return tx.Commit()
 }
 
 func (r *ProductRepository) ReplaceImages(ctx context.Context, productID int64, images []string) error {

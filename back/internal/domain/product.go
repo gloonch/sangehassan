@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrInvalidProductOrder = errors.New("invalid product order")
 
 type Product struct {
 	ID                     int64               `json:"id"`
@@ -32,6 +37,7 @@ type Product struct {
 	IsActive               bool                `json:"is_active"`
 	IsIndexable            bool                `json:"is_indexable"`
 	SampleAvailable        bool                `json:"sample_available"`
+	DisplayOrder           int                 `json:"display_order"`
 	TermIDs                []int64             `json:"term_ids,omitempty"`
 	CreatedAt              time.Time           `json:"created_at"`
 	UpdatedAt              time.Time           `json:"updated_at,omitempty"`

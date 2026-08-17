@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { defaultLandingDesktopImages } from "@shared/landingSlides";
 import ReorderableImageGrid from "../components/ReorderableImageGrid";
 import { moveImage, selectedIndexAfterImageMove } from "../lib/imageOrderDraft";
 import { useTranslation } from "../lib/i18n";
@@ -24,6 +25,11 @@ const emptyForm = {
   order_index: 0,
   is_active: true,
   image_urls: []
+};
+
+const defaultSlideImages = (page, key) => {
+  if (page !== "home") return [];
+  return defaultLandingDesktopImages[key] || [];
 };
 
 export default function ContentSections() {
@@ -148,6 +154,7 @@ export default function ContentSections() {
 
   const handleEdit = async (section) => {
     setEditingId(section.id);
+    setFormOpen(true);
     setLoading(true);
     try {
       const res = await fetchJSON(`/api/admin/content-sections/${section.id}`);
@@ -191,6 +198,10 @@ export default function ContentSections() {
   };
 
   const listItems = useMemo(() => sections, [sections]);
+  const configuredFormImages = form.image_urls || [];
+  const fallbackFormImages = defaultSlideImages(form.page, form.key);
+  const usingDefaultFormImages = configuredFormImages.length === 0 && fallbackFormImages.length > 0;
+  const effectiveFormImages = configuredFormImages.length ? configuredFormImages : fallbackFormImages;
 
   return (
     <div className="space-y-6">
@@ -225,7 +236,10 @@ export default function ContentSections() {
                   type="text"
                   className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
                   value={form.key}
-                  onChange={(event) => setForm({ ...form, key: event.target.value })}
+                  onChange={(event) => {
+                    setForm({ ...form, key: event.target.value });
+                    setSelectedImageIndex(0);
+                  }}
                   required
                 />
               </label>
@@ -377,7 +391,7 @@ export default function ContentSections() {
 
             <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
               <label className="block text-xs font-semibold uppercase tracking-wide text-primary/70">
-                {t("form.images")}
+                {t("panelContent.uploadSlides")}
                 <input
                   type="file"
                   accept="image/*"
@@ -385,6 +399,9 @@ export default function ContentSections() {
                   className="mt-2 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm"
                   onChange={(event) => handleImageUpload(event.target.files)}
                 />
+                <span className="mt-2 block text-[11px] font-normal normal-case tracking-normal text-primary/55">
+                  {t("panelContent.uploadHint")}
+                </span>
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-primary/10 bg-white p-4 text-sm">
                 <input
@@ -398,24 +415,45 @@ export default function ContentSections() {
             </div>
 
             <div className="rounded-2xl border border-primary/10 bg-sand/60 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary/60">
-                {t("panelContent.title")}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/60">
+                    {t("panelContent.mediaTitle")}
+                  </p>
+                  <p className="mt-1 text-xs text-primary/55">
+                    {usingDefaultFormImages
+                      ? t("panelContent.defaultSlidesHint")
+                      : configuredFormImages.length
+                        ? t("panelContent.customSlidesHint")
+                        : t("panelContent.noSlides")}
+                  </p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${usingDefaultFormImages ? "bg-primary/10 text-primary/70" : configuredFormImages.length ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  {usingDefaultFormImages
+                    ? t("panelContent.defaultSlides")
+                    : configuredFormImages.length
+                      ? t("panelContent.customSlides")
+                      : t("panelContent.noSlides")}
+                  {` • ${effectiveFormImages.length}`}
+                </span>
+              </div>
               <div className="mt-4">
                 <ReorderableImageGrid
-                  images={form.image_urls}
+                  images={effectiveFormImages}
                   selectedIndex={selectedImageIndex}
                   onSelect={setSelectedImageIndex}
-                  onRemove={handleRemoveImage}
-                  onMove={handleMoveImage}
+                  onRemove={usingDefaultFormImages ? undefined : handleRemoveImage}
+                  onMove={usingDefaultFormImages ? undefined : handleMoveImage}
                   previewClassName="h-40"
                   thumbnailClassName="h-14"
                   gridClassName="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+                  showOrderNumbers
                   labels={{
                     empty: t("messages.empty"),
                     remove: t("actions.delete"),
                     moveLeft: t("actions.moveLeft"),
-                    moveRight: t("actions.moveRight")
+                    moveRight: t("actions.moveRight"),
+                    slide: t("panelContent.slide")
                   }}
                 />
               </div>
@@ -456,41 +494,74 @@ export default function ContentSections() {
         )}
 
         <div className="space-y-3">
-          {listItems.map((section) => (
-            <div
-              key={section.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-white px-5 py-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-primary">
-                  {section.page} / {section.key}
-                </p>
-                <p className="text-xs text-primary/60">
-                  {section.title_fa || section.title_en}
-                </p>
+          {listItems.map((section) => {
+            const configuredImages = section.images || [];
+            const fallbackImages = defaultSlideImages(section.page, section.key);
+            const usingDefaults = configuredImages.length === 0 && fallbackImages.length > 0;
+            const visibleImages = configuredImages.length ? configuredImages : fallbackImages;
+            return (
+              <div
+                key={section.id}
+                className="rounded-2xl border border-primary/10 bg-white px-5 py-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-primary">
+                      {section.page} / {section.key}
+                    </p>
+                    <p className="text-xs text-primary/60">
+                      {section.title_fa || section.title_en}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-primary/70">
+                    <span>{t("form.orderIndex")}: {section.order_index}</span>
+                    <span>{section.is_active ? t("form.active") : t("form.inactive")}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
+                      onClick={() => handleEdit(section)}
+                    >
+                      {t("actions.edit")}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-500"
+                      onClick={() => handleDelete(section.id)}
+                    >
+                      {t("actions.delete")}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-primary/10 pt-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-semibold text-primary/70">{t("panelContent.currentSlides")}</span>
+                    <span className={usingDefaults ? "text-primary/55" : configuredImages.length ? "text-emerald-700" : "text-amber-700"}>
+                      {usingDefaults
+                        ? t("panelContent.defaultSlides")
+                        : configuredImages.length
+                          ? t("panelContent.customSlides")
+                          : t("panelContent.noSlides")}
+                      {` • ${visibleImages.length}`}
+                    </span>
+                  </div>
+                  <ReorderableImageGrid
+                    images={visibleImages}
+                    showPreview={false}
+                    showOrderNumbers
+                    thumbnailClassName="h-20"
+                    gridClassName="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-8"
+                    labels={{
+                      empty: t("panelContent.noSlides"),
+                      slide: t("panelContent.slide")
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-primary/70">
-                <span>{t("form.orderIndex")}: {section.order_index}</span>
-                <span>{section.is_active ? t("form.active") : t("form.inactive")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70"
-                  onClick={() => handleEdit(section)}
-                >
-                  {t("actions.edit")}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-500"
-                  onClick={() => handleDelete(section.id)}
-                >
-                  {t("actions.delete")}
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

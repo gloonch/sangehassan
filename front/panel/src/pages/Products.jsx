@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, GripVertical, LoaderCircle } from "lucide-react";
 import ReorderableImageGrid from "../components/ReorderableImageGrid";
 import { moveImage, selectedIndexAfterImageMove } from "../lib/imageOrderDraft";
+import { moveProduct } from "../lib/productOrder";
 import { useTranslation } from "../lib/i18n";
 import { API_BASE, fetchJSON } from "../lib/api";
 import { resolveImageUrl } from "../lib/assets";
@@ -67,6 +69,9 @@ export default function Products() {
   const [selectedListInputs, setSelectedListInputs] = useState(emptySelectedListInputs);
   const [productTerms, setProductTerms] = useState([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [draggedProductID, setDraggedProductID] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const [orderStatus, setOrderStatus] = useState("idle");
   const { imageOrderDraft, stageImageOrder, resetImageOrderDraft } = useImageOrderDraft();
 
   const metaListFields = useMemo(() => ([
@@ -164,6 +169,55 @@ export default function Products() {
   const getImageCount = (product) => {
     if (typeof product.image_count === "number") return product.image_count;
     return product.image_url ? 1 : 0;
+  };
+
+  const clearProductDrag = () => {
+    setDraggedProductID(null);
+    setDropTarget(null);
+  };
+
+  const handleProductDragStart = (event, productID) => {
+    if (filterCategory !== "all" || orderStatus === "saving") {
+      event.preventDefault();
+      return;
+    }
+    setOrderStatus("idle");
+    setDraggedProductID(productID);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(productID));
+  };
+
+  const handleProductDragOver = (event, targetID) => {
+    if (filterCategory !== "all" || draggedProductID == null || orderStatus === "saving") return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const placement = event.clientY < bounds.top + bounds.height / 2 ? "before" : "after";
+    setDropTarget({ id: targetID, placement });
+  };
+
+  const handleProductDrop = async (event, targetID) => {
+    event.preventDefault();
+    const placement = dropTarget?.id === targetID ? dropTarget.placement : "before";
+    const nextProducts = moveProduct(products, draggedProductID, targetID, placement);
+    clearProductDrag();
+    if (nextProducts === products) return;
+
+    const previousProducts = products;
+    setProducts(nextProducts);
+    setOrderStatus("saving");
+    setError("");
+    try {
+      await fetchJSON("/api/admin/products/order", {
+        method: "PUT",
+        body: JSON.stringify({ product_ids: nextProducts.map((product) => product.id) })
+      });
+      setOrderStatus("saved");
+    } catch (_) {
+      setProducts(previousProducts);
+      setOrderStatus("error");
+      setError(t("panelProducts.orderSaveFailed"));
+    }
   };
 
   const handleImageUpload = async (files) => {
@@ -762,6 +816,29 @@ export default function Products() {
           </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/10 bg-primary/[0.03] px-4 py-3 text-xs text-primary/65">
+          <p>
+            {filterCategory === "all"
+              ? t("panelProducts.orderHint")
+              : t("panelProducts.reorderAllCategories")}
+          </p>
+          {orderStatus === "saving" && (
+            <span className="flex items-center gap-2 font-semibold text-primary">
+              <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+              {t("panelProducts.orderSaving")}
+            </span>
+          )}
+          {orderStatus === "saved" && (
+            <span className="flex items-center gap-2 font-semibold text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              {t("panelProducts.orderSaved")}
+            </span>
+          )}
+          {orderStatus === "error" && (
+            <span className="font-semibold text-red-600">{t("panelProducts.orderSaveFailed")}</span>
+          )}
+        </div>
+
         {loading ? (
           <p className="text-sm text-primary/70">{t("messages.loading")}</p>
         ) : filteredProducts.length === 0 ? (
@@ -778,9 +855,26 @@ export default function Products() {
               return (
               <div
                 key={product.id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/10 bg-white/80 px-4 py-3"
+                onDragOver={(event) => handleProductDragOver(event, product.id)}
+                onDrop={(event) => handleProductDrop(event, product.id)}
+                className={`relative flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-white/80 px-4 py-3 transition ${draggedProductID === product.id ? "opacity-50" : ""} ${dropTarget?.id === product.id && dropTarget.placement === "before" ? "border-t-4 border-t-accent" : "border-primary/10"} ${dropTarget?.id === product.id && dropTarget.placement === "after" ? "border-b-4 border-b-accent" : ""}`}
               >
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    draggable={filterCategory === "all" && orderStatus !== "saving"}
+                    onDragStart={(event) => handleProductDragStart(event, product.id)}
+                    onDragEnd={clearProductDrag}
+                    disabled={filterCategory !== "all" || orderStatus === "saving"}
+                    className="flex h-10 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg border border-primary/10 text-primary/45 transition hover:border-accent/40 hover:text-accent active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={`${t("panelProducts.dragProduct")} ${product.title_fa || product.title_en}`}
+                    title={t("panelProducts.dragProduct")}
+                  >
+                    <GripVertical className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-primary/5 px-2 text-xs font-bold tabular-nums text-primary/60" title={t("panelProducts.position")}>
+                    {products.findIndex((item) => item.id === product.id) + 1}
+                  </span>
                   <div className="h-12 w-12 overflow-hidden rounded-xl border border-primary/20 bg-primary/5">
                     {product.image_url ? (
                       <img

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -47,6 +48,10 @@ type productPayload struct {
 	IsIndexable            *bool    `json:"is_indexable"`
 	SampleAvailable        *bool    `json:"sample_available"`
 	TermIDs                []int64  `json:"term_ids"`
+}
+
+type productOrderPayload struct {
+	ProductIDs []int64 `json:"product_ids"`
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
@@ -264,6 +269,23 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *ProductHandler) Reorder(c *gin.Context) {
+	var payload productOrderPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid product order payload")
+		return
+	}
+	if err := h.service.Reorder(c.Request.Context(), payload.ProductIDs); err != nil {
+		if errors.Is(err, domain.ErrInvalidProductOrder) {
+			respondError(c, http.StatusBadRequest, "product order must include every product exactly once")
+			return
+		}
+		respondError(c, http.StatusInternalServerError, "failed to save product order")
+		return
+	}
+	respondOK(c, gin.H{"product_ids": payload.ProductIDs})
 }
 
 func buildCategoryID(value int64) *int64 {

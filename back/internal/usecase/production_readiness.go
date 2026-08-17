@@ -537,11 +537,11 @@ func (s *OperationsService) Ready(ctx context.Context) error {
 		return err
 	}
 	var exists bool
-	if err := s.db.QueryRowContext(readyCtx, `SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version=19)`).Scan(&exists); err != nil {
+	if err := s.db.QueryRowContext(readyCtx, `SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version=20)`).Scan(&exists); err != nil {
 		return err
 	}
 	if !exists {
-		return errors.New("database migration 019 is required")
+		return errors.New("database migration 020 is required")
 	}
 	return nil
 }
