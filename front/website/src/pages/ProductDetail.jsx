@@ -138,6 +138,7 @@ export default function ProductDetail() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const lightboxScrollRef = useRef(null);
   const lightboxImageRefs = useRef([]);
 
@@ -187,6 +188,10 @@ export default function ProductDetail() {
   useEffect(() => {
     setActiveHotspotId(null);
   }, [activeIndex, slug]);
+
+  useEffect(() => {
+    setShowAllProjects(false);
+  }, [slug]);
 
   useEffect(() => {
     if (!lightboxOpen) return undefined;
@@ -468,7 +473,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="hidden lg:grid lg:w-full lg:grid-cols-[9fr_1fr]">
+            <div className="hidden lg:grid lg:w-full lg:grid-cols-[9fr_1fr] lg:gap-2">
               {primaryImage ? (
                 <>
                   <button
@@ -540,6 +545,59 @@ export default function ProductDetail() {
                   })}
                 </div>
               </div>
+            )}
+
+            {relatedProjects.length > 0 && (
+              <section className="space-y-3 border-y border-primary/15 py-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className={`space-y-1 ${isRTL ? "text-right" : "text-left"}`}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/65">
+                      {t("productDetail.relatedProjectsTitle")}
+                    </p>
+                    <p className="text-xs text-primary/55">{t("productDetail.relatedProjectsSubtitle")}</p>
+                  </div>
+                  {!showAllProjects && relatedProjects.length > 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllProjects(true)}
+                      className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50 hover:text-primary"
+                    >
+                      {t("productDetail.relatedProjectsViewAll")}
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  {(showAllProjects ? relatedProjects : relatedProjects.slice(0, 3)).map((project) => {
+                    const title = getLocalizedProjectTitle(project, lang, t);
+                    const description = getLocalizedProjectDescription(project, lang);
+                    return (
+                      <Link
+                        key={project.id}
+                        to={`/projects/${project.id}`}
+                        className="group grid min-h-24 grid-cols-[6rem_1fr] overflow-hidden border border-primary/15 bg-white/45 transition hover:border-primary/40 hover:bg-white/65"
+                      >
+                        <div className="aspect-square bg-primary/10">
+                          {project.cover_image_url ? (
+                            <img
+                              src={resolveImageUrl(project.cover_image_url)}
+                              alt={title}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                              loading="lazy"
+                            />
+                          ) : null}
+                        </div>
+                        <div className={`min-w-0 self-center px-3 py-2 ${isRTL ? "text-right" : "text-left"}`}>
+                          <p className="line-clamp-2 text-sm font-semibold leading-6 text-primary">{title}</p>
+                          {description ? (
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-primary/55">{description}</p>
+                          ) : null}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
             )}
 
             <div className="space-y-2">
@@ -748,47 +806,6 @@ export default function ProductDetail() {
                           <p className="line-clamp-2 text-sm font-semibold text-primary">{title}</p>
                           {categoryTitle ? (
                             <p className="truncate text-xs text-primary/50">{categoryTitle}</p>
-                          ) : null}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {relatedProjects.length > 0 && (
-              <section className="space-y-4 border-t border-primary/20 pt-6">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.3em] text-primary/60">
-                    {t("productDetail.relatedProjectsTitle")}
-                  </p>
-                  <p className="text-sm text-primary/60">{t("productDetail.relatedProjectsSubtitle")}</p>
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {relatedProjects.map((project) => {
-                    const title = getLocalizedProjectTitle(project, lang, t);
-                    const description = getLocalizedProjectDescription(project, lang);
-                    return (
-                      <Link
-                        key={project.id}
-                        to={`/projects/${project.id}`}
-                        className="group overflow-hidden border border-primary/15 bg-white/55 transition hover:border-primary/40"
-                      >
-                        <div className="aspect-[4/3] bg-primary/10">
-                          {project.cover_image_url ? (
-                            <img
-                              src={resolveImageUrl(project.cover_image_url)}
-                              alt={title}
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                              loading="lazy"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="space-y-1 px-3 py-3">
-                          <p className="line-clamp-2 text-sm font-semibold text-primary">{title}</p>
-                          {description ? (
-                            <p className="line-clamp-2 text-xs text-primary/55">{description}</p>
                           ) : null}
                         </div>
                       </Link>

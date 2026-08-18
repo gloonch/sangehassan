@@ -343,8 +343,9 @@
     "popularBadge": "Popular choice",
     "relatedProductsTitle": "Related products",
     "relatedProductsSubtitle": "Other stones from the same category.",
-    "relatedProjectsTitle": "Projects using this stone",
-    "relatedProjectsSubtitle": "Real projects connected to this product.",
+    "relatedProjectsTitle": "Completed projects using this stone",
+    "relatedProjectsSubtitle": "Examples of this product used in real projects.",
+    "relatedProjectsViewAll": "View all projects",
     "prev": "Previous",
     "next": "Next"
   },

@@ -136,8 +136,9 @@
     "popularBadge": "اختيار شائع",
     "relatedProductsTitle": "منتجات ذات صلة",
     "relatedProductsSubtitle": "أحجار أخرى من الفئة نفسها.",
-    "relatedProjectsTitle": "مشاريع تستخدم هذا الحجر",
-    "relatedProjectsSubtitle": "مشاريع مرتبطة بهذا المنتج.",
+    "relatedProjectsTitle": "مشاريع منفذة بهذا الحجر",
+    "relatedProjectsSubtitle": "أمثلة على استخدام هذا المنتج في مشاريع حقيقية.",
+    "relatedProjectsViewAll": "عرض جميع المشاريع",
     "prev": "السابق",
     "next": "التالي"
   },

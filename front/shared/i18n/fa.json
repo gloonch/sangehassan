@@ -136,8 +136,9 @@
     "popularBadge": "پرمخاطب",
     "relatedProductsTitle": "محصولات مرتبط",
     "relatedProductsSubtitle": "سنگ‌های دیگر از همین دسته‌بندی.",
-    "relatedProjectsTitle": "پروژه‌های مرتبط با این سنگ",
-    "relatedProjectsSubtitle": "پروژه‌هایی که به این محصول وصل شده‌اند.",
+    "relatedProjectsTitle": "پروژه‌های اجراشده با این سنگ",
+    "relatedProjectsSubtitle": "نمونه‌هایی از اجرای این محصول در پروژه‌های واقعی.",
+    "relatedProjectsViewAll": "مشاهده همه پروژه‌ها",
     "prev": "قبلی",
     "next": "بعدی"
   },
