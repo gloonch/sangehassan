@@ -469,7 +469,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="hidden lg:ml-auto lg:grid lg:w-4/5 lg:grid-cols-[9fr_1fr] lg:gap-2">
+            <div className="hidden lg:mx-auto lg:grid lg:w-4/5 lg:grid-cols-[9fr_1fr] lg:gap-2">
               {primaryImage ? (
                 <>
                   <button
@@ -547,46 +547,48 @@ export default function ProductDetail() {
 
             {(images.length > 1 || relatedProjects.length > 0) && (
               <nav
-                className="flex flex-nowrap gap-2 overflow-x-auto no-scrollbar pb-1 lg:hidden"
+                className="overflow-x-auto no-scrollbar pb-1 lg:hidden"
                 aria-label={t("productDetail.relatedProjectsTitle")}
               >
-                {images.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => openLightbox(1)}
-                    className="group relative flex aspect-square w-20 shrink-0 flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
-                    aria-label={`${t("productDetail.openGallery")} (${images.length})`}
-                    aria-haspopup="dialog"
-                    aria-expanded={lightboxOpen}
-                  >
-                    <GalleryIcon className="h-[38%] w-[38%] transition duration-300 group-hover:scale-110" />
-                    <span className="text-[10px] font-semibold tabular-nums text-primary/60">+{images.length - 1}</span>
-                  </button>
-                ) : null}
-
-                {relatedProjects.map((project) => {
-                  const title = getLocalizedProjectTitle(project, lang, t);
-                  return (
-                    <Link
-                      key={project.id}
-                      to={`/projects/${project.id}`}
-                      className="group relative block aspect-square w-20 shrink-0 overflow-hidden border border-primary/15 bg-primary/10 transition hover:border-primary/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
-                      aria-label={title}
+                <div className="flex w-max min-w-full flex-nowrap justify-center gap-2">
+                  {images.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => openLightbox(1)}
+                      className="group relative flex aspect-square w-20 shrink-0 flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                      aria-label={`${t("productDetail.openGallery")} (${images.length})`}
+                      aria-haspopup="dialog"
+                      aria-expanded={lightboxOpen}
                     >
-                      {project.cover_image_url ? (
-                        <img
-                          src={resolveImageUrl(project.cover_image_url)}
-                          alt=""
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
-                          loading="lazy"
-                        />
-                      ) : null}
-                      <span className="absolute inset-x-0 bottom-0 line-clamp-2 bg-primary/80 px-1.5 py-1 text-center text-[9px] font-semibold leading-3 text-white backdrop-blur-sm">
-                        {title}
-                      </span>
-                    </Link>
-                  );
-                })}
+                      <GalleryIcon className="h-[38%] w-[38%] transition duration-300 group-hover:scale-110" />
+                      <span className="text-[10px] font-semibold tabular-nums text-primary/60">+{images.length - 1}</span>
+                    </button>
+                  ) : null}
+
+                  {relatedProjects.map((project) => {
+                    const title = getLocalizedProjectTitle(project, lang, t);
+                    return (
+                      <Link
+                        key={project.id}
+                        to={`/projects/${project.id}`}
+                        className="group relative block aspect-square w-20 shrink-0 overflow-hidden border border-primary/15 bg-primary/10 transition hover:border-primary/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                        aria-label={title}
+                      >
+                        {project.cover_image_url ? (
+                          <img
+                            src={resolveImageUrl(project.cover_image_url)}
+                            alt=""
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
+                            loading="lazy"
+                          />
+                        ) : null}
+                        <span className="absolute inset-x-0 bottom-0 line-clamp-2 bg-primary/80 px-1.5 py-1 text-center text-[9px] font-semibold leading-3 text-white backdrop-blur-sm">
+                          {title}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </nav>
             )}
 
