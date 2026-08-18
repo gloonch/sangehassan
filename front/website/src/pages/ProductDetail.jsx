@@ -468,7 +468,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="hidden lg:grid lg:w-[min(72vw,820px)] lg:grid-cols-[9fr_1fr]">
+            <div className="hidden lg:grid lg:w-full lg:grid-cols-[9fr_1fr]">
               {primaryImage ? (
                 <>
                   <button
