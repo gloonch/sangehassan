@@ -495,12 +495,12 @@ export default function ProductDetail() {
                     <ImageScale />
                   </button>
 
-                  <div className="min-w-0">
+                  <div className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden">
                     {images.length > 1 ? (
                       <button
                         type="button"
                         onClick={() => openLightbox(1)}
-                        className="group relative flex aspect-square w-full flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                        className="group relative flex aspect-square w-full shrink-0 flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
                         aria-label={`${t("productDetail.openGallery")} (${images.length})`}
                         aria-haspopup="dialog"
                         aria-expanded={lightboxOpen}
@@ -508,6 +508,37 @@ export default function ProductDetail() {
                         <GalleryIcon className="h-[38%] w-[38%] transition duration-300 group-hover:scale-110" />
                         <span className="text-[10px] font-semibold tabular-nums text-primary/60">+{images.length - 1}</span>
                       </button>
+                    ) : null}
+
+                    {relatedProjects.length > 0 ? (
+                      <nav
+                        className="min-h-0 flex-1 space-y-2 overflow-y-auto no-scrollbar"
+                        aria-label={t("productDetail.relatedProjectsTitle")}
+                      >
+                        {relatedProjects.map((project) => {
+                          const title = getLocalizedProjectTitle(project, lang, t);
+                          return (
+                            <Link
+                              key={project.id}
+                              to={`/projects/${project.id}`}
+                              className="group relative block aspect-square w-full overflow-hidden border border-primary/15 bg-primary/10 transition hover:border-primary/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                              aria-label={title}
+                            >
+                              {project.cover_image_url ? (
+                                <img
+                                  src={resolveImageUrl(project.cover_image_url)}
+                                  alt=""
+                                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
+                                  loading="lazy"
+                                />
+                              ) : null}
+                              <span className="absolute inset-x-0 bottom-0 line-clamp-2 bg-primary/80 px-1.5 py-1 text-center text-[9px] font-semibold leading-3 text-white backdrop-blur-sm">
+                                {title}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </nav>
                     ) : null}
                   </div>
                 </>
@@ -548,7 +579,7 @@ export default function ProductDetail() {
             )}
 
             {relatedProjects.length > 0 && (
-              <section className="space-y-3 border-y border-primary/15 py-4">
+              <section className="space-y-3 border-y border-primary/15 py-4 lg:hidden">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div className={`space-y-1 ${isRTL ? "text-right" : "text-left"}`}>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/65">
