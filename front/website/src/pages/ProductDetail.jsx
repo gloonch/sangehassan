@@ -138,7 +138,6 @@ export default function ProductDetail() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
-  const [showAllProjects, setShowAllProjects] = useState(false);
   const lightboxScrollRef = useRef(null);
   const lightboxImageRefs = useRef([]);
 
@@ -188,10 +187,6 @@ export default function ProductDetail() {
   useEffect(() => {
     setActiveHotspotId(null);
   }, [activeIndex, slug]);
-
-  useEffect(() => {
-    setShowAllProjects(false);
-  }, [slug]);
 
   useEffect(() => {
     if (!lightboxOpen) return undefined;
@@ -447,23 +442,24 @@ export default function ProductDetail() {
 
             <div className="lg:hidden">
               <div className="relative overflow-hidden bg-primary/10">
-                {activeImage ? (
+                {primaryImage ? (
                   <button
                     type="button"
                     className="group relative block h-[42vh] min-h-[320px] w-full cursor-zoom-in appearance-none overflow-hidden border-0 bg-transparent p-0 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 md:h-[52vh]"
-                    onClick={() => openLightbox(activeIndex)}
+                    onClick={() => openLightbox(0)}
                     aria-label={t("productDetail.openGallery")}
                     aria-haspopup="dialog"
                     aria-expanded={lightboxOpen}
                   >
                     <img
-                      src={resolveImageUrl(activeImage)}
+                      src={resolveImageUrl(primaryImage)}
                       alt={localizedTitle}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                       loading="eager"
                       fetchPriority="high"
                       decoding="async"
                     />
+                    <ImageScale />
                   </button>
                 ) : (
                   <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
@@ -473,7 +469,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="hidden lg:grid lg:w-full lg:grid-cols-[9fr_1fr] lg:gap-2">
+            <div className="hidden lg:ml-auto lg:grid lg:w-4/5 lg:grid-cols-[9fr_1fr] lg:gap-2">
               {primaryImage ? (
                 <>
                   <button
@@ -549,86 +545,49 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {images.length > 0 && (
-              <div className="overflow-x-auto no-scrollbar pb-1 lg:hidden">
-                <div className="flex flex-nowrap gap-2">
-                  {images.map((image, index) => {
-                    const isActive = index === activeIndex;
-                    return (
-                      <button
-                        key={`${image}-${index}`}
-                        type="button"
-                        onClick={() => setActiveIndex(index)}
-                        aria-label={`thumb-${index + 1}`}
-                        className={`relative h-16 w-16 flex-shrink-0 overflow-hidden border transition ${isActive
-                          ? "border-primary"
-                          : "border-primary/20 hover:border-primary/45"
-                          }`}
-                      >
+            {(images.length > 1 || relatedProjects.length > 0) && (
+              <nav
+                className="flex flex-nowrap gap-2 overflow-x-auto no-scrollbar pb-1 lg:hidden"
+                aria-label={t("productDetail.relatedProjectsTitle")}
+              >
+                {images.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => openLightbox(1)}
+                    className="group relative flex aspect-square w-20 shrink-0 flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                    aria-label={`${t("productDetail.openGallery")} (${images.length})`}
+                    aria-haspopup="dialog"
+                    aria-expanded={lightboxOpen}
+                  >
+                    <GalleryIcon className="h-[38%] w-[38%] transition duration-300 group-hover:scale-110" />
+                    <span className="text-[10px] font-semibold tabular-nums text-primary/60">+{images.length - 1}</span>
+                  </button>
+                ) : null}
+
+                {relatedProjects.map((project) => {
+                  const title = getLocalizedProjectTitle(project, lang, t);
+                  return (
+                    <Link
+                      key={project.id}
+                      to={`/projects/${project.id}`}
+                      className="group relative block aspect-square w-20 shrink-0 overflow-hidden border border-primary/15 bg-primary/10 transition hover:border-primary/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                      aria-label={title}
+                    >
+                      {project.cover_image_url ? (
                         <img
-                          src={resolveImageUrl(image)}
+                          src={resolveImageUrl(project.cover_image_url)}
                           alt=""
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
                           loading="lazy"
                         />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {relatedProjects.length > 0 && (
-              <section className="space-y-3 border-y border-primary/15 py-4 lg:hidden">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div className={`space-y-1 ${isRTL ? "text-right" : "text-left"}`}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/65">
-                      {t("productDetail.relatedProjectsTitle")}
-                    </p>
-                    <p className="text-xs text-primary/55">{t("productDetail.relatedProjectsSubtitle")}</p>
-                  </div>
-                  {!showAllProjects && relatedProjects.length > 3 ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllProjects(true)}
-                      className="rounded-full border border-primary/20 px-4 py-2 text-xs font-semibold text-primary/70 transition hover:border-primary/50 hover:text-primary"
-                    >
-                      {t("productDetail.relatedProjectsViewAll")}
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  {(showAllProjects ? relatedProjects : relatedProjects.slice(0, 3)).map((project) => {
-                    const title = getLocalizedProjectTitle(project, lang, t);
-                    const description = getLocalizedProjectDescription(project, lang);
-                    return (
-                      <Link
-                        key={project.id}
-                        to={`/projects/${project.id}`}
-                        className="group grid min-h-24 grid-cols-[6rem_1fr] overflow-hidden border border-primary/15 bg-white/45 transition hover:border-primary/40 hover:bg-white/65"
-                      >
-                        <div className="aspect-square bg-primary/10">
-                          {project.cover_image_url ? (
-                            <img
-                              src={resolveImageUrl(project.cover_image_url)}
-                              alt={title}
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                              loading="lazy"
-                            />
-                          ) : null}
-                        </div>
-                        <div className={`min-w-0 self-center px-3 py-2 ${isRTL ? "text-right" : "text-left"}`}>
-                          <p className="line-clamp-2 text-sm font-semibold leading-6 text-primary">{title}</p>
-                          {description ? (
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-primary/55">{description}</p>
-                          ) : null}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
+                      ) : null}
+                      <span className="absolute inset-x-0 bottom-0 line-clamp-2 bg-primary/80 px-1.5 py-1 text-center text-[9px] font-semibold leading-3 text-white backdrop-blur-sm">
+                        {title}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
             )}
 
             <div className="space-y-2">
