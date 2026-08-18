@@ -11,7 +11,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/signintech/gopdf v0.33.0
 	golang.org/x/crypto v0.24.0
-	golang.org/x/image v0.18.0
 )
 
 require (

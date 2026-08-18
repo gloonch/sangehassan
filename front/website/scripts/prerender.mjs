@@ -21,7 +21,6 @@ const sitemapLastmod = /^\d{4}-\d{2}-\d{2}$/.test(configuredSitemapLastmod)
 const organizationId = `${siteUrl}/#organization`;
 const websiteId = `${siteUrl}/#website`;
 const defaultRobots = "index,follow";
-const protectedImageRev = process.env.VITE_PROTECTED_IMAGE_REV || "protected-2026-06-09-r3";
 const sharedAssetUrl = (sourcePath) => `/@fs${path.resolve(rootDir, sourcePath).replace(/\\/g, "/")}`;
 const defaultShareImage = sharedAssetUrl("../shared/assets/landing_page/landingpage_blocks_overlay.webp");
 const fetchTimeoutMs = Number(process.env.VITE_PRERENDER_FETCH_TIMEOUT_MS || 10000);
@@ -243,24 +242,6 @@ function absoluteUrl(value = "") {
   if (!value) return "";
   if (/^https?:\/\//i.test(value)) return value;
   return `${siteUrl}${value.startsWith("/") ? "" : "/"}${value}`;
-}
-
-function protectedProductImagePath(value = "") {
-  if (!value || /^https?:\/\//i.test(value)) return value;
-
-  const protectedPath = value.startsWith("/images/products/")
-    ? value.replace(/^\/images\//, "/protected-images/")
-    : value.startsWith("/protected-images/products/")
-      ? value
-      : "";
-  if (!protectedPath) return value;
-
-  const [urlWithoutHash, hash = ""] = protectedPath.split("#");
-  const [pathname, query = ""] = urlWithoutHash.split("?");
-  const params = new URLSearchParams(query);
-  params.set("pv", protectedImageRev);
-  const nextQuery = params.toString();
-  return `${pathname}${nextQuery ? `?${nextQuery}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
 function escapeAttr(value = "") {
@@ -774,7 +755,7 @@ async function detailRoutes(items, routeFactory, detailPath, dataKey, label) {
       if (!createdRoutes) return [];
       return (Array.isArray(createdRoutes) ? createdRoutes : [createdRoutes]).map((route) => ({
         ...route,
-        prerenderData: { [dataKey]: dataKey === "product" ? protectProductPrerenderData(data) : data }
+        prerenderData: { [dataKey]: data }
       }));
     })
   );
@@ -796,28 +777,7 @@ function shareImage(item) {
 }
 
 function productShareImage(product) {
-  return protectedProductImagePath(firstImage(product)) || defaultShareImage;
-}
-
-function protectProductPrerenderData(product) {
-  if (!product || typeof product !== "object") return product;
-
-  return {
-    ...product,
-    image_url: protectedProductImagePath(product.image_url || ""),
-    images: Array.isArray(product.images)
-      ? product.images.map((image) => {
-          if (typeof image === "string") return protectedProductImagePath(image);
-          if (image && typeof image === "object") {
-            return {
-              ...image,
-              image_url: protectedProductImagePath(image.image_url || "")
-            };
-          }
-          return image;
-        })
-      : product.images
-  };
+  return firstImage(product) || defaultShareImage;
 }
 
 function productRoute(product) {

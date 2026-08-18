@@ -589,15 +589,7 @@
     "templatesCount": "Templates",
     "blogsCount": "Blogs",
     "categoryUsageTitle": "Category coverage",
-    "templatesTitle": "Templates overview",
-    "mediaSettingsTitle": "Media settings",
-    "watermarkTitle": "Product image watermark",
-    "watermarkDescription": "Controls only the watermark overlay on protected product-detail images. Protected image delivery and non-download UI behavior remain active.",
-    "watermarkOn": "On",
-    "watermarkOff": "Off",
-    "watermarkEnabled": "Watermark overlay is enabled",
-    "watermarkDisabled": "Watermark overlay is disabled",
-    "savingSettings": "Saving..."
+    "templatesTitle": "Templates overview"
   },
   "categories": {
     "title": "Categories",

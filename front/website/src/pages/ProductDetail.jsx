@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
-import { resolveImageUrl, resolveProtectedImageUrl, resolveProtectedThumbnailUrl } from "../lib/assets";
+import { resolveImageUrl } from "../lib/assets";
 import { getAbsoluteUrl, getCanonicalUrl, usePageSeo } from "../lib/seo";
 import { getProductSeo, productAdditionalProperties } from "../lib/productSeo";
 import { usePrerenderData } from "../lib/prerenderData";
-import ProtectedImage from "../components/ProtectedImage";
 import { catalogAlternates } from "../lib/catalogLocale";
 import { hasLegacyProductsReturnState, readCatalogProductReturnState } from "../lib/productReturnState";
 import { formatOfferPrice, getProductOfferPrice, getProductOfferStructuredData, getProductSku } from "../lib/productOffers";
@@ -233,7 +232,7 @@ export default function ProductDetail() {
     if (!product || !localizedTitle) return null;
 
     const pageUrl = getCanonicalUrl(localizedProductPath);
-    const imageUrl = activeImage ? getAbsoluteUrl(resolveProtectedImageUrl(activeImage)) : undefined;
+    const imageUrl = activeImage ? getAbsoluteUrl(resolveImageUrl(activeImage)) : undefined;
     return {
       "@context": "https://schema.org",
       "@type": "Product",
@@ -260,7 +259,7 @@ export default function ProductDetail() {
     path: localizedProductPath,
     lang,
     locale: lang === "fa" ? "fa_IR" : lang === "ar" ? "ar_SA" : "en_US",
-    image: activeImage ? resolveProtectedImageUrl(activeImage) : "",
+    image: activeImage ? resolveImageUrl(activeImage) : "",
     type: "product",
     robots: isLegacyProductPath || (!loading && !product) ? "noindex,follow" : "index,follow",
     alternates: catalogAlternates(`/${slug}`),
@@ -450,14 +449,13 @@ export default function ProductDetail() {
                     aria-haspopup="dialog"
                     aria-expanded={lightboxOpen}
                   >
-                    <ProtectedImage
-                      src={resolveProtectedImageUrl(activeImage)}
+                    <img
+                      src={resolveImageUrl(activeImage)}
                       alt={localizedTitle}
-                      wrapperClassName="h-full w-full"
-                      fit="cover"
-                      className="transition duration-500 group-hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                       loading="eager"
                       fetchPriority="high"
+                      decoding="async"
                     />
                   </button>
                 ) : (
@@ -479,14 +477,13 @@ export default function ProductDetail() {
                     aria-haspopup="dialog"
                     aria-expanded={lightboxOpen}
                   >
-                    <ProtectedImage
-                      src={resolveProtectedImageUrl(primaryImage)}
+                    <img
+                      src={resolveImageUrl(primaryImage)}
                       alt={localizedTitle}
-                      wrapperClassName="h-full w-full"
-                      fit="cover"
-                      className="transition duration-500 group-hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                       loading="eager"
                       fetchPriority="high"
+                      decoding="async"
                     />
                     <ImageScale />
                   </button>
@@ -531,7 +528,7 @@ export default function ProductDetail() {
                           }`}
                       >
                         <img
-                          src={resolveProtectedThumbnailUrl(image)}
+                          src={resolveImageUrl(image)}
                           alt=""
                           className="h-full w-full object-cover"
                           loading="lazy"
@@ -824,11 +821,11 @@ export default function ProductDetail() {
 
           <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col pb-6">
             <div className="flex-1 overflow-hidden">
-              <ProtectedImage
-                src={resolveProtectedImageUrl(activeImage)}
+              <img
+                src={resolveImageUrl(activeImage)}
                 alt={localizedTitle}
-                wrapperClassName="h-full w-full"
-                fit="contain"
+                className="h-full w-full object-contain"
+                decoding="async"
               />
             </div>
             {images.length > 1 && (

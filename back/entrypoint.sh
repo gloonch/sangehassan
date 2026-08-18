@@ -21,10 +21,6 @@ if [ -d /seed/images ]; then
       mkdir -p /app/storage/images/category_images
       cp -R /seed/images/category_images/. /app/storage/images/category_images/
     fi
-    if [ -d /seed/images/watermark ]; then
-      mkdir -p /app/storage/images/watermark
-      cp -R /seed/images/watermark/. /app/storage/images/watermark/
-    fi
     # Provide a few generic placeholder images under /images/content/.
     mkdir -p /app/storage/images/content
     for f in /seed/images/granite.jpg /seed/images/marble.jpg /seed/images/travertine.jpg; do

@@ -589,15 +589,7 @@
     "templatesCount": "قالب‌ها",
     "blogsCount": "مقالات",
     "categoryUsageTitle": "پوشش دسته‌بندی‌ها",
-    "templatesTitle": "نمای کلی قالب‌ها",
-    "mediaSettingsTitle": "تنظیمات رسانه",
-    "watermarkTitle": "واترمارک تصاویر محصول",
-    "watermarkDescription": "فقط لایه واترمارک روی تصاویر محافظت‌شده صفحه جزئیات محصول را کنترل می‌کند. مسیر محافظت‌شده و رفتار غیرقابل دانلود باقی می‌ماند.",
-    "watermarkOn": "روشن",
-    "watermarkOff": "خاموش",
-    "watermarkEnabled": "لایه واترمارک فعال است",
-    "watermarkDisabled": "لایه واترمارک غیرفعال است",
-    "savingSettings": "در حال ذخیره..."
+    "templatesTitle": "نمای کلی قالب‌ها"
   },
   "categories": {
     "title": "دسته‌بندی‌ها",

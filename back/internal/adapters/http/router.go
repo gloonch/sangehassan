@@ -56,10 +56,6 @@ func NewRouter(
 
 	router.Static("/images", cfg.UploadDir)
 
-	imageHandler := handlers.NewImageHandler(cfg.UploadDir, "")
-	router.GET("/protected-images/*filepath", imageHandler.Serve)
-	router.HEAD("/protected-images/*filepath", imageHandler.Serve)
-
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -431,8 +427,6 @@ func NewRouter(
 			admin.POST("/upload/project", uploadHandler.UploadProject)
 
 			admin.GET("/dashboard", dashboardHandler.Stats)
-			admin.GET("/protected-images/settings", imageHandler.AdminSettings)
-			admin.PUT("/protected-images/settings", imageHandler.AdminUpdateSettings)
 
 			admin.GET("/product-terms", productTermHandler.List)
 			admin.POST("/product-terms", productTermHandler.Upsert)
