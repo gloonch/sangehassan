@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "../lib/i18n";
 import { fetchJSON } from "../lib/api";
@@ -138,6 +138,8 @@ export default function ProductDetail() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeHotspotId, setActiveHotspotId] = useState(null);
+  const lightboxScrollRef = useRef(null);
+  const lightboxImageRefs = useRef([]);
 
   useEffect(() => {
     let mounted = true;
@@ -197,12 +199,22 @@ export default function ProductDetail() {
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
+    const scrollFrame = window.requestAnimationFrame(() => {
+      const scrollContainer = lightboxScrollRef.current;
+      const targetImage = lightboxImageRefs.current[activeIndex];
+      if (scrollContainer && targetImage) {
+        const targetTop =
+          scrollContainer.scrollTop + targetImage.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
+        scrollContainer.scrollTo({ top: targetTop, behavior: "auto" });
+      }
+    });
 
     return () => {
+      window.cancelAnimationFrame(scrollFrame);
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [lightboxOpen]);
+  }, [activeIndex, lightboxOpen]);
 
   const primaryImage = images[0] || "";
   const activeImage = images[activeIndex] || primaryImage;
@@ -385,16 +397,6 @@ export default function ProductDetail() {
     return fallbackHotspots;
   }, [fallbackHotspots, lang, product?.hotspots, product?.image_hotspots]);
 
-  const goPrev = () => {
-    if (images.length <= 1) return;
-    setActiveIndex((idx) => (idx - 1 + images.length) % images.length);
-  };
-
-  const goNext = () => {
-    if (images.length <= 1) return;
-    setActiveIndex((idx) => (idx + 1) % images.length);
-  };
-
   if (!loading && !product) return <NotFound />;
 
   return (
@@ -466,7 +468,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="hidden lg:grid lg:w-[min(72vw,820px)] lg:grid-cols-[10fr_1fr] lg:gap-4">
+            <div className="hidden lg:grid lg:w-[min(72vw,820px)] lg:grid-cols-[9fr_1fr]">
               {primaryImage ? (
                 <>
                   <button
@@ -819,36 +821,34 @@ export default function ProductDetail() {
             </button>
           </div>
 
-          <div className="section-shell flex h-[calc(100dvh-5rem)] flex-col pb-6">
-            <div className="flex-1 overflow-hidden">
-              <img
-                src={resolveImageUrl(activeImage)}
-                alt={localizedTitle}
-                className="h-full w-full object-contain"
-                decoding="async"
-              />
+          <div
+            ref={lightboxScrollRef}
+            className="h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain"
+          >
+            <div className="section-shell space-y-4 pb-8">
+              {images.map((image, index) => (
+                <figure
+                  key={`${image}-${index}`}
+                  ref={(node) => {
+                    lightboxImageRefs.current[index] = node;
+                  }}
+                  className="relative flex min-h-[calc(100dvh-7rem)] w-full items-center justify-center overflow-hidden bg-primary/5"
+                >
+                  <img
+                    src={resolveImageUrl(image)}
+                    alt={`${localizedTitle} - ${index + 1}`}
+                    className="max-h-[calc(100dvh-7rem)] w-full object-contain"
+                    loading={index === activeIndex ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                  {images.length > 1 && (
+                    <figcaption className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-[#E5E1DD]/85 px-3 py-1 text-xs font-semibold text-primary/65 backdrop-blur-sm">
+                      {index + 1}/{images.length}
+                    </figcaption>
+                  )}
+                </figure>
+              ))}
             </div>
-            {images.length > 1 && (
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={goPrev}
-                  className="rounded-full border border-primary/25 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary/50"
-                >
-                  {t("productDetail.prev")}
-                </button>
-                <span className="text-xs font-semibold text-primary/65">
-                  {activeIndex + 1}/{images.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="rounded-full border border-primary/25 px-4 py-2 text-xs font-semibold text-primary transition hover:border-primary/50"
-                >
-                  {t("productDetail.next")}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
