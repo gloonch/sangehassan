@@ -29,6 +29,25 @@ const PhoneIcon = ({ className }) => (
   </svg>
 );
 
+const GalleryIcon = ({ className }) => (
+  <svg {...iconBaseProps} className={className} aria-hidden="true">
+    <rect x="3.5" y="3.5" width="13" height="13" rx="1.5" />
+    <path d="m5.5 14l3.2-3.4l2.4 2.3l1.6-1.7l3.8 3.8" />
+    <circle cx="12.7" cy="7.7" r="1.1" />
+    <path d="M8 20.5h10.5a2 2 0 0 0 2-2V8" />
+  </svg>
+);
+
+const ImageScale = () => (
+  <span
+    className="pointer-events-none absolute bottom-[4.5%] right-[4.5%] z-10 flex w-[clamp(100px,24%,168px)] flex-col items-center text-white mix-blend-difference"
+    dir="ltr"
+  >
+    <span className="text-[11px] font-semibold leading-none tracking-[0.04em] md:text-xs">10 cm</span>
+    <span className="relative mt-1.5 block h-px w-full bg-current before:absolute before:bottom-0 before:left-0 before:h-2 before:w-px before:bg-current after:absolute after:bottom-0 after:right-0 after:h-2 after:w-px after:bg-current" />
+  </span>
+);
+
 const getLocalized = (item, lang) => {
   if (!item) return "";
   if (lang === "fa") return item.title_fa;
@@ -186,11 +205,13 @@ export default function ProductDetail() {
     };
   }, [lightboxOpen]);
 
-  const activeImage = images[activeIndex] || images[0] || "";
-  const openLightbox = () => {
-    if (activeImage) {
-      setLightboxOpen(true);
-    }
+  const primaryImage = images[0] || "";
+  const activeImage = images[activeIndex] || primaryImage;
+  const openLightbox = (index = activeIndex) => {
+    if (!images.length) return;
+    const nextIndex = Math.min(Math.max(index, 0), images.length - 1);
+    setActiveIndex(nextIndex);
+    setLightboxOpen(true);
   };
   const closeLightbox = () => setLightboxOpen(false);
   const productSeo = getProductSeo(product, lang);
@@ -418,36 +439,83 @@ export default function ProductDetail() {
               </Link>
             </div>
 
-            <div className="relative overflow-hidden bg-primary/10">
-              {activeImage ? (
-                <button
-                  type="button"
-                  className="group relative block h-[42vh] min-h-[320px] w-full cursor-zoom-in appearance-none overflow-hidden border-0 bg-transparent p-0 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 md:h-[52vh]"
-                  onClick={openLightbox}
-                  aria-label={t("productDetail.openGallery")}
-                  aria-haspopup="dialog"
-                  aria-expanded={lightboxOpen}
-                >
-                  <ProtectedImage
-                    src={resolveProtectedImageUrl(activeImage)}
-                    alt={localizedTitle}
-                    wrapperClassName="h-full w-full"
-                    fit="cover"
-                    className="transition duration-500 group-hover:scale-[1.02]"
-                    loading="eager"
-                    fetchPriority="high"
-                  />
-                </button>
+            <div className="lg:hidden">
+              <div className="relative overflow-hidden bg-primary/10">
+                {activeImage ? (
+                  <button
+                    type="button"
+                    className="group relative block h-[42vh] min-h-[320px] w-full cursor-zoom-in appearance-none overflow-hidden border-0 bg-transparent p-0 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 md:h-[52vh]"
+                    onClick={() => openLightbox(activeIndex)}
+                    aria-label={t("productDetail.openGallery")}
+                    aria-haspopup="dialog"
+                    aria-expanded={lightboxOpen}
+                  >
+                    <ProtectedImage
+                      src={resolveProtectedImageUrl(activeImage)}
+                      alt={localizedTitle}
+                      wrapperClassName="h-full w-full"
+                      fit="cover"
+                      className="transition duration-500 group-hover:scale-[1.02]"
+                      loading="eager"
+                      fetchPriority="high"
+                    />
+                  </button>
+                ) : (
+                  <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
+                    {t("productDetail.noImages")}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="hidden lg:grid lg:w-[min(72vw,820px)] lg:grid-cols-[10fr_1fr] lg:gap-4">
+              {primaryImage ? (
+                <>
+                  <button
+                    type="button"
+                    className="group relative aspect-square w-full cursor-zoom-in appearance-none overflow-hidden border-0 bg-primary/10 p-0 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                    onClick={() => openLightbox(0)}
+                    aria-label={t("productDetail.openGallery")}
+                    aria-haspopup="dialog"
+                    aria-expanded={lightboxOpen}
+                  >
+                    <ProtectedImage
+                      src={resolveProtectedImageUrl(primaryImage)}
+                      alt={localizedTitle}
+                      wrapperClassName="h-full w-full"
+                      fit="cover"
+                      className="transition duration-500 group-hover:scale-[1.02]"
+                      loading="eager"
+                      fetchPriority="high"
+                    />
+                    <ImageScale />
+                  </button>
+
+                  <div className="min-w-0">
+                    {images.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => openLightbox(1)}
+                        className="group relative flex aspect-square w-full flex-col items-center justify-center gap-1 overflow-hidden border border-primary/20 bg-white/45 text-primary transition hover:border-primary/55 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/55"
+                        aria-label={`${t("productDetail.openGallery")} (${images.length})`}
+                        aria-haspopup="dialog"
+                        aria-expanded={lightboxOpen}
+                      >
+                        <GalleryIcon className="h-[38%] w-[38%] transition duration-300 group-hover:scale-110" />
+                        <span className="text-[10px] font-semibold tabular-nums text-primary/60">+{images.length - 1}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                </>
               ) : (
-                <div className="flex h-[56vh] min-h-[420px] w-full items-center justify-center text-sm text-primary/60">
+                <div className="col-span-2 flex aspect-square w-full max-w-[720px] items-center justify-center bg-primary/10 text-sm text-primary/60">
                   {t("productDetail.noImages")}
                 </div>
               )}
-
             </div>
 
             {images.length > 0 && (
-              <div className="overflow-x-auto no-scrollbar pb-1">
+              <div className="overflow-x-auto no-scrollbar pb-1 lg:hidden">
                 <div className="flex flex-nowrap gap-2">
                   {images.map((image, index) => {
                     const isActive = index === activeIndex;
