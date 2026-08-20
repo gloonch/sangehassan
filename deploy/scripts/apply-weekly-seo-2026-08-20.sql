@@ -148,6 +148,19 @@ DO $granite_health$
 DECLARE
   target_blog_id INTEGER;
 BEGIN
+  -- A later migration replaces this draft with the reviewed Granite cluster version.
+  IF EXISTS (
+    SELECT 1
+    FROM blog_translations
+    WHERE locale = 'fa'
+      AND (
+        slug = 'granite-advantages-disadvantages'
+        OR content_html LIKE '%data-content-version="granite-cluster-2026"%'
+      )
+  ) THEN
+    RETURN;
+  END IF;
+
   SELECT blog_id INTO target_blog_id
   FROM blog_translations
   WHERE locale = 'fa' AND slug = 'granite-advantages-disadvantages-health';
@@ -281,6 +294,17 @@ DO $granite_slab$
 DECLARE
   target_blog_id INTEGER;
 BEGIN
+  -- Do not overwrite the reviewed version if this historical script is rerun.
+  IF EXISTS (
+    SELECT 1
+    FROM blog_translations
+    WHERE locale = 'fa'
+      AND slug = 'granite-slab-guide'
+      AND content_html LIKE '%data-content-version="granite-cluster-2026"%'
+  ) THEN
+    RETURN;
+  END IF;
+
   SELECT blog_id INTO target_blog_id
   FROM blog_translations
   WHERE locale = 'fa' AND slug = 'granite-slab-guide';
