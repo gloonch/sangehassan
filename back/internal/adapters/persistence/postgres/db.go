@@ -119,8 +119,8 @@ func ensureListingProductLinks(db *sql.DB) error {
 		WHERE l.id = s.id`,
 		`WITH title_map(pattern, slug) AS (
 			VALUES
-				('Hassan Travertine%', 'hassan-travertine'),
-				('Takab Travertine%', 'takab-travertine'),
+				('Hassan Travertine%', 'hassan-beige-travertine'),
+				('Takab Travertine%', 'silver-takab-travertine'),
 				('Chocolate Aqamohammadi Travertine%', 'chocolate-aqamohammadi-travertine'),
 				('Chocolate Aqamohammadi%', 'chocolate-aqamohammadi-travertine'),
 				('Azna Crystal%', 'azna-crystal')

@@ -95,6 +95,37 @@ promote_due_scheduled_blogs() {
   fi
 }
 
+activate_published_blog_links() {
+  docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DO $activate_links$
+DECLARE
+  target RECORD;
+BEGIN
+  FOR target IN
+    SELECT bt.locale, bt.slug
+    FROM blog_translations bt
+    JOIN blogs b ON b.id = bt.blog_id
+    WHERE b.status = 'published'
+      AND bt.translation_status = 'published'
+      AND COALESCE(b.published_at, b.created_at) <= NOW()
+  LOOP
+    UPDATE blog_translations source
+    SET content_html = regexp_replace(
+          source.content_html,
+          '<span data-pending-blog-link="' || target.slug || '">([^<]+)</span>',
+          '<a href="/' || target.locale || '/blogs/' || target.slug || '">\1</a>',
+          'g'
+        ),
+        content_json = '{"type":"doc","content":[]}'::jsonb,
+        updated_at = NOW()
+    WHERE source.locale = target.locale
+      AND source.content_html LIKE '%data-pending-blog-link="' || target.slug || '"%';
+  END LOOP;
+END
+$activate_links$;
+SQL
+}
+
 verify_blog_routes() {
   local base_url="$1"
   local failures=0
@@ -241,6 +272,7 @@ main() {
   trap 'rm -rf "$TMP_DIR"' EXIT
 
   promote_due_scheduled_blogs
+  activate_published_blog_links
   fetch_public_blogs
 
   local current_fingerprint previous_fingerprint

@@ -9,7 +9,9 @@
     "build:client": "vite build",
     "optimize:landing-icons": "node scripts/optimize-landing-icons.mjs",
     "prerender": "node scripts/prerender.mjs",
+    "verify:internal-links": "node scripts/verify-internal-links.mjs",
     "verify:sitemap-seo": "node scripts/verify-sitemap-seo.mjs",
+    "verify:sitemap-seo:strict": "SEO_VERIFY_STRICT_DUPLICATES=1 node scripts/verify-sitemap-seo.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test": "vitest run"
   },
